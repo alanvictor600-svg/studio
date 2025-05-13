@@ -6,16 +6,21 @@ import type { Draw, Ticket } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminDrawForm } from '@/components/admin-draw-form';
 import { AdminDrawList } from '@/components/admin-draw-list';
-import { TicketList } from '@/components/ticket-list'; // Import TicketList
+import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy } from 'lucide-react';
-import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils'; // Import status update utility
+import { ArrowLeft, Trophy, Rocket, AlertTriangle } from 'lucide-react';
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
-  const [allTickets, setAllTickets] = useState<Ticket[]>([]); // State for all tickets
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Initial load of draws and tickets
   useEffect(() => {
@@ -26,7 +31,7 @@ export default function AdminPage() {
     }
     const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
     if (storedTickets) {
-      setAllTickets(JSON.parse(storedTickets)); // Load raw tickets
+      setAllTickets(JSON.parse(storedTickets));
     }
   }, [isClient]);
 
@@ -35,10 +40,13 @@ export default function AdminPage() {
     if (isClient) {
       const processedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
       
+      // Only update state if there's a meaningful change to avoid infinite loops or unnecessary re-renders.
+      // Compare stringified versions, or use a deep comparison library if objects are complex.
       if (JSON.stringify(processedTickets) !== JSON.stringify(allTickets)) {
-        setAllTickets(processedTickets);
+         setAllTickets(processedTickets);
       }
-      // Always save the latest processed tickets to localStorage to ensure consistency
+      // Always save the latest `processedTickets` to localStorage to ensure consistency.
+      // If `allTickets` was updated by `handleStartNewLottery`, `processedTickets` will reflect that against empty draws.
       localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(processedTickets));
     }
   }, [allTickets, draws, isClient]);
@@ -52,7 +60,7 @@ export default function AdminPage() {
 
   const handleAddDraw = (newNumbers: number[]) => {
     if (newNumbers.length !== 5) {
-      alert("O sorteio deve conter exatamente 5 números.");
+      toast({ title: "Erro de Validação", description: "O sorteio deve conter exatamente 5 números.", variant: "destructive" });
       return;
     }
     const newDraw: Draw = {
@@ -61,6 +69,29 @@ export default function AdminPage() {
       createdAt: new Date().toISOString(),
     };
     setDraws(prevDraws => [newDraw, ...prevDraws]);
+     toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado com sucesso.", className: "bg-primary text-primary-foreground" });
+  };
+
+  const handleStartNewLottery = () => {
+    // 1. Clear all draws
+    setDraws([]);
+
+    // 2. Update ticket statuses: active/winning -> expired
+    setAllTickets(prevTickets =>
+      prevTickets.map(ticket => {
+        if (ticket.status === 'active' || ticket.status === 'winning') {
+          return { ...ticket, status: 'expired' as Ticket['status'] };
+        }
+        return ticket;
+      })
+    );
+
+    toast({
+      title: "Nova Loteria Iniciada!",
+      description: "Sorteios anteriores e bilhetes ativos/premiados foram resetados/expirados.",
+      className: "bg-primary text-primary-foreground",
+    });
+    setIsConfirmDialogOpen(false); // Close dialog
   };
 
   const winningTickets = useMemo(() => {
@@ -99,6 +130,45 @@ export default function AdminPage() {
         <section aria-labelledby="draw-submission-heading">
           <h2 id="draw-submission-heading" className="sr-only">Cadastrar Novo Sorteio</h2>
           <AdminDrawForm onAddDraw={handleAddDraw} />
+        </section>
+
+        <section aria-labelledby="lottery-controls-heading" className="mt-12">
+          <h2 id="lottery-controls-heading" className="sr-only">Controles da Loteria</h2>
+          <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
+            <CardHeader>
+              <CardTitle className="text-xl text-center font-bold text-accent">Controles da Loteria</CardTitle>
+              <CardDescription className="text-center text-muted-foreground">
+                Gerenciar o ciclo da loteria.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center">
+                      <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
+                      Confirmar Nova Loteria?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação irá limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados.
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleStartNewLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                      Confirmar e Iniciar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
         </section>
 
         <section aria-labelledby="draw-history-heading" className="mt-16">
