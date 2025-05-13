@@ -8,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import type { Draw, Ticket } from '@/types';
-import { ArrowLeft, ClipboardList, Ticket as TicketIcon, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Ticket as TicketIconLucide, BarChart3 } from 'lucide-react'; // Renamed Ticket icon
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 
 export default function VendedorPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isClient, setIsClient] = useState(false);
 
+  // Initial load of draws and tickets
   useEffect(() => {
     setIsClient(true);
     const storedDraws = localStorage.getItem('bolaoPotiguarDraws');
@@ -23,9 +25,20 @@ export default function VendedorPage() {
     }
     const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
     if (storedTickets) {
-      setTickets(JSON.parse(storedTickets));
+      setTickets(JSON.parse(storedTickets)); // Load raw tickets
     }
-  }, []);
+  }, [isClient]);
+
+  // Process tickets based on draws for display (read-only for tickets, no saving back)
+  useEffect(() => {
+    if (isClient) {
+      const processedTickets = updateTicketStatusesBasedOnDraws(tickets, draws);
+      if (JSON.stringify(processedTickets) !== JSON.stringify(tickets)) {
+        setTickets(processedTickets); // Update local state for display
+      }
+    }
+  }, [tickets, draws, isClient]);
+
 
   if (!isClient) {
     return (
@@ -81,7 +94,7 @@ export default function VendedorPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Total de Bilhetes Vendidos
                 </CardTitle>
-                <TicketIcon className="h-5 w-5 text-primary" />
+                <TicketIconLucide className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-primary">{tickets.length}</div>
@@ -115,11 +128,9 @@ export default function VendedorPage() {
           </h2>
            {tickets.length > 0 ? (
             <TicketList tickets={tickets} draws={draws} /> 
-            // Note: No onUpdateTicketStatus needed for seller view of all tickets
-            // Pass draws to TicketList
           ) : (
              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                <TicketIcon size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <TicketIconLucide size={48} className="mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground text-lg">Nenhum bilhete vendido ainda.</p>
              </div>
           )}

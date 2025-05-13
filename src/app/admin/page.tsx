@@ -1,27 +1,49 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import type { Draw } from '@/types';
+import { useState, useEffect, useMemo } from 'react';
+import type { Draw, Ticket } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminDrawForm } from '@/components/admin-draw-form';
 import { AdminDrawList } from '@/components/admin-draw-list';
+import { TicketList } from '@/components/ticket-list'; // Import TicketList
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils'; // Import status update utility
 
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]); // State for all tickets
   const [isClient, setIsClient] = useState(false);
 
+  // Initial load of draws and tickets
   useEffect(() => {
     setIsClient(true);
     const storedDraws = localStorage.getItem('bolaoPotiguarDraws');
     if (storedDraws) {
       setDraws(JSON.parse(storedDraws));
     }
-  }, []);
+    const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
+    if (storedTickets) {
+      setAllTickets(JSON.parse(storedTickets)); // Load raw tickets
+    }
+  }, [isClient]);
 
+  // Process tickets based on draws and save updated tickets to localStorage
+  useEffect(() => {
+    if (isClient) {
+      const processedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
+      
+      if (JSON.stringify(processedTickets) !== JSON.stringify(allTickets)) {
+        setAllTickets(processedTickets);
+      }
+      // Always save the latest processed tickets to localStorage to ensure consistency
+      localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(processedTickets));
+    }
+  }, [allTickets, draws, isClient]);
+
+  // Save draws to localStorage
   useEffect(() => {
     if (isClient) {
       localStorage.setItem('bolaoPotiguarDraws', JSON.stringify(draws));
@@ -30,18 +52,20 @@ export default function AdminPage() {
 
   const handleAddDraw = (newNumbers: number[]) => {
     if (newNumbers.length !== 5) {
-      // This should be handled by the form, but as a safeguard
       alert("O sorteio deve conter exatamente 5 números.");
       return;
     }
     const newDraw: Draw = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      // status: 'registered', // Default status, can be extended later. No status field in Draw type.
       createdAt: new Date().toISOString(),
     };
     setDraws(prevDraws => [newDraw, ...prevDraws]);
   };
+
+  const winningTickets = useMemo(() => {
+    return allTickets.filter(ticket => ticket.status === 'winning');
+  }, [allTickets]);
 
   if (!isClient) {
     return (
@@ -65,7 +89,7 @@ export default function AdminPage() {
              <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
                 Área Administrativa
              </h1>
-             <p className="text-lg text-muted-foreground mt-2">Cadastro de Sorteios Manuais (5 Números)</p>
+             <p className="text-lg text-muted-foreground mt-2">Gerenciamento de Sorteios e Bilhetes Premiados</p>
           </div>
           <div className="w-[150px]"></div> {/* Spacer to balance the layout */}
         </div>
@@ -82,6 +106,21 @@ export default function AdminPage() {
             Histórico de Sorteios
           </h2>
           <AdminDrawList draws={draws} />
+        </section>
+
+        <section aria-labelledby="winning-tickets-heading" className="mt-16">
+          <h2 id="winning-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+            <Trophy className="mr-3 h-8 w-8 text-accent" />
+            Bilhetes Premiados ({winningTickets.length})
+          </h2>
+          {winningTickets.length > 0 ? (
+            <TicketList tickets={winningTickets} draws={draws} />
+          ) : (
+            <div className="text-center py-10 bg-card/50 rounded-lg shadow">
+              <Trophy size={48} className="mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground text-lg">Nenhum bilhete premiado no momento.</p>
+            </div>
+          )}
         </section>
       </main>
 

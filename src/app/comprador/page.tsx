@@ -4,53 +4,65 @@
 import { useState, useEffect } from 'react';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
-import type { Ticket, Draw } from '@/types'; // Import Draw
+import type { Ticket, Draw } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-// import type { Metadata } from 'next'; // Metadata not used here
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 
 export default function CompradorPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [draws, setDraws] = useState<Draw[]>([]); // Added state for draws
+  const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
 
+  // Initial load of draws and tickets, and process tickets
   useEffect(() => {
     setIsClient(true);
-    const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
-    if (storedTickets) {
-      setTickets(JSON.parse(storedTickets));
-    } else {
-      setTickets([
-        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
-      ]);
-    }
-    
-    const storedDraws = localStorage.getItem('bolaoPotiguarDraws'); // Load draws
-    if (storedDraws) {
-      setDraws(JSON.parse(storedDraws));
-    }
-  }, []);
+    const storedDrawsRaw = localStorage.getItem('bolaoPotiguarDraws');
+    const localDraws = storedDrawsRaw ? JSON.parse(storedDrawsRaw) : [];
+    setDraws(localDraws);
 
+    let initialTickets: Ticket[] = [];
+    const storedTicketsRaw = localStorage.getItem('bolaoPotiguarTickets');
+    if (storedTicketsRaw) {
+      initialTickets = JSON.parse(storedTicketsRaw);
+    } else {
+      // Add default ticket if none exist
+      initialTickets = [
+        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
+      ];
+    }
+    setTickets(initialTickets); // Set raw tickets, next effect will process and save.
+
+  }, [isClient]);
+
+  // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(tickets));
-      // Note: Comprador page doesn't save draws, it only reads them.
+      const processedTickets = updateTicketStatusesBasedOnDraws(tickets, draws);
+      
+      if (JSON.stringify(processedTickets) !== JSON.stringify(tickets)) {
+        setTickets(processedTickets); // Update state if statuses changed
+      }
+      // Always save the latest processed tickets to localStorage to ensure consistency
+      localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(processedTickets));
     }
-  }, [tickets, isClient]);
+  }, [tickets, draws, isClient]);
+
 
   const handleAddTicket = (newNumbers: number[]) => {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b), 
-      status: 'active',
+      status: 'active', // Initial status, will be updated by the useEffect
       createdAt: new Date().toISOString(),
     };
-    setTickets(prevTickets => [newTicket, ...prevTickets]);
+    setTickets(prevTickets => [newTicket, ...prevTickets]); // Add new ticket, effect will process
   };
 
   const handleUpdateTicketStatus = (ticketId: string, newStatus: Ticket['status']) => {
+    // Dev function: directly set status. The main useEffect will re-evaluate if it conflicts with winning logic.
     setTickets(prevTickets => prevTickets.map(t => t.id === ticketId ? {...t, status: newStatus} : t));
   };
 
@@ -95,7 +107,7 @@ export default function CompradorPage() {
           <TicketList 
             tickets={tickets} 
             onUpdateTicketStatus={handleUpdateTicketStatus} 
-            draws={draws} // Pass draws to TicketList
+            draws={draws}
           />
         </section>
       </main>

@@ -1,4 +1,6 @@
 // src/lib/lottery-utils.ts
+import type { Ticket, Draw } from '@/types';
+
 export function generateAutoFilledTicket(): number[] {
   const ticket: number[] = [];
   const counts: Record<number, number> = {};
@@ -25,4 +27,67 @@ export function countOccurrences(arr: number[]): Record<number, number> {
     acc[curr] = (acc[curr] || 0) + 1;
     return acc;
   }, {} as Record<number, number>);
+}
+
+export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[]): Ticket[] {
+  if (!Array.isArray(tickets)) {
+    console.error("updateTicketStatusesBasedOnDraws: tickets is not an array", tickets);
+    return [];
+  }
+  if (!Array.isArray(draws)) {
+    console.error("updateTicketStatusesBasedOnDraws: draws is not an array", draws);
+    // If draws are invalid, process tickets as if there are no draws
+    return tickets.map(ticket => ({
+      ...ticket,
+      status: ticket.status === 'winning' ? 'active' : ticket.status,
+    }));
+  }
+
+  if (draws.length === 0) {
+    // If there are no draws, no ticket can be winning.
+    // If a ticket was previously 'winning', reset it to 'active'.
+    return tickets.map(ticket => ({
+      ...ticket,
+      status: ticket.status === 'winning' ? 'active' : ticket.status,
+    }));
+  }
+
+  const allDrawnNumbersFlattened: number[] = draws.flatMap(draw => draw.numbers);
+  const drawnNumbersFrequency = countOccurrences(allDrawnNumbersFlattened);
+
+  return tickets.map(ticket => {
+    if (!ticket || !Array.isArray(ticket.numbers)) {
+      console.error("updateTicketStatusesBasedOnDraws: invalid ticket encountered", ticket);
+      return { ...ticket, status: 'expired' }; // Or some default error state
+    }
+
+    const ticketNumbersFrequency = countOccurrences(ticket.numbers);
+    let isCurrentlyWinning = true;
+
+    if (ticket.numbers.length !== 10) { 
+      isCurrentlyWinning = false;
+    } else {
+      for (const numStr in ticketNumbersFrequency) {
+        const num = parseInt(numStr, 10);
+        const countInTicket = ticketNumbersFrequency[num];
+        const countInDraws = drawnNumbersFrequency[num] || 0;
+        if (countInDraws < countInTicket) {
+          isCurrentlyWinning = false;
+          break;
+        }
+      }
+    }
+
+    let newStatus = ticket.status;
+    if (isCurrentlyWinning) {
+      newStatus = 'winning';
+    } else {
+      // If it's not currently winning, but its status was 'winning', revert it.
+      // Otherwise, keep its existing non-winning status (e.g., 'active', 'expired').
+      if (ticket.status === 'winning') {
+        newStatus = 'active'; 
+      }
+    }
+    return { ...ticket, status: newStatus };
+  });
 }
