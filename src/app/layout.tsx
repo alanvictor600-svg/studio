@@ -1,17 +1,17 @@
 import type {Metadata} from 'next';
-import { Geist_Sans } from 'next/font/google'; // Corrected import
+import { GeistSans } from 'geist/font/sans'; // Corrected import from geist/font/sans
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"; // Added Toaster
 
-const geistSans = Geist_Sans({ // Corrected usage
+const geistSans = GeistSans({ // Corrected usage for GeistSans
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  // subsets: ['latin'], // 'subsets' is not a valid option for GeistSans from 'geist/font/sans'. GeistSans defaults to Latin.
 });
 
-// Geist_Mono is not explicitly used, can be removed if not needed for specific mono sections
-// const geistMono = Geist_Mono({
+// If GeistMono were to be used, it should be imported from 'geist/font/mono'
+// import { GeistMono } from 'geist/font/mono';
+// const geistMono = GeistMono({
 //   variable: '--font-geist-mono',
-//   subsets: ['latin'],
 // });
 
 export const metadata: Metadata = {
