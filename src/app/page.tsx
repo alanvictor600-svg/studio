@@ -1,53 +1,20 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { TicketSelectionForm } from '@/components/ticket-selection-form';
-import { TicketList } from '@/components/ticket-list';
-import type { Ticket } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
-import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Users, ShoppingCart, ShieldCheck, ArrowRight } from 'lucide-react';
 
-export default function HomePage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
-    if (storedTickets) {
-      setTickets(JSON.parse(storedTickets));
-    } else {
-      // Initial mock data for demonstration
-      setTickets([
-        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
-        { id: uuidv4(), numbers: [11,12,13,14,15,15,15,15,16,17].sort((a,b)=>a-b), status: 'winning', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-        { id: uuidv4(), numbers: [21,22,23,24,25,1,2,3,4,5].sort((a,b)=>a-b), status: 'expired', createdAt: new Date(Date.now() - 86400000 * 8).toISOString() },
-      ]);
-    }
   }, []);
 
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(tickets));
-    }
-  }, [tickets, isClient]);
-
-  const handleAddTicket = (newNumbers: number[]) => {
-    const newTicket: Ticket = {
-      id: uuidv4(),
-      numbers: newNumbers, // Assumed sorted by form
-      status: 'active',
-      createdAt: new Date().toISOString(),
-    };
-    setTickets(prevTickets => [newTicket, ...prevTickets]);
-  };
-
-  const handleUpdateTicketStatus = (ticketId: string, newStatus: Ticket['status']) => {
-    setTickets(prevTickets => prevTickets.map(t => t.id === ticketId ? {...t, status: newStatus} : t));
-  };
-
   if (!isClient) {
-    // Basic loading state to avoid hydration mismatch with localStorage
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Bolão Potiguar...</p>
@@ -56,11 +23,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
-      <header className="mb-10 text-center">
+    <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center">
+      <header className="mb-12 text-center">
         <div className="inline-block p-3 rounded-full bg-primary shadow-lg mb-4">
-          {/* Simple SVG Logo placeholder - replace with actual logo if available */}
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="hsl(var(--primary-foreground))" xmlns="http://www.w3.org/2000/svg" data-ai-hint="lottery ball">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="hsl(var(--primary-foreground))" xmlns="http://www.w3.org/2000/svg" data-ai-hint="lottery ball">
             <circle cx="12" cy="12" r="10" stroke="hsl(var(--primary-foreground))" strokeWidth="1.5"/>
             <text x="12" y="16" fontSize="10" textAnchor="middle" fill="hsl(var(--primary-foreground))" fontWeight="bold">BP</text>
           </svg>
@@ -68,24 +34,69 @@ export default function HomePage() {
         <h1 className="text-5xl md:text-6xl font-extrabold text-primary tracking-tight">
           Bolão Potiguar
         </h1>
-        <p className="text-xl text-muted-foreground mt-3">Sua sorte começa aqui!</p>
+        <p className="text-xl text-muted-foreground mt-3">Bem-vindo! Escolha seu perfil para continuar.</p>
       </header>
 
-      <main className="space-y-12 flex-grow">
-        <section aria-labelledby="ticket-selection-heading">
-          <h2 id="ticket-selection-heading" className="sr-only">Seleção de Bilhetes</h2>
-          <TicketSelectionForm onAddTicket={handleAddTicket} />
-        </section>
+      <main className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Link href="/comprador" passHref legacyBehavior>
+          <a className="block transform hover:scale-105 transition-transform duration-300">
+            <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-primary/50">
+              <CardHeader>
+                <Users className="mx-auto h-16 w-16 text-primary mb-4" />
+                <CardTitle className="text-2xl font-bold text-primary">Comprador</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Compre seus bilhetes e tente a sorte!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pb-6">
+                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                  Entrar como Comprador <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </a>
+        </Link>
 
-        <section aria-labelledby="ticket-management-heading" className="mt-16">
-          <h2 id="ticket-management-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
-            Meus Bilhetes
-          </h2>
-          <TicketList tickets={tickets} onUpdateTicketStatus={handleUpdateTicketStatus} />
-        </section>
+        <Link href="/vendedor" passHref legacyBehavior>
+          <a className="block transform hover:scale-105 transition-transform duration-300">
+            <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-secondary/50">
+              <CardHeader>
+                <ShoppingCart className="mx-auto h-16 w-16 text-secondary mb-4" />
+                <CardTitle className="text-2xl font-bold text-secondary">Vendedor</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Gerencie suas vendas e acompanhe os resultados.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pb-6">
+                <Button variant="secondary" className="w-full">
+                  Entrar como Vendedor <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </a>
+        </Link>
+
+        <Link href="/admin" passHref legacyBehavior>
+          <a className="block transform hover:scale-105 transition-transform duration-300">
+            <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-accent/50">
+              <CardHeader>
+                <ShieldCheck className="mx-auto h-16 w-16 text-accent mb-4" />
+                <CardTitle className="text-2xl font-bold text-accent">Admin</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Administre os sorteios e configurações do sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pb-6">
+                <Button variant="destructive" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                  Acessar Admin <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </a>
+        </Link>
       </main>
 
-      <footer className="mt-20 py-8 text-center border-t border-border/50">
+      <footer className="mt-20 py-8 text-center border-t border-border/50 w-full">
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.
         </p>

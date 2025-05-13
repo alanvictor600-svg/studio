@@ -37,7 +37,7 @@ export default function AdminPage() {
     const newDraw: Draw = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'registered', // Default status, can be extended later
+      // status: 'registered', // Default status, can be extended later. No status field in Draw type.
       createdAt: new Date().toISOString(),
     };
     setDraws(prevDraws => [newDraw, ...prevDraws]);
