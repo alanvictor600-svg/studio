@@ -36,7 +36,7 @@ export default function AdminPage() {
     if (storedTickets) {
       setAllTickets(JSON.parse(storedTickets));
     }
-  }, [isClient]); // Removed isClient dependency here as it's set once.
+  }, []); // Removed isClient dependency here as it's set once.
 
   // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
@@ -59,7 +59,15 @@ export default function AdminPage() {
     }
   }, [draws, isClient]);
 
+  const winningTickets = useMemo(() => {
+    return allTickets.filter(ticket => ticket.status === 'winning');
+  }, [allTickets]);
+
   const handleAddDraw = (newNumbers: number[]) => {
+    if (winningTickets.length > 0) {
+      toast({ title: "Ação Bloqueada", description: "Não é possível cadastrar sorteios enquanto houver bilhetes premiados. Inicie uma nova loteria.", variant: "destructive" });
+      return;
+    }
     if (newNumbers.length !== 5) {
       toast({ title: "Erro de Validação", description: "O sorteio deve conter exatamente 5 números.", variant: "destructive" });
       return;
@@ -96,9 +104,6 @@ export default function AdminPage() {
     setIsConfirmDialogOpen(false); // Close dialog
   };
 
-  const winningTickets = useMemo(() => {
-    return allTickets.filter(ticket => ticket.status === 'winning');
-  }, [allTickets]);
 
   if (!isClient) {
     return (
@@ -131,7 +136,7 @@ export default function AdminPage() {
       <main className="space-y-12 flex-grow">
         <section aria-labelledby="draw-submission-heading">
           <h2 id="draw-submission-heading" className="sr-only">Cadastrar Novo Sorteio</h2>
-          <AdminDrawForm onAddDraw={handleAddDraw} />
+          <AdminDrawForm onAddDraw={handleAddDraw} hasWinningTickets={winningTickets.length > 0} />
         </section>
 
         <section aria-labelledby="lottery-controls-heading" className="mt-12">
