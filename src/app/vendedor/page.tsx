@@ -114,8 +114,9 @@ export default function VendedorPage() {
             Bilhetes Registrados
           </h2>
            {tickets.length > 0 ? (
-            <TicketList tickets={tickets} /> 
+            <TicketList tickets={tickets} draws={draws} /> 
             // Note: No onUpdateTicketStatus needed for seller view of all tickets
+            // Pass draws to TicketList
           ) : (
              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
                 <TicketIcon size={48} className="mx-auto mb-4 text-muted-foreground" />

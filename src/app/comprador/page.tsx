@@ -4,20 +4,16 @@
 import { useState, useEffect } from 'react';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
-import type { Ticket } from '@/types';
+import type { Ticket, Draw } from '@/types'; // Import Draw
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import type { Metadata } from 'next';
-
-// export const metadata: Metadata = { // Metadata should be defined in layout or at build time
-//   title: 'Comprar Bilhetes - Bolão Potiguar',
-//   description: 'Selecione seus números e compre seus bilhetes da sorte!',
-// };
+// import type { Metadata } from 'next'; // Metadata not used here
 
 export default function CompradorPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [draws, setDraws] = useState<Draw[]>([]); // Added state for draws
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -26,23 +22,28 @@ export default function CompradorPage() {
     if (storedTickets) {
       setTickets(JSON.parse(storedTickets));
     } else {
-      // Initial mock data for demonstration if no tickets are stored
       setTickets([
         { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
       ]);
+    }
+    
+    const storedDraws = localStorage.getItem('bolaoPotiguarDraws'); // Load draws
+    if (storedDraws) {
+      setDraws(JSON.parse(storedDraws));
     }
   }, []);
 
   useEffect(() => {
     if (isClient) {
       localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(tickets));
+      // Note: Comprador page doesn't save draws, it only reads them.
     }
   }, [tickets, isClient]);
 
   const handleAddTicket = (newNumbers: number[]) => {
     const newTicket: Ticket = {
       id: uuidv4(),
-      numbers: newNumbers.sort((a, b) => a - b), // Ensure sorted
+      numbers: newNumbers.sort((a, b) => a - b), 
       status: 'active',
       createdAt: new Date().toISOString(),
     };
@@ -91,7 +92,11 @@ export default function CompradorPage() {
           <h2 id="ticket-management-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
             Meus Bilhetes
           </h2>
-          <TicketList tickets={tickets} onUpdateTicketStatus={handleUpdateTicketStatus} />
+          <TicketList 
+            tickets={tickets} 
+            onUpdateTicketStatus={handleUpdateTicketStatus} 
+            draws={draws} // Pass draws to TicketList
+          />
         </section>
       </main>
 

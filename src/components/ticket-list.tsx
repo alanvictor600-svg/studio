@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, type FC } from 'react';
-import type { Ticket } from '@/types';
+import type { Ticket, Draw } from '@/types'; // Import Draw
 import { TicketCard } from '@/components/ticket-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { List, PlayCircle, Trophy, Clock3 } from 'lucide-react';
@@ -9,9 +10,10 @@ import { List, PlayCircle, Trophy, Clock3 } from 'lucide-react';
 interface TicketListProps {
   tickets: Ticket[];
   onUpdateTicketStatus?: (ticketId: string, newStatus: Ticket['status']) => void; // Optional for dev/demo
+  draws?: Draw[]; // Added to receive draw information
 }
 
-export const TicketList: FC<TicketListProps> = ({ tickets, onUpdateTicketStatus }) => {
+export const TicketList: FC<TicketListProps> = ({ tickets, onUpdateTicketStatus, draws }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'expired'>('all');
 
   const filteredTickets = tickets.filter(ticket => {
@@ -41,7 +43,12 @@ export const TicketList: FC<TicketListProps> = ({ tickets, onUpdateTicketStatus 
       {filteredTickets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTickets.map(ticket => (
-            <TicketCard key={ticket.id} ticket={ticket} onUpdateTicketStatus={onUpdateTicketStatus} />
+            <TicketCard 
+              key={ticket.id} 
+              ticket={ticket} 
+              onUpdateTicketStatus={onUpdateTicketStatus}
+              draws={draws} // Pass draws to TicketCard
+            />
           ))}
         </div>
       ) : (

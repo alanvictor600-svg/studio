@@ -1,7 +1,9 @@
+
 "use client";
 
 import type { FC } from 'react';
-import type { Ticket } from '@/types';
+import { useMemo } from 'react';
+import type { Ticket, Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -14,9 +16,10 @@ import { Award, CircleDot, TimerOff, CalendarDays } from 'lucide-react';
 interface TicketCardProps {
   ticket: Ticket;
   onUpdateTicketStatus?: (ticketId: string, newStatus: Ticket['status']) => void; // Optional for dev/demo
+  draws?: Draw[]; // Added to receive draw information
 }
 
-export const TicketCard: FC<TicketCardProps> = ({ ticket, onUpdateTicketStatus }) => {
+export const TicketCard: FC<TicketCardProps> = ({ ticket, onUpdateTicketStatus, draws }) => {
   const getStatusProps = () => {
     switch (ticket.status) {
       case 'winning':
@@ -49,6 +52,14 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, onUpdateTicketStatus }
 
   const statusProps = getStatusProps();
 
+  const drawnNumbersSet = useMemo(() => {
+    if (!draws || draws.length === 0) {
+      return new Set<number>();
+    }
+    const allDrawnNumbers = draws.flatMap(d => d.numbers);
+    return new Set<number>(allDrawnNumbers);
+  }, [draws]);
+
   return (
     <Card className={cn(
       "shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between h-full",
@@ -69,18 +80,24 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, onUpdateTicketStatus }
         <div className="mb-4">
           <p className="text-sm font-medium mb-1 opacity-90">Números:</p>
           <div className="flex flex-wrap gap-1.5">
-            {ticket.numbers.map((num, index) => (
-              <Badge
-                key={index}
-                variant="default"
-                className={cn(
-                  "text-md font-semibold px-2.5 py-1 shadow-sm",
-                  ticket.status === 'winning' ? 'bg-primary-foreground text-primary' : 'bg-primary text-primary-foreground'
-                )}
-              >
-                {num}
-              </Badge>
-            ))}
+            {ticket.numbers.map((num, index) => {
+              const isMatched = drawnNumbersSet.has(num);
+              return (
+                <Badge
+                  key={index}
+                  variant="default" // This variant itself means bg-primary text-primary-foreground
+                  className={cn(
+                    "text-md font-semibold px-2.5 py-1 shadow-sm",
+                    ticket.status === 'winning' 
+                      ? 'bg-primary-foreground text-primary' // Style for numbers on a winning ticket
+                      : 'bg-primary text-primary-foreground', // Default style for numbers on active/expired tickets
+                    isMatched && 'ring-2 ring-accent ring-offset-2 ring-offset-background' // Apply ring if number is matched in any draw
+                  )}
+                >
+                  {num}
+                </Badge>
+              );
+            })}
           </div>
         </div>
         <div className="text-xs opacity-80 flex items-center">
