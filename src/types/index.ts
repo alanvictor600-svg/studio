@@ -4,6 +4,8 @@ export interface Ticket {
   numbers: number[];
   status: 'active' | 'expired' | 'winning';
   createdAt: string; // ISO string for date
+  buyerName?: string;
+  buyerPhone?: string;
 }
 
 export interface Draw {

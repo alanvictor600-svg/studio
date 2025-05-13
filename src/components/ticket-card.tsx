@@ -4,17 +4,17 @@
 import type { FC } from 'react';
 import { useMemo } from 'react';
 import type { Ticket, Draw } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Award, CircleDot, TimerOff, CalendarDays } from 'lucide-react';
+import { Award, CircleDot, TimerOff, CalendarDays, User, Phone } from 'lucide-react';
 
 
 interface TicketCardProps {
   ticket: Ticket;
-  draws?: Draw[]; // Added to receive draw information
+  draws?: Draw[];
 }
 
 export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
@@ -22,7 +22,7 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
     switch (ticket.status) {
       case 'winning':
         return {
-          bgColor: 'bg-accent', // Crimson
+          bgColor: 'bg-accent',
           textColor: 'text-accent-foreground',
           borderColor: 'border-accent',
           Icon: Award,
@@ -92,22 +92,22 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="mb-4">
+      <CardContent className="flex-grow space-y-3">
+        <div>
           <p className="text-sm font-medium mb-1 opacity-90">Números:</p>
           <div className="flex flex-wrap gap-1.5">
             {processedTicketNumbers.map(({ numberValue, isMatched }, index) => (
               <Badge
-                key={`${ticket.id}-num-${index}`} // Ensure unique key for each number instance
+                key={`${ticket.id}-num-${index}`}
                 variant="default"
                 className={cn(
                   "text-md font-semibold px-2.5 py-1 shadow-sm",
                   isMatched
-                    ? 'bg-accent text-accent-foreground' // Highlight for matched numbers
-                    : (ticket.status === 'winning' // Style for non-matched numbers based on ticket status
+                    ? 'bg-accent text-accent-foreground'
+                    : (ticket.status === 'winning'
                         ? 'bg-primary-foreground text-primary'
                         : 'bg-primary text-primary-foreground'),
-                  isMatched && 'ring-2 ring-yellow-300 dark:ring-yellow-400 ring-offset-2 ring-offset-[hsl(var(--card))]' // Ring for matched numbers
+                  isMatched && 'ring-2 ring-yellow-300 dark:ring-yellow-400 ring-offset-2 ring-offset-[hsl(var(--card))]'
                 )}
               >
                 {numberValue}
@@ -120,8 +120,26 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
           Criado em: {format(parseISO(ticket.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
         </div>
       </CardContent>
-      {/* Removed CardFooter with manual status update buttons */}
+      {(ticket.buyerName || ticket.buyerPhone) && (
+        <CardFooter className={cn("pt-3 pb-4 border-t mt-auto", statusProps.borderColor, `bg-${statusProps.bgColor}/20`)}>
+          <div className="space-y-1 w-full">
+            {ticket.buyerName && (
+              <div className="flex items-center text-xs opacity-90">
+                <User size={14} className="mr-1.5 shrink-0" />
+                <span className="font-medium mr-1">Comprador:</span>
+                <span className="truncate">{ticket.buyerName}</span>
+              </div>
+            )}
+            {ticket.buyerPhone && (
+              <div className="flex items-center text-xs opacity-90">
+                <Phone size={14} className="mr-1.5 shrink-0" />
+                <span className="font-medium mr-1">Telefone:</span>
+                <span>{ticket.buyerPhone}</span>
+              </div>
+            )}
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 };
-
