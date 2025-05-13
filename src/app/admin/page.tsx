@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+const COMPRADOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarCompradorTickets';
+const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
+
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
@@ -25,15 +28,15 @@ export default function AdminPage() {
   // Initial load of draws and tickets
   useEffect(() => {
     setIsClient(true);
-    const storedDraws = localStorage.getItem('bolaoPotiguarDraws');
+    const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
     if (storedDraws) {
       setDraws(JSON.parse(storedDraws));
     }
-    const storedTickets = localStorage.getItem('bolaoPotiguarTickets');
+    const storedTickets = localStorage.getItem(COMPRADOR_TICKETS_STORAGE_KEY);
     if (storedTickets) {
       setAllTickets(JSON.parse(storedTickets));
     }
-  }, [isClient]);
+  }, [isClient]); // Removed isClient dependency here as it's set once.
 
   // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
@@ -41,20 +44,18 @@ export default function AdminPage() {
       const processedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
       
       // Only update state if there's a meaningful change to avoid infinite loops or unnecessary re-renders.
-      // Compare stringified versions, or use a deep comparison library if objects are complex.
       if (JSON.stringify(processedTickets) !== JSON.stringify(allTickets)) {
          setAllTickets(processedTickets);
       }
       // Always save the latest `processedTickets` to localStorage to ensure consistency.
-      // If `allTickets` was updated by `handleStartNewLottery`, `processedTickets` will reflect that against empty draws.
-      localStorage.setItem('bolaoPotiguarTickets', JSON.stringify(processedTickets));
+      localStorage.setItem(COMPRADOR_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
     }
   }, [allTickets, draws, isClient]);
 
   // Save draws to localStorage
   useEffect(() => {
     if (isClient) {
-      localStorage.setItem('bolaoPotiguarDraws', JSON.stringify(draws));
+      localStorage.setItem(DRAWS_STORAGE_KEY, JSON.stringify(draws));
     }
   }, [draws, isClient]);
 
@@ -77,6 +78,7 @@ export default function AdminPage() {
     setDraws([]);
 
     // 2. Update ticket statuses: active/winning -> expired
+    // This will trigger the useEffect for allTickets, which will save to COMPRADOR_TICKETS_STORAGE_KEY
     setAllTickets(prevTickets =>
       prevTickets.map(ticket => {
         if (ticket.status === 'active' || ticket.status === 'winning') {
