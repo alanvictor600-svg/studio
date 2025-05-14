@@ -73,10 +73,8 @@ export default function LandingPage() {
             className="mx-auto"
           />
         </div>
-        <h1 className="text-5xl md:text-6xl font-extrabold text-primary tracking-tight">
-          Bolão Potiguar
-        </h1>
-        {/* Subtitle removed as per request */}
+        {/* Título principal removido */}
+        <p className="text-lg text-muted-foreground mt-2">Sua sorte começa aqui!</p> 
       </header>
 
       <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-8">
