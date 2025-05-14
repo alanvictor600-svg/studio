@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { useAuth } from '@/context/auth-context'; // Import useAuth
+import { useAuth } from '@/context/auth-context'; 
 import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
-  const { currentUser, logout, isLoading } = useAuth(); // Get currentUser and logout
+  const { currentUser, logout, isLoading } = useAuth(); 
   const router = useRouter();
 
   useEffect(() => {
@@ -23,16 +23,25 @@ export default function LandingPage() {
   const handleCompradorClick = () => {
     if (currentUser && currentUser.role === 'comprador') {
       router.push('/comprador');
-    } else {
-      router.push('/login');
+    } else if (currentUser && currentUser.role !== 'comprador') {
+      // Inform user they are logged in with a different role or handle as needed
+      // For now, redirecting to login to allow role switch via login, or just show a message.
+      // This path could also show a toast message: "You are logged in as a vendor."
+      router.push('/login?redirect=/comprador'); // Or simply to /login
+    }
+     else {
+      router.push('/login?redirect=/comprador');
     }
   };
 
   const handleVendedorClick = () => {
      if (currentUser && currentUser.role === 'vendedor') {
       router.push('/vendedor');
-    } else {
-      router.push('/login');
+    } else if (currentUser && currentUser.role !== 'vendedor') {
+      router.push('/login?redirect=/vendedor');
+    }
+     else {
+      router.push('/login?redirect=/vendedor');
     }
   };
 
@@ -56,8 +65,8 @@ export default function LandingPage() {
         <ThemeToggleButton />
       </div>
       <header className="mb-12 text-center">
-        <div className="inline-block p-3 rounded-full bg-primary shadow-lg mb-4">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="hsl(var(--primary-foreground))" xmlns="http://www.w3.org/2000/svg" data-ai-hint="lottery ball">
+        <div className="inline-block p-3 rounded-full bg-primary shadow-lg mb-4" data-ai-hint="lottery ball">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="hsl(var(--primary-foreground))" xmlns="http://www.w3.org/2000/svg">
             <circle cx="12" cy="12" r="10" stroke="hsl(var(--primary-foreground))" strokeWidth="1.5"/>
             <text x="12" y="16" fontSize="10" textAnchor="middle" fill="hsl(var(--primary-foreground))" fontWeight="bold">BP</text>
           </svg>
@@ -79,12 +88,12 @@ export default function LandingPage() {
             <Users className="mx-auto h-16 w-16 text-primary mb-4" />
             <CardTitle className="text-2xl font-bold text-primary">Comprador</CardTitle>
             <CardDescription className="text-muted-foreground">
-              {currentUser && currentUser.role === 'comprador' ? "Acessar meus bilhetes" : "Compre seus bilhetes e tente a sorte!"}
+              {currentUser && currentUser.role === 'comprador' ? "Acessar meus bilhetes e tentar a sorte!" : "Compre seus bilhetes e tente a sorte!"}
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-auto pb-6">
             <Button onClick={handleCompradorClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'comprador' ? "Meu Painel" : "Entrar / Ver Bilhetes"}
+              <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'comprador' ? "Meu Painel de Compras" : "Entrar como Comprador"}
             </Button>
           </CardContent>
         </Card>
@@ -95,12 +104,12 @@ export default function LandingPage() {
             <ShoppingCart className="mx-auto h-16 w-16 text-secondary mb-4" />
             <CardTitle className="text-2xl font-bold text-secondary">Vendedor</CardTitle>
             <CardDescription className="text-muted-foreground">
-              {currentUser && currentUser.role === 'vendedor' ? "Gerenciar minhas vendas" : "Gerencie suas vendas e acompanhe."}
+              {currentUser && currentUser.role === 'vendedor' ? "Gerenciar minhas vendas e bilhetes." : "Gerencie suas vendas e acompanhe seus bilhetes."}
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-auto pb-6">
              <Button onClick={handleVendedorClick} variant="secondary" className="w-full">
-                <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'vendedor' ? "Meu Painel" : "Entrar / Gerenciar Vendas"}
+                <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'vendedor' ? "Meu Painel de Vendas" : "Entrar como Vendedor"}
             </Button>
           </CardContent>
         </Card>
