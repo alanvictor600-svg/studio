@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
@@ -27,6 +27,16 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   sellerCommissionPercentage: 10, // Default 10%
 };
 
+type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados';
+
+const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] = [
+  { id: 'configuracoes', label: 'Configurações', Icon: Settings },
+  { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
+  { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
+  { id: 'historico-sorteios', label: 'Histórico Sorteios', Icon: History },
+  { id: 'bilhetes-premiados', label: 'Bilhetes Premiados', Icon: Trophy },
+];
+
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
@@ -35,11 +45,11 @@ export default function AdminPage() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Form states for lottery config
   const [ticketPriceInput, setTicketPriceInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
   const [commissionInput, setCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
 
-  // Initial load of draws, tickets, and lottery config
+  const [activeSection, setActiveSection] = useState<AdminSection>('cadastrar-sorteio');
+
   useEffect(() => {
     setIsClient(true);
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
@@ -63,7 +73,6 @@ export default function AdminPage() {
     }
   }, []); 
 
-  // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
     if (isClient) {
       const processedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
@@ -74,14 +83,12 @@ export default function AdminPage() {
     }
   }, [allTickets, draws, isClient]);
 
-  // Save draws to localStorage
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(DRAWS_STORAGE_KEY, JSON.stringify(draws));
     }
   }, [draws, isClient]);
 
-  // Save lottery config to localStorage
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(lotteryConfig));
@@ -153,46 +160,10 @@ export default function AdminPage() {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
-      <header className="mb-6">
-        <div className="flex justify-between items-center">
-          <Link href="/" passHref>
-            <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline-block sm:ml-2">Voltar para Home</span>
-            </Button>
-          </Link>
-          <div className="text-center flex-grow">
-             <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
-                Área Administrativa
-             </h1>
-             <p className="text-lg text-muted-foreground mt-2">Gerenciamento de Sorteios, Bilhetes e Configurações</p>
-          </div>
-          <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> 
-        </div>
-      </header>
-
-      <Tabs defaultValue="cadastrar-sorteio" className="w-full flex-grow">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-8 h-auto p-2 bg-card/70 backdrop-blur-sm rounded-lg shadow-md">
-          <TabsTrigger value="configuracoes" className="py-2.5 text-xs sm:text-sm">
-            <Settings className="mr-1.5 h-4 w-4" /> Configurações
-          </TabsTrigger>
-          <TabsTrigger value="cadastrar-sorteio" className="py-2.5 text-xs sm:text-sm">
-            <PlusCircle className="mr-1.5 h-4 w-4" /> Cadastrar Sorteio
-          </TabsTrigger>
-          <TabsTrigger value="controles-loteria" className="py-2.5 text-xs sm:text-sm">
-            <ShieldCheck className="mr-1.5 h-4 w-4" /> Controles
-          </TabsTrigger>
-          <TabsTrigger value="historico-sorteios" className="py-2.5 text-xs sm:text-sm">
-            <History className="mr-1.5 h-4 w-4" /> Histórico Sorteios
-          </TabsTrigger>
-          <TabsTrigger value="bilhetes-premiados" className="py-2.5 text-xs sm:text-sm">
-            <Trophy className="mr-1.5 h-4 w-4" /> Bilhetes Premiados
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="configuracoes">
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'configuracoes':
+        return (
           <section aria-labelledby="lottery-settings-heading">
             <h2 id="lottery-settings-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
                 <Settings className="mr-3 h-8 w-8 text-primary" />
@@ -246,9 +217,9 @@ export default function AdminPage() {
                 </CardFooter>
             </Card>
           </section>
-        </TabsContent>
-
-        <TabsContent value="cadastrar-sorteio">
+        );
+      case 'cadastrar-sorteio':
+        return (
           <section aria-labelledby="draw-submission-heading">
             <h2 id="draw-submission-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <PlusCircle className="mr-3 h-8 w-8 text-primary" />
@@ -256,9 +227,9 @@ export default function AdminPage() {
             </h2>
             <AdminDrawForm onAddDraw={handleAddDraw} hasWinningTickets={winningTickets.length > 0} />
           </section>
-        </TabsContent>
-
-        <TabsContent value="controles-loteria">
+        );
+      case 'controles-loteria':
+        return (
           <section aria-labelledby="lottery-controls-heading">
             <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
@@ -303,9 +274,9 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </section>
-        </TabsContent>
-
-        <TabsContent value="historico-sorteios">
+        );
+      case 'historico-sorteios':
+        return (
           <section aria-labelledby="draw-history-heading">
             <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <History className="mr-3 h-8 w-8 text-primary" />
@@ -313,9 +284,9 @@ export default function AdminPage() {
             </h2>
             <AdminDrawList draws={draws} />
           </section>
-        </TabsContent>
-
-        <TabsContent value="bilhetes-premiados">
+        );
+      case 'bilhetes-premiados':
+        return (
           <section aria-labelledby="winning-tickets-heading">
             <h2 id="winning-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <Trophy className="mr-3 h-8 w-8 text-accent" />
@@ -330,8 +301,60 @@ export default function AdminPage() {
               </div>
             )}
           </section>
-        </TabsContent>
-      </Tabs>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
+      <header className="mb-6">
+        <div className="flex justify-between items-center">
+          <Link href="/" passHref>
+            <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline-block sm:ml-2">Voltar para Home</span>
+            </Button>
+          </Link>
+          <div className="text-center flex-grow">
+             <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
+                Área Administrativa
+             </h1>
+             <p className="text-lg text-muted-foreground mt-2">Gerenciamento de Sorteios, Bilhetes e Configurações</p>
+          </div>
+          <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> 
+        </div>
+      </header>
+
+      <div className="flex flex-col md:flex-row gap-x-8 gap-y-6 flex-grow mt-8">
+        {/* Vertical Menu */}
+        <aside className="w-full md:w-64 lg:w-72 flex-shrink-0 bg-card/70 backdrop-blur-sm p-4 rounded-lg shadow-md md:sticky md:top-20 md:self-start max-h-[calc(100vh-10rem)] overflow-y-auto">
+          <nav className="space-y-2">
+            {menuItems.map(item => (
+              <Button
+                key={item.id}
+                variant={activeSection === item.id ? 'default' : 'ghost'}
+                className={cn(
+                  "w-full justify-start text-sm py-3 px-4 h-auto",
+                  activeSection === item.id 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "hover:bg-muted/50 hover:text-primary"
+                )}
+                onClick={() => setActiveSection(item.id)}
+              >
+                <item.Icon className={cn("mr-3 h-5 w-5", activeSection === item.id ? "text-primary-foreground" : "text-primary")} />
+                {item.label}
+              </Button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Content Area */}
+        <main className="flex-grow">
+          {renderSectionContent()}
+        </main>
+      </div>
 
       <footer className="mt-20 py-8 text-center border-t border-border/50">
         <p className="text-sm text-muted-foreground">
@@ -341,5 +364,6 @@ export default function AdminPage() {
     </div>
   );
 }
+    
 
     
