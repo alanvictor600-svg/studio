@@ -67,8 +67,8 @@ export default function LandingPage() {
           <Image
             src="/logo.png" 
             alt="Logo Bolão Potiguar - Tentativa 2" 
-            width={180} 
-            height={180} 
+            width={150} 
+            height={150} 
             priority 
             className="mx-auto"
           />
