@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // Importar o componente Image
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -20,14 +21,14 @@ export default function LandingPage() {
     setIsClient(true);
   }, []);
 
-  const handleClienteClick = () => { // Renamed from handleCompradorClick
-    if (currentUser && currentUser.role === 'cliente') { // Changed 'comprador' to 'cliente'
-      router.push('/cliente'); // Changed path
-    } else if (currentUser && currentUser.role !== 'cliente') { // Changed 'comprador' to 'cliente'
-      router.push('/login?redirect=/cliente'); // Changed path
+  const handleClienteClick = () => { 
+    if (currentUser && currentUser.role === 'cliente') { 
+      router.push('/cliente'); 
+    } else if (currentUser && currentUser.role !== 'cliente') { 
+      router.push('/login?redirect=/cliente'); 
     }
      else {
-      router.push('/login?redirect=/cliente'); // Changed path
+      router.push('/login?redirect=/cliente'); 
     }
   };
 
@@ -62,11 +63,15 @@ export default function LandingPage() {
         <ThemeToggleButton />
       </div>
       <header className="mb-12 text-center">
-        <div className="inline-block p-3 rounded-full bg-primary shadow-lg mb-4" data-ai-hint="lottery ball">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="hsl(var(--primary-foreground))" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="hsl(var(--primary-foreground))" strokeWidth="1.5"/>
-            <text x="12" y="16" fontSize="10" textAnchor="middle" fill="hsl(var(--primary-foreground))" fontWeight="bold">BP</text>
-          </svg>
+        <div className="mb-6">
+          <Image 
+            src="/logo-bolao-potiguar.png" // Caminho para a sua logo na pasta public
+            alt="Logo Bolão Potiguar"
+            width={180} // Ajuste a largura conforme necessário
+            height={180} // Ajuste a altura conforme necessário
+            priority // Para carregar a logo mais rapidamente
+            className="mx-auto"
+          />
         </div>
         <h1 className="text-5xl md:text-6xl font-extrabold text-primary tracking-tight">
           Bolão Potiguar
