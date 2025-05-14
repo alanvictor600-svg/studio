@@ -6,17 +6,38 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings } from 'lucide-react';
-import { ThemeToggleButton } from '@/components/theme-toggle-button'; // Import the toggle button
+import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { ThemeToggleButton } from '@/components/theme-toggle-button';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
+  const { currentUser, logout, isLoading } = useAuth(); // Get currentUser and logout
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient) {
+  const handleCompradorClick = () => {
+    if (currentUser && currentUser.role === 'comprador') {
+      router.push('/comprador');
+    } else {
+      router.push('/login');
+    }
+  };
+
+  const handleVendedorClick = () => {
+     if (currentUser && currentUser.role === 'vendedor') {
+      router.push('/vendedor');
+    } else {
+      router.push('/login');
+    }
+  };
+
+
+  if (!isClient || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Bolão Potiguar...</p>
@@ -26,7 +47,12 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
-      <div className="fixed top-6 right-6 z-50">
+      <div className="fixed top-6 right-6 z-50 flex space-x-2">
+        {currentUser && (
+          <Button variant="outline" onClick={logout} className="shadow-md">
+            <LogOut className="mr-2 h-4 w-4" /> Sair
+          </Button>
+        )}
         <ThemeToggleButton />
       </div>
       <header className="mb-12 text-center">
@@ -39,48 +65,56 @@ export default function LandingPage() {
         <h1 className="text-5xl md:text-6xl font-extrabold text-primary tracking-tight">
           Bolão Potiguar
         </h1>
-        <p className="text-xl text-muted-foreground mt-3">Bem-vindo! Escolha seu perfil para continuar.</p>
+        {currentUser ? (
+           <p className="text-xl text-muted-foreground mt-3">Bem-vindo(a) de volta, {currentUser.username}!</p>
+        ) : (
+           <p className="text-xl text-muted-foreground mt-3">Bem-vindo! Escolha seu perfil ou cadastre-se.</p>
+        )}
       </header>
 
       <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Link href="/comprador" passHref legacyBehavior>
-          <a className="block transform hover:scale-105 transition-transform duration-300">
-            <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-primary/50">
-              <CardHeader>
-                <Users className="mx-auto h-16 w-16 text-primary mb-4" />
-                <CardTitle className="text-2xl font-bold text-primary">Comprador</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Compre seus bilhetes e tente a sorte!
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto pb-6">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  Entrar como Comprador <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </a>
-        </Link>
+        {/* Comprador Card */}
+        <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-primary/50 transform hover:scale-105 transition-transform duration-300">
+          <CardHeader>
+            <Users className="mx-auto h-16 w-16 text-primary mb-4" />
+            <CardTitle className="text-2xl font-bold text-primary">Comprador</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {currentUser && currentUser.role === 'comprador' ? "Acessar meus bilhetes" : "Compre seus bilhetes e tente a sorte!"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto pb-6">
+            <Button onClick={handleCompradorClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'comprador' ? "Meu Painel" : "Entrar / Ver Bilhetes"}
+            </Button>
+          </CardContent>
+        </Card>
 
-        <Link href="/vendedor" passHref legacyBehavior>
-          <a className="block transform hover:scale-105 transition-transform duration-300">
-            <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-secondary/50">
-              <CardHeader>
-                <ShoppingCart className="mx-auto h-16 w-16 text-secondary mb-4" />
-                <CardTitle className="text-2xl font-bold text-secondary">Vendedor</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Gerencie suas vendas e acompanhe os resultados.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto pb-6">
-                <Button variant="secondary" className="w-full">
-                  Entrar como Vendedor <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </a>
-        </Link>
+        {/* Vendedor Card */}
+         <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-secondary/50 transform hover:scale-105 transition-transform duration-300">
+          <CardHeader>
+            <ShoppingCart className="mx-auto h-16 w-16 text-secondary mb-4" />
+            <CardTitle className="text-2xl font-bold text-secondary">Vendedor</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {currentUser && currentUser.role === 'vendedor' ? "Gerenciar minhas vendas" : "Gerencie suas vendas e acompanhe."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto pb-6">
+             <Button onClick={handleVendedorClick} variant="secondary" className="w-full">
+                <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'vendedor' ? "Meu Painel" : "Entrar / Gerenciar Vendas"}
+            </Button>
+          </CardContent>
+        </Card>
       </main>
+
+      {!currentUser && (
+        <div className="mt-12">
+          <Link href="/cadastrar" passHref>
+            <Button variant="outline" size="lg" className="text-lg py-3 px-6 shadow-md hover:shadow-lg">
+              <UserPlus className="mr-2 h-5 w-5" /> Ainda não tem conta? Cadastre-se!
+            </Button>
+          </Link>
+        </div>
+      )}
 
       <div className="fixed bottom-6 left-6 z-50">
         <Popover>

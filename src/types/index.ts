@@ -15,3 +15,10 @@ export interface Draw {
   createdAt: string; // ISO string for date
 }
 
+export interface User {
+  id: string;
+  username: string;
+  passwordHash: string; // Storing a hash is better, but for simplicity, this might store plain if not careful.
+  role: 'comprador' | 'vendedor';
+  createdAt: string; // ISO string for date
+}
