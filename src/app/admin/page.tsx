@@ -9,13 +9,14 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, ListFilter, Edit } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
@@ -172,48 +173,27 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <nav className="mb-10 py-3 bg-card/70 backdrop-blur-sm rounded-lg shadow-md sticky top-4 z-10">
-        <ul className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 sm:gap-x-4">
-          <li>
-            <Link href="#admin-lottery-settings-section" passHref>
-              <Button variant="ghost" className="text-primary hover:bg-primary/10 text-xs sm:text-sm">
-                <Settings className="mr-1.5 h-4 w-4 sm:h-5 sm:w-5" /> Configurações
-              </Button>
-            </Link>
-          </li>
-          <li>
-            <Link href="#admin-draw-submission-section" passHref>
-              <Button variant="ghost" className="text-primary hover:bg-primary/10 text-xs sm:text-sm">
-                <PlusCircle className="mr-1.5 h-4 w-4 sm:h-5 sm:w-5" /> Cadastrar Sorteio
-              </Button>
-            </Link>
-          </li>
-          <li>
-            <Link href="#admin-lottery-controls-section" passHref>
-              <Button variant="ghost" className="text-primary hover:bg-primary/10 text-xs sm:text-sm">
-                <ShieldCheck className="mr-1.5 h-4 w-4 sm:h-5 sm:w-5" /> Controles
-              </Button>
-            </Link>
-          </li>
-          <li>
-            <Link href="#admin-draw-history-section" passHref>
-              <Button variant="ghost" className="text-primary hover:bg-primary/10 text-xs sm:text-sm">
-                <History className="mr-1.5 h-4 w-4 sm:h-5 sm:w-5" /> Histórico Sorteios
-              </Button>
-            </Link>
-          </li>
-          <li>
-            <Link href="#admin-winning-tickets-section" passHref>
-              <Button variant="ghost" className="text-primary hover:bg-primary/10 text-xs sm:text-sm">
-                <Trophy className="mr-1.5 h-4 w-4 sm:h-5 sm:w-5" /> Bilhetes Premiados
-              </Button>
-            </Link>
-          </li>
-        </ul>
-      </nav>
+      <Tabs defaultValue="cadastrar-sorteio" className="w-full flex-grow">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-8 h-auto p-2 bg-card/70 backdrop-blur-sm rounded-lg shadow-md">
+          <TabsTrigger value="configuracoes" className="py-2.5 text-xs sm:text-sm">
+            <Settings className="mr-1.5 h-4 w-4" /> Configurações
+          </TabsTrigger>
+          <TabsTrigger value="cadastrar-sorteio" className="py-2.5 text-xs sm:text-sm">
+            <PlusCircle className="mr-1.5 h-4 w-4" /> Cadastrar Sorteio
+          </TabsTrigger>
+          <TabsTrigger value="controles-loteria" className="py-2.5 text-xs sm:text-sm">
+            <ShieldCheck className="mr-1.5 h-4 w-4" /> Controles
+          </TabsTrigger>
+          <TabsTrigger value="historico-sorteios" className="py-2.5 text-xs sm:text-sm">
+            <History className="mr-1.5 h-4 w-4" /> Histórico Sorteios
+          </TabsTrigger>
+          <TabsTrigger value="bilhetes-premiados" className="py-2.5 text-xs sm:text-sm">
+            <Trophy className="mr-1.5 h-4 w-4" /> Bilhetes Premiados
+          </TabsTrigger>
+        </TabsList>
 
-      <main className="space-y-12 flex-grow">
-        <section id="admin-lottery-settings-section" aria-labelledby="lottery-settings-heading" className="scroll-mt-24">
+        <TabsContent value="configuracoes">
+          <section aria-labelledby="lottery-settings-heading">
             <h2 id="lottery-settings-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
                 <Settings className="mr-3 h-8 w-8 text-primary" />
                 Configurações da Loteria
@@ -265,84 +245,93 @@ export default function AdminPage() {
                     </Button>
                 </CardFooter>
             </Card>
-        </section>
-        
-        <section id="admin-draw-submission-section" aria-labelledby="draw-submission-heading" className="mt-12 scroll-mt-24">
-          <h2 id="draw-submission-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-            <PlusCircle className="mr-3 h-8 w-8 text-primary" />
-            Cadastrar Novo Sorteio
-          </h2>
-          <AdminDrawForm onAddDraw={handleAddDraw} hasWinningTickets={winningTickets.length > 0} />
-        </section>
+          </section>
+        </TabsContent>
 
-        <section id="admin-lottery-controls-section" aria-labelledby="lottery-controls-heading" className="mt-12 scroll-mt-24">
-          <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-            <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
-            Controles da Loteria
-          </h2>
-          <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
-            <CardHeader>
-              <CardTitle className="text-xl text-center font-semibold">
-                Gerenciar Ciclo da Loteria
-              </CardTitle>
-              <CardDescription className="text-center text-muted-foreground">
-                Esta ação reinicia a loteria, limpa os sorteios e expira bilhetes ativos/premiados.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center">
-                      <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
-                      Confirmar Nova Loteria?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação irá limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados.
-                      A comissão dos vendedores para o ciclo atual será baseada nos bilhetes ativos antes desta ação.
-                      Esta ação não pode ser desfeita.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleStartNewLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                      Confirmar e Iniciar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardContent>
-          </Card>
-        </section>
+        <TabsContent value="cadastrar-sorteio">
+          <section aria-labelledby="draw-submission-heading">
+            <h2 id="draw-submission-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <PlusCircle className="mr-3 h-8 w-8 text-primary" />
+              Cadastrar Novo Sorteio
+            </h2>
+            <AdminDrawForm onAddDraw={handleAddDraw} hasWinningTickets={winningTickets.length > 0} />
+          </section>
+        </TabsContent>
 
-        <section id="admin-draw-history-section" aria-labelledby="draw-history-heading" className="mt-16 scroll-mt-24">
-          <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-            <History className="mr-3 h-8 w-8 text-primary" />
-            Histórico de Sorteios
-          </h2>
-          <AdminDrawList draws={draws} />
-        </section>
+        <TabsContent value="controles-loteria">
+          <section aria-labelledby="lottery-controls-heading">
+            <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
+              Controles da Loteria
+            </h2>
+            <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
+              <CardHeader>
+                <CardTitle className="text-xl text-center font-semibold">
+                  Gerenciar Ciclo da Loteria
+                </CardTitle>
+                <CardDescription className="text-center text-muted-foreground">
+                  Esta ação reinicia a loteria, limpa os sorteios e expira bilhetes ativos/premiados.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center">
+                        <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
+                        Confirmar Nova Loteria?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados.
+                        A comissão dos vendedores para o ciclo atual será baseada nos bilhetes ativos antes desta ação.
+                        Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleStartNewLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        Confirmar e Iniciar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+          </section>
+        </TabsContent>
 
-        <section id="admin-winning-tickets-section" aria-labelledby="winning-tickets-heading" className="mt-16 scroll-mt-24">
-          <h2 id="winning-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-            <Trophy className="mr-3 h-8 w-8 text-accent" />
-            Bilhetes Premiados ({winningTickets.length})
-          </h2>
-          {winningTickets.length > 0 ? (
-            <TicketList tickets={winningTickets} draws={draws} />
-          ) : (
-            <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-              <Trophy size={48} className="mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground text-lg">Nenhum bilhete premiado no momento.</p>
-            </div>
-          )}
-        </section>
-      </main>
+        <TabsContent value="historico-sorteios">
+          <section aria-labelledby="draw-history-heading">
+            <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <History className="mr-3 h-8 w-8 text-primary" />
+              Histórico de Sorteios
+            </h2>
+            <AdminDrawList draws={draws} />
+          </section>
+        </TabsContent>
+
+        <TabsContent value="bilhetes-premiados">
+          <section aria-labelledby="winning-tickets-heading">
+            <h2 id="winning-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <Trophy className="mr-3 h-8 w-8 text-accent" />
+              Bilhetes Premiados ({winningTickets.length})
+            </h2>
+            {winningTickets.length > 0 ? (
+              <TicketList tickets={winningTickets} draws={draws} />
+            ) : (
+              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
+                <Trophy size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground text-lg">Nenhum bilhete premiado no momento.</p>
+              </div>
+            )}
+          </section>
+        </TabsContent>
+      </Tabs>
 
       <footer className="mt-20 py-8 text-center border-t border-border/50">
         <p className="text-sm text-muted-foreground">
@@ -353,3 +342,4 @@ export default function AdminPage() {
   );
 }
 
+    
