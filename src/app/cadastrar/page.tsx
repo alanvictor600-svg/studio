@@ -18,7 +18,7 @@ export default function CadastroPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'comprador' | 'vendedor'>('comprador');
+  const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente'); // Changed 'comprador' to 'cliente'
   const { register, currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -30,7 +30,7 @@ export default function CadastroPage() {
 
   useEffect(() => {
     if (isClient && !authLoading && currentUser) {
-      router.push(currentUser.role === 'comprador' ? '/comprador' : '/vendedor');
+      router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor'); // Changed 'comprador' to 'cliente' and path
     }
   }, [currentUser, authLoading, router, isClient]);
 
@@ -46,7 +46,6 @@ export default function CadastroPage() {
       return;
     }
     await register(username, password, role);
-    // Redirection handled by register function or useEffect
   };
   
   if (authLoading && isClient) {
@@ -61,7 +60,7 @@ export default function CadastroPage() {
      return (
         <div className="flex flex-col justify-center items-center min-h-screen bg-background p-4">
             <p className="text-foreground text-lg mb-4">Você já está logado como {currentUser.username}. Não é possível se cadastrar.</p>
-            <Button onClick={() => router.push(currentUser.role === 'comprador' ? '/comprador' : '/vendedor')}>
+            <Button onClick={() => router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor')}> 
                 Ir para o painel
             </Button>
         </div>
@@ -131,13 +130,13 @@ export default function CadastroPage() {
             <div className="space-y-3">
               <Label>Qual seu perfil?</Label>
               <RadioGroup 
-                defaultValue="comprador" 
-                onValueChange={(value) => setRole(value as 'comprador' | 'vendedor')}
+                defaultValue="cliente" // Changed 'comprador' to 'cliente'
+                onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')} // Changed 'comprador' to 'cliente'
                 className="flex space-x-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="comprador" id="role-comprador" />
-                  <Label htmlFor="role-comprador" className="font-normal">Comprador</Label>
+                  <RadioGroupItem value="cliente" id="role-cliente" /> 
+                  <Label htmlFor="role-cliente" className="font-normal">Cliente</Label> 
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="vendedor" id="role-vendedor" />

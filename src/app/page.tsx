@@ -20,17 +20,14 @@ export default function LandingPage() {
     setIsClient(true);
   }, []);
 
-  const handleCompradorClick = () => {
-    if (currentUser && currentUser.role === 'comprador') {
-      router.push('/comprador');
-    } else if (currentUser && currentUser.role !== 'comprador') {
-      // Inform user they are logged in with a different role or handle as needed
-      // For now, redirecting to login to allow role switch via login, or just show a message.
-      // This path could also show a toast message: "You are logged in as a vendor."
-      router.push('/login?redirect=/comprador'); // Or simply to /login
+  const handleClienteClick = () => { // Renamed from handleCompradorClick
+    if (currentUser && currentUser.role === 'cliente') { // Changed 'comprador' to 'cliente'
+      router.push('/cliente'); // Changed path
+    } else if (currentUser && currentUser.role !== 'cliente') { // Changed 'comprador' to 'cliente'
+      router.push('/login?redirect=/cliente'); // Changed path
     }
      else {
-      router.push('/login?redirect=/comprador');
+      router.push('/login?redirect=/cliente'); // Changed path
     }
   };
 
@@ -82,18 +79,18 @@ export default function LandingPage() {
       </header>
 
       <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Comprador Card */}
+        {/* Cliente Card */}
         <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-primary/50 transform hover:scale-105 transition-transform duration-300">
           <CardHeader>
             <Users className="mx-auto h-16 w-16 text-primary mb-4" />
-            <CardTitle className="text-2xl font-bold text-primary">Comprador</CardTitle>
+            <CardTitle className="text-2xl font-bold text-primary">Cliente</CardTitle> 
             <CardDescription className="text-muted-foreground">
-              {currentUser && currentUser.role === 'comprador' ? "Acessar meus bilhetes e tentar a sorte!" : "Compre seus bilhetes e tente a sorte!"}
+              {currentUser && currentUser.role === 'cliente' ? "Acessar meus bilhetes e tentar a sorte!" : "Compre seus bilhetes e tente a sorte!"} 
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-auto pb-6">
-            <Button onClick={handleCompradorClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'comprador' ? "Meu Painel de Compras" : "Entrar como Comprador"}
+            <Button onClick={handleClienteClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <ArrowRight className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'cliente' ? "Meu Painel de Cliente" : "Entrar como Cliente"} 
             </Button>
           </CardContent>
         </Card>

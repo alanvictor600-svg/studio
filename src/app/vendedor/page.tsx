@@ -15,12 +15,12 @@ import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
-const COMPRADOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarCompradorTickets';
+const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; // Renamed key
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
 
 export default function VendedorPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
-  const [compradorTicketsForSummary, setCompradorTicketsForSummary] = useState<Ticket[]>([]);
+  const [clienteTicketsForSummary, setClienteTicketsForSummary] = useState<Ticket[]>([]); // Renamed state variable
   const [vendedorManagedTickets, setVendedorManagedTickets] = useState<Ticket[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
@@ -37,15 +37,15 @@ export default function VendedorPage() {
   // Load and process tickets once client-side and when draws or vendedorManagedTickets change
   useEffect(() => {
     if (isClient) {
-      // Load comprador tickets for summary
-      const storedCompradorTickets = localStorage.getItem(COMPRADOR_TICKETS_STORAGE_KEY);
-      let initialCompradorTickets: Ticket[] = [];
-      if (storedCompradorTickets) {
-        initialCompradorTickets = JSON.parse(storedCompradorTickets);
+      // Load cliente tickets for summary
+      const storedClienteTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); // Using renamed key
+      let initialClienteTickets: Ticket[] = [];
+      if (storedClienteTickets) {
+        initialClienteTickets = JSON.parse(storedClienteTickets);
       }
-      const processedCompradorTickets = updateTicketStatusesBasedOnDraws(initialCompradorTickets, draws);
-      if(JSON.stringify(processedCompradorTickets) !== JSON.stringify(compradorTicketsForSummary)){
-        setCompradorTicketsForSummary(processedCompradorTickets);
+      const processedClienteTickets = updateTicketStatusesBasedOnDraws(initialClienteTickets, draws);
+      if(JSON.stringify(processedClienteTickets) !== JSON.stringify(clienteTicketsForSummary)){
+        setClienteTicketsForSummary(processedClienteTickets); // Using renamed state setter
       }
       
 
@@ -55,39 +55,36 @@ export default function VendedorPage() {
       if (storedVendedorTickets) {
         initialVendedorTickets = JSON.parse(storedVendedorTickets);
       }
-      // Important: Process these tickets *before* setting them to state to avoid loops if updateTicketStatusesBasedOnDraws modifies them.
       const processedVendedorTickets = updateTicketStatusesBasedOnDraws(initialVendedorTickets, draws);
        if (JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorManagedTickets) || initialVendedorTickets.length !== vendedorManagedTickets.length) {
          setVendedorManagedTickets(processedVendedorTickets);
        }
 
     }
-  }, [isClient, draws]); // Removed vendedorManagedTickets from dependency to avoid loop on its own update
+  }, [isClient, draws, clienteTicketsForSummary]); // Added clienteTicketsForSummary to dependencies
 
   // Save vendedorManagedTickets to localStorage when it changes
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(vendedorManagedTickets));
-      // Re-process vendedor tickets based on draws after any update
       const processedVendedorTickets = updateTicketStatusesBasedOnDraws(vendedorManagedTickets, draws);
       if(JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorManagedTickets)){
         setVendedorManagedTickets(processedVendedorTickets);
       }
     }
-  }, [vendedorManagedTickets, draws, isClient]); // Add draws here to re-process if draws change.
+  }, [vendedorManagedTickets, draws, isClient]); 
 
 
   const handleAddSellerTicket = (numbers: number[], buyerName: string, buyerPhone: string) => {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: numbers.sort((a, b) => a - b),
-      status: 'active', // Will be updated by effect
+      status: 'active', 
       createdAt: new Date().toISOString(),
       buyerName,
       buyerPhone,
     };
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
-    // Toast is handled in the form component
   };
 
   const isLotteryActive = draws.length > 0;
@@ -116,12 +113,11 @@ export default function VendedorPage() {
             </h1>
             <p className="text-lg text-muted-foreground mt-2">Painel de Controle e Vendas</p>
           </div>
-          <div className="w-[150px]"></div> {/* Spacer to balance layout */}
+          <div className="w-[150px]"></div> 
         </div>
       </header>
 
       <main className="space-y-12 flex-grow">
-        {/* Ticket Creation Section for Seller */}
         <section aria-labelledby="seller-ticket-creation-heading">
           <h2 id="seller-ticket-creation-heading" className="text-3xl font-bold text-primary mb-6 text-center flex items-center justify-center">
             <PlusCircle className="mr-3 h-7 w-7" /> Registrar Nova Venda de Bilhete
@@ -129,7 +125,6 @@ export default function VendedorPage() {
           <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryActive={isLotteryActive} />
         </section>
 
-        {/* Dashboard Summary Section */}
         <section aria-labelledby="dashboard-summary-heading" className="mt-16">
           <h2 id="dashboard-summary-heading" className="text-3xl font-bold text-primary mb-6 text-center">
             Resumo Geral
@@ -160,18 +155,17 @@ export default function VendedorPage() {
             <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Bilhetes (App Compradores)
+                  Bilhetes (App Clientes) 
                 </CardTitle>
                 <TicketIconLucide className="h-5 w-5 text-secondary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-secondary">{compradorTicketsForSummary.length}</div>
+                <div className="text-3xl font-bold text-secondary">{clienteTicketsForSummary.length}</div> 
               </CardContent>
             </Card>
           </div>
         </section>
 
-        {/* Seller's Managed Tickets Section */}
         <section aria-labelledby="seller-ticket-list-heading" className="mt-16">
           <h2 id="seller-ticket-list-heading" className="text-3xl font-bold text-primary mb-8 text-center">
             Meus Bilhetes Vendidos
@@ -187,7 +181,6 @@ export default function VendedorPage() {
           )}
         </section>
 
-        {/* Draws Section */}
         <section aria-labelledby="seller-draw-history-heading" className="mt-16">
           <h2 id="seller-draw-history-heading" className="text-3xl font-bold text-primary mb-8 text-center">
             Histórico de Sorteios
@@ -202,7 +195,6 @@ export default function VendedorPage() {
           )}
         </section>
         
-        {/* Placeholder for future reports/analytics */}
         <section aria-labelledby="reports-heading" className="mt-16">
           <h2 id="reports-heading" className="text-3xl font-bold text-primary mb-8 text-center">
             Relatórios e Análises

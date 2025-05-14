@@ -27,18 +27,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (isClient && !authLoading && currentUser) {
       const redirectPath = searchParams.get('redirect');
-      router.push(redirectPath || (currentUser.role === 'comprador' ? '/comprador' : '/vendedor'));
+      router.push(redirectPath || (currentUser.role === 'cliente' ? '/cliente' : '/vendedor')); // Changed 'comprador' to 'cliente' and path
     }
   }, [currentUser, authLoading, router, searchParams, isClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
-      // Toast can be handled by the login function in AuthContext
       return;
     }
     await login(username, password);
-    // Redirection is handled by useEffect or login function
   };
   
   if (authLoading && isClient) {
@@ -49,13 +47,11 @@ export default function LoginPage() {
     );
   }
   
-  // If already logged in and client is ready, this page content might not show due to redirect
-  // But keep it for cases where redirect hasn't happened or if user navigates here directly while logged in
    if (isClient && currentUser) {
      return (
         <div className="flex flex-col justify-center items-center min-h-screen bg-background p-4">
             <p className="text-foreground text-lg mb-4">Você já está logado como {currentUser.username}.</p>
-            <Button onClick={() => router.push(currentUser.role === 'comprador' ? '/comprador' : '/vendedor')}>
+            <Button onClick={() => router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor')}> 
                 Ir para o painel
             </Button>
         </div>

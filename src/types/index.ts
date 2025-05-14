@@ -19,6 +19,6 @@ export interface User {
   id: string;
   username: string;
   passwordHash: string; // Storing a hash is better, but for simplicity, this might store plain if not careful.
-  role: 'comprador' | 'vendedor';
+  role: 'cliente' | 'vendedor'; // Changed 'comprador' to 'cliente'
   createdAt: string; // ISO string for date
 }

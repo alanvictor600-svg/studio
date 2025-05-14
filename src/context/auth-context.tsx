@@ -16,7 +16,7 @@ interface AuthContextType {
   currentUser: User | null;
   login: (username: string, passwordAttempt: string) => Promise<boolean>;
   logout: () => void;
-  register: (username: string, passwordRaw: string, role: 'comprador' | 'vendedor') => Promise<boolean>;
+  register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<boolean>; // Changed 'comprador' to 'cliente'
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(userToLogin);
         localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, userToLogin.username);
         toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground" });
-        router.push(userToLogin.role === 'comprador' ? '/comprador' : '/vendedor');
+        router.push(userToLogin.role === 'cliente' ? '/cliente' : '/vendedor'); // Changed 'comprador' to 'cliente' and path
         return true;
       } else {
         toast({ title: "Erro de Login", description: "Senha incorreta.", variant: "destructive" });
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [users, router, toast]);
 
-  const register = useCallback(async (username: string, passwordRaw: string, role: 'comprador' | 'vendedor'): Promise<boolean> => {
+  const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => { // Changed 'comprador' to 'cliente'
     if (users.find(u => u.username === username)) {
       toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
       return false;

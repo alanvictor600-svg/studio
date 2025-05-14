@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const COMPRADOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarCompradorTickets';
+const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; // Renamed key
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 
 export default function AdminPage() {
@@ -32,7 +32,7 @@ export default function AdminPage() {
     if (storedDraws) {
       setDraws(JSON.parse(storedDraws));
     }
-    const storedTickets = localStorage.getItem(COMPRADOR_TICKETS_STORAGE_KEY);
+    const storedTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); // Using renamed key
     if (storedTickets) {
       setAllTickets(JSON.parse(storedTickets));
     }
@@ -46,7 +46,7 @@ export default function AdminPage() {
       if (JSON.stringify(processedTickets) !== JSON.stringify(allTickets)) {
          setAllTickets(processedTickets);
       }
-      localStorage.setItem(COMPRADOR_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
+      localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets)); // Using renamed key
     }
   }, [allTickets, draws, isClient]);
 
@@ -74,7 +74,7 @@ export default function AdminPage() {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
       createdAt: new Date().toISOString(),
-      name: name || undefined, // Add the name here
+      name: name || undefined,
     };
     setDraws(prevDraws => [newDraw, ...prevDraws]);
      toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado com sucesso.", className: "bg-primary text-primary-foreground" });
@@ -124,7 +124,7 @@ export default function AdminPage() {
              </h1>
              <p className="text-lg text-muted-foreground mt-2">Gerenciamento de Sorteios e Bilhetes Premiados</p>
           </div>
-          <div className="w-[150px]"></div> {/* Spacer to balance the layout */}
+          <div className="w-[150px]"></div> 
         </div>
       </header>
 

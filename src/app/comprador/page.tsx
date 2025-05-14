@@ -11,10 +11,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 
-const COMPRADOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarCompradorTickets';
+const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; // Renamed key
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 
-export default function CompradorPage() {
+export default function ClientePage() { // Renamed function
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -27,17 +27,15 @@ export default function CompradorPage() {
     setDraws(localDraws);
 
     let initialTickets: Ticket[] = [];
-    const storedTicketsRaw = localStorage.getItem(COMPRADOR_TICKETS_STORAGE_KEY);
+    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); // Using renamed key
     if (storedTicketsRaw) {
       initialTickets = JSON.parse(storedTicketsRaw);
     } else {
-      // Add default ticket if none exist for comprador
+      // Add default ticket if none exist for cliente
       initialTickets = [
         { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
       ];
     }
-    // Set initial tickets; the processing effect will run after this.
-    // The subsequent effect will process these tickets against draws and save them.
     setTickets(initialTickets);
 
   }, [isClient]);
@@ -45,16 +43,13 @@ export default function CompradorPage() {
   // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
     if (isClient) {
-      // Ensure tickets state is not empty before processing, especially if initial load resulted in an empty array
-      // and we don't want to overwrite localStorage with an empty array unless it was truly the result of processing.
-      if (tickets.length > 0 || localStorage.getItem(COMPRADOR_TICKETS_STORAGE_KEY)) {
+      if (tickets.length > 0 || localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY)) { // Using renamed key
           const processedTickets = updateTicketStatusesBasedOnDraws(tickets, draws);
 
           if (JSON.stringify(processedTickets) !== JSON.stringify(tickets)) {
-            setTickets(processedTickets); // Update state if statuses changed
+            setTickets(processedTickets); 
           }
-          // Always save the latest processed tickets to localStorage to ensure consistency
-          localStorage.setItem(COMPRADOR_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
+          localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets)); // Using renamed key
       }
     }
   }, [tickets, draws, isClient]);
@@ -64,10 +59,10 @@ export default function CompradorPage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'active', // Initial status, will be updated by the useEffect that processes tickets
+      status: 'active', 
       createdAt: new Date().toISOString(),
     };
-    setTickets(prevTickets => [newTicket, ...prevTickets]); // Add new ticket, effect will process and save
+    setTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
 
   const isLotteryActive = draws.length > 0;
@@ -75,7 +70,7 @@ export default function CompradorPage() {
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
-        <p className="text-foreground text-xl">Carregando área do comprador...</p>
+        <p className="text-foreground text-xl">Carregando área do cliente...</p> 
       </div>
     );
   }
@@ -92,11 +87,11 @@ export default function CompradorPage() {
           </Link>
           <div className="text-center flex-grow">
              <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
-                Comprar Bilhetes
+                Área do Cliente 
              </h1>
              <p className="text-lg text-muted-foreground mt-2">Sua sorte começa aqui!</p>
           </div>
-           <div className="w-[150px]"></div> {/* Spacer to balance the layout */}
+           <div className="w-[150px]"></div> 
         </div>
       </header>
 
