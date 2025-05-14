@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, ListChecks, PlusCircle, ShieldCheck, History, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -276,15 +276,17 @@ export default function AdminPage() {
         </section>
 
         <section id="admin-lottery-controls-section" aria-labelledby="lottery-controls-heading" className="mt-12 scroll-mt-24">
-          <h2 id="lottery-controls-heading" className="sr-only">Controles da Loteria</h2> {/* Changed from text-3xl to sr-only as it's now visually represented by the card */}
+          <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+            <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
+            Controles da Loteria
+          </h2>
           <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
             <CardHeader>
-              <CardTitle className="text-xl text-center font-bold text-accent flex items-center justify-center">
-                <ShieldCheck className="mr-3 h-7 w-7" />
-                Controles da Loteria
+              <CardTitle className="text-xl text-center font-semibold">
+                Gerenciar Ciclo da Loteria
               </CardTitle>
               <CardDescription className="text-center text-muted-foreground">
-                Gerenciar o ciclo da loteria.
+                Esta ação reinicia a loteria, limpa os sorteios e expira bilhetes ativos/premiados.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
@@ -350,3 +352,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
