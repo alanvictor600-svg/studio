@@ -11,10 +11,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 
-const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
+const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 
-export default function ClientePage() {
+export default function ClientePage() { 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -27,7 +27,7 @@ export default function ClientePage() {
     setDraws(localDraws);
 
     let initialTickets: Ticket[] = [];
-    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); 
     if (storedTicketsRaw) {
       initialTickets = JSON.parse(storedTicketsRaw);
     } else {
@@ -43,13 +43,13 @@ export default function ClientePage() {
   // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
     if (isClient) {
-      if (tickets.length > 0 || localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY)) {
+      if (tickets.length > 0 || localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY)) { 
           const processedTickets = updateTicketStatusesBasedOnDraws(tickets, draws);
 
           if (JSON.stringify(processedTickets) !== JSON.stringify(tickets)) {
-            setTickets(processedTickets);
+            setTickets(processedTickets); 
           }
-          localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
+          localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets)); 
       }
     }
   }, [tickets, draws, isClient]);
@@ -59,10 +59,10 @@ export default function ClientePage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'active',
+      status: 'active', 
       createdAt: new Date().toISOString(),
     };
-    setTickets(prevTickets => [newTicket, ...prevTickets]);
+    setTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
 
   const isLotteryActive = draws.length > 0;
@@ -70,7 +70,7 @@ export default function ClientePage() {
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
-        <p className="text-foreground text-xl">Carregando área do cliente...</p>
+        <p className="text-foreground text-xl">Carregando área do cliente...</p> 
       </div>
     );
   }
@@ -87,11 +87,11 @@ export default function ClientePage() {
           </Link>
           <div className="text-center flex-grow">
              <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
-                Área do Cliente
+                Área do Cliente 
              </h1>
              <p className="text-lg text-muted-foreground mt-2">Sua sorte começa aqui!</p>
           </div>
-           <div className="w-[150px]"></div>
+           <div className="w-[150px]"></div> 
         </div>
       </header>
 
