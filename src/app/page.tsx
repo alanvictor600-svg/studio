@@ -63,7 +63,7 @@ export default function LandingPage() {
         <ThemeToggleButton />
       </div>
       <header className="mb-12 text-center">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-center"> {/* Added flex justify-center */}
           <Image
             src="/logo.png" 
             alt="Logo Bolão Potiguar - Tentativa 2" 

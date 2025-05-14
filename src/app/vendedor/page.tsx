@@ -109,19 +109,19 @@ export default function VendedorPage() {
             </Button>
           </Link>
           <div className="text-center flex-grow">
-            <div className="mb-2 flex justify-center"> {/* Added flex and justify-center */}
+            <div className="mb-2 flex justify-center"> {/* Ensured flex justify-center */}
               <Image
                 src="/logo.png" 
                 alt="Logo Bolão Potiguar" 
-                width={100} // Adjusted width for header
-                height={100} // Adjusted height for header
+                width={100} 
+                height={100} 
                 priority 
                 className="mx-auto"
               />
             </div>
             <p className="text-lg text-muted-foreground mt-1">Painel de Controle e Vendas</p>
           </div>
-          <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> {/* Adjusted width for spacing */}
+          <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> 
         </div>
       </header>
 
