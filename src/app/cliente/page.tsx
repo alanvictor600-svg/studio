@@ -7,6 +7,7 @@ import { TicketList } from '@/components/ticket-list';
 import type { Ticket, Draw } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
+import Image from 'next/image'; // Import Image component
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
@@ -86,12 +87,19 @@ export default function ClientePage() {
             </Button>
           </Link>
           <div className="text-center flex-grow">
-             <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
-                Área do Cliente 
-             </h1>
-             <p className="text-lg text-muted-foreground mt-2">Sua sorte começa aqui!</p>
+            <div className="mb-2 flex justify-center">
+              <Image
+                src="/logo.png" 
+                alt="Logo Bolão Potiguar" 
+                width={100} // Adjusted size to be similar to vendedor page
+                height={100} // Adjusted size
+                priority 
+                className="mx-auto"
+              />
+            </div>
+             <p className="text-lg text-muted-foreground mt-1">Sua sorte começa aqui!</p>
           </div>
-           <div className="w-[150px]"></div> 
+           <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> 
         </div>
       </header>
 
