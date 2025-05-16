@@ -9,20 +9,28 @@ import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn } from 'lucide-react'; // Added Menu, X, TicketIconLucide, ListChecks, LogOut, LogIn
+import { ArrowLeft, Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useAuth } from '@/context/auth-context';
-import { cn } from '@/lib/utils'; // Added cn
+import { cn } from '@/lib/utils';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
+
+type ClienteSection = 'selecionar-bilhete' | 'meus-bilhetes';
+
+const menuItems: { id: ClienteSection; label: string; Icon: React.ElementType }[] = [
+  { id: 'selecionar-bilhete', label: 'Montar Bilhete', Icon: TicketIconLucide },
+  { id: 'meus-bilhetes', label: 'Meus Bilhetes', Icon: ListChecks },
+];
 
 export default function ClientePage() { 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { currentUser, logout } = useAuth(); 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<ClienteSection>('selecionar-bilhete');
 
   useEffect(() => {
     setIsClient(true);
@@ -35,9 +43,7 @@ export default function ClientePage() {
     if (storedTicketsRaw) {
       initialTickets = JSON.parse(storedTicketsRaw);
     } else {
-      initialTickets = [
-        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString(), buyerName: currentUser?.username },
-      ];
+      // No longer creating default tickets if none are found, relies on user action.
     }
     if (currentUser) {
         initialTickets = initialTickets.map(ticket => ({
@@ -74,6 +80,13 @@ export default function ClientePage() {
     setTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
 
+  const handleSectionChange = (sectionId: ClienteSection) => {
+    setActiveSection(sectionId);
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   const isLotteryActive = draws.length > 0;
 
   if (!isClient) {
@@ -84,9 +97,35 @@ export default function ClientePage() {
     );
   }
 
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'selecionar-bilhete':
+        return (
+          <section aria-labelledby="ticket-selection-heading">
+            <h2 id="ticket-selection-heading" className="sr-only">Seleção de Bilhetes</h2>
+            <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryActive={isLotteryActive} />
+          </section>
+        );
+      case 'meus-bilhetes':
+        return (
+          <section aria-labelledby="ticket-management-heading">
+            <h2 id="ticket-management-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
+              Meus Bilhetes
+            </h2>
+            <TicketList
+              tickets={tickets}
+              draws={draws}
+            />
+          </section>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
-      <header className="mb-10">
+      <header className="mb-6">
         <div className="flex justify-between items-center">
           <Link href="/" passHref>
             <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start">
@@ -107,7 +146,7 @@ export default function ClientePage() {
             </div>
              <p className="text-lg text-muted-foreground mt-1">Sua sorte começa aqui!</p>
           </div>
-          <div className="w-10 md:hidden"> {/* Hamburger button container */}
+          <div className="w-10 md:hidden"> 
              <Button
                 variant="ghost"
                 size="icon"
@@ -118,66 +157,63 @@ export default function ClientePage() {
                 <Menu className="h-6 w-6" />
               </Button>
           </div>
-          <div className="hidden md:block w-[150px] sm:w-[180px] md:w-[200px]"></div>  {/* Spacer for desktop */}
+          <div className="hidden md:block w-[150px] sm:w-[180px] md:w-[200px]"></div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+      <div className="flex flex-col md:flex-row gap-x-8 gap-y-6 flex-grow mt-8">
         <aside 
           className={cn(
-            "fixed inset-0 z-40 w-full h-full flex flex-col bg-card/95 backdrop-blur-sm p-4",
-            "md:hidden" // Ensure it's only for mobile
+            "bg-card/90 backdrop-blur-sm p-4 rounded-lg shadow-md md:sticky md:top-20 md:self-start max-h-[calc(100vh-10rem)] overflow-y-auto transition-transform duration-300 ease-in-out md:translate-x-0",
+            "md:w-64 lg:w-72 flex-shrink-0",
+            isMobileMenuOpen 
+              ? "fixed inset-0 z-40 w-full h-full flex flex-col md:relative md:inset-auto md:h-auto md:w-64 lg:w-72" 
+              : "hidden md:flex" 
           )}
         >
-          <div className="flex justify-end p-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
-          <nav className="space-y-2 flex-grow mt-4">
-            <Link href="#ticket-selection-heading" passHref>
-              <Button variant="ghost" className="w-full justify-start text-lg py-3" onClick={() => setIsMobileMenuOpen(false)}>
-                <TicketIconLucide className="mr-3 h-6 w-6" /> Montar Bilhete
+          {isMobileMenuOpen && (
+            <div className="flex justify-end p-2 md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
+                <X className="h-6 w-6" />
               </Button>
-            </Link>
-            <Link href="#ticket-management-heading" passHref>
-              <Button variant="ghost" className="w-full justify-start text-lg py-3" onClick={() => setIsMobileMenuOpen(false)}>
-                <ListChecks className="mr-3 h-6 w-6" /> Meus Bilhetes
+            </div>
+          )}
+          <nav className="space-y-2 flex-grow md:flex-grow-0">
+            {menuItems.map(item => (
+              <Button
+                key={item.id}
+                variant={activeSection === item.id ? 'default' : 'ghost'}
+                className={cn(
+                  "w-full justify-start text-sm py-3 px-4 h-auto",
+                  activeSection === item.id 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "hover:bg-muted/50 hover:text-primary"
+                )}
+                onClick={() => handleSectionChange(item.id)}
+              >
+                <item.Icon className={cn("mr-3 h-5 w-5", activeSection === item.id ? "text-primary-foreground" : "text-primary")} />
+                {item.label}
               </Button>
-            </Link>
+            ))}
             {currentUser && (
-                <Button variant="outline" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10">
-                    <LogOut className="mr-3 h-6 w-6" /> Sair
+                <Button variant="outline" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full justify-start text-sm py-3 px-4 h-auto mt-6 border-primary text-primary hover:bg-primary/10">
+                    <LogOut className="mr-3 h-5 w-5" /> Sair
                 </Button>
             )}
             {!currentUser && (
               <Link href="/login" passHref>
-                  <Button variant="outline" className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10" onClick={() => setIsMobileMenuOpen(false)}>
-                      <LogIn className="mr-3 h-6 w-6" /> Login / Cadastro
+                  <Button variant="outline" className="w-full justify-start text-sm py-3 px-4 h-auto mt-6 border-primary text-primary hover:bg-primary/10" onClick={() => setIsMobileMenuOpen(false)}>
+                      <LogIn className="mr-3 h-5 w-5" /> Login / Cadastro
                   </Button>
               </Link>
             )}
           </nav>
         </aside>
-      )}
 
-      <main className="space-y-12 flex-grow">
-        <section aria-labelledby="ticket-selection-heading" id="ticket-selection-heading" className="scroll-mt-20">
-          <h2 className="sr-only">Seleção de Bilhetes</h2>
-          <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryActive={isLotteryActive} />
-        </section>
-
-        <section aria-labelledby="ticket-management-heading" id="ticket-management-heading" className="mt-16 scroll-mt-20">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
-            Meus Bilhetes
-          </h2>
-          <TicketList
-            tickets={tickets}
-            draws={draws}
-          />
-        </section>
-      </main>
+        <main className={cn("flex-grow space-y-12", isMobileMenuOpen && "md:ml-0")}>
+          {renderSectionContent()}
+        </main>
+      </div>
 
       <footer className="mt-20 py-8 text-center border-t border-border/50">
         <p className="text-sm text-muted-foreground">
