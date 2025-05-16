@@ -7,10 +7,11 @@ import { TicketList } from '@/components/ticket-list';
 import type { Ticket, Draw } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import { useAuth } from '@/context/auth-context'; // Importar useAuth
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
@@ -19,6 +20,7 @@ export default function ClientePage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const { currentUser } = useAuth(); // Obter o usuário logado
 
   // Initial load of draws and tickets, and process tickets
   useEffect(() => {
@@ -34,12 +36,20 @@ export default function ClientePage() {
     } else {
       // Add default ticket if none exist for cliente
       initialTickets = [
-        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString() },
+        { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString(), buyerName: currentUser?.username },
       ];
+    }
+    // Se houver um usuário logado e os bilhetes iniciais não tiverem nome, atualize-os.
+    // Isso é mais relevante se os bilhetes foram criados antes da lógica de adicionar nome.
+    if (currentUser) {
+        initialTickets = initialTickets.map(ticket => ({
+            ...ticket,
+            buyerName: ticket.buyerName || currentUser.username, // Adiciona nome se não existir
+        }));
     }
     setTickets(initialTickets);
 
-  }, [isClient]);
+  }, [isClient, currentUser]); // Adicionar currentUser às dependências
 
   // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
@@ -62,6 +72,7 @@ export default function ClientePage() {
       numbers: newNumbers.sort((a, b) => a - b),
       status: 'active', 
       createdAt: new Date().toISOString(),
+      buyerName: currentUser?.username, // Adicionar nome do comprador se houver usuário logado
     };
     setTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
@@ -91,8 +102,8 @@ export default function ClientePage() {
               <Image
                 src="/logo.png" 
                 alt="Logo Bolão Potiguar" 
-                width={100} // Adjusted size to be similar to vendedor page
-                height={100} // Adjusted size
+                width={100} 
+                height={100} 
                 priority 
                 className="mx-auto"
               />
