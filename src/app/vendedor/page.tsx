@@ -27,6 +27,16 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   sellerCommissionPercentage: 10,
 };
 
+type VendedorSection = 'registrar-venda' | 'meus-bilhetes' | 'historico-sorteios' | 'relatorios';
+
+const menuItems: { id: VendedorSection; label: string; Icon: React.ElementType }[] = [
+  { id: 'registrar-venda', label: 'Registrar Venda', Icon: PlusCircle },
+  { id: 'meus-bilhetes', label: 'Bilhetes Vendidos', Icon: ListChecks },
+  { id: 'historico-sorteios', label: 'Histórico Sorteios', Icon: History },
+  { id: 'relatorios', label: 'Relatórios', Icon: PieChart },
+];
+
+
 export default function VendedorPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [clienteTicketsForSummary, setClienteTicketsForSummary] = useState<Ticket[]>([]);
@@ -36,8 +46,9 @@ export default function VendedorPage() {
   const { toast } = useToast();
   const { currentUser, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<VendedorSection>('registrar-venda');
 
-  // Initial load of client status, draws, and lottery config
+
   useEffect(() => {
     setIsClient(true);
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
@@ -48,15 +59,12 @@ export default function VendedorPage() {
     if (storedConfig) {
       setLotteryConfig(JSON.parse(storedConfig));
     } else {
-      // If no config, set default and save it
       localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_LOTTERY_CONFIG));
     }
   }, []);
 
-  // Load and process tickets once client-side and when draws or vendedorManagedTickets change
   useEffect(() => {
     if (isClient) {
-      // Load cliente tickets for summary
       const storedClienteTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
       let initialClienteTickets: Ticket[] = [];
       if (storedClienteTickets) {
@@ -67,7 +75,6 @@ export default function VendedorPage() {
         setClienteTicketsForSummary(processedClienteTickets);
       }
       
-      // Load vendedor tickets
       const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
       let initialVendedorTickets: Ticket[] = [];
       if (storedVendedorTickets) {
@@ -78,9 +85,8 @@ export default function VendedorPage() {
          setVendedorManagedTickets(processedVendedorTickets);
        }
     }
-  }, [isClient, draws, clienteTicketsForSummary]);
+  }, [isClient, draws, clienteTicketsForSummary]); // Removed vendedorManagedTickets from dependencies to avoid loop with its own update
 
-  // Save vendedorManagedTickets to localStorage when it changes
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(vendedorManagedTickets));
@@ -120,6 +126,13 @@ export default function VendedorPage() {
 
   const isLotteryActive = draws.length > 0;
 
+  const handleSectionChange = (sectionId: VendedorSection) => {
+    setActiveSection(sectionId);
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -128,12 +141,140 @@ export default function VendedorPage() {
     );
   }
 
-  const menuNavItems = [
-    { href: "#seller-ticket-creation-heading", label: "Registrar Venda", Icon: PlusCircle },
-    { href: "#seller-ticket-list-heading", label: "Meus Bilhetes Vendidos", Icon: ListChecks },
-    { href: "#seller-draw-history-heading", label: "Histórico de Sorteios", Icon: History },
-    { href: "#reports-heading", label: "Relatórios e Análises", Icon: PieChart },
-  ];
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'registrar-venda':
+        return (
+          <section id="seller-ticket-creation-heading" aria-labelledby="seller-ticket-creation-heading-title" className="scroll-mt-24">
+            <h2 id="seller-ticket-creation-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <PlusCircle className="mr-3 h-8 w-8 text-primary" /> Registrar Nova Venda
+            </h2>
+            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryActive={isLotteryActive} />
+          </section>
+        );
+      case 'meus-bilhetes':
+        return (
+          <section id="seller-ticket-list-heading" aria-labelledby="seller-ticket-list-heading-title" className="mt-0 scroll-mt-24">
+            <h2 id="seller-ticket-list-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <ListChecks className="mr-3 h-8 w-8 text-primary" /> Meus Bilhetes Vendidos
+            </h2>
+            {vendedorManagedTickets.length > 0 ? (
+              <TicketList tickets={vendedorManagedTickets} draws={draws} /> 
+            ) : (
+               <div className="text-center py-10 bg-card/50 rounded-lg shadow">
+                  <TicketIconLucide size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground text-lg">Nenhum bilhete de vendedor registrado ainda.</p>
+                  <p className="text-sm text-muted-foreground/80">Use o formulário acima para registrar uma venda.</p>
+               </div>
+            )}
+          </section>
+        );
+      case 'historico-sorteios':
+        return (
+          <section id="seller-draw-history-heading" aria-labelledby="seller-draw-history-heading-title" className="mt-0 scroll-mt-24">
+            <h2 id="seller-draw-history-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <History className="mr-3 h-8 w-8 text-primary" /> Histórico de Sorteios
+            </h2>
+            {draws.length > 0 ? (
+              <AdminDrawList draws={draws} />
+            ) : (
+               <div className="text-center py-10 bg-card/50 rounded-lg shadow">
+                  <ClipboardList size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground text-lg">Nenhum sorteio cadastrado ainda.</p>
+               </div>
+            )}
+          </section>
+        );
+      case 'relatorios':
+        return (
+          <>
+            <section id="dashboard-summary-heading" aria-labelledby="dashboard-summary-heading-title" className="mt-0 scroll-mt-24">
+              <h2 id="dashboard-summary-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+                 <PieChart className="mr-3 h-8 w-8 text-primary" /> Resumo Geral e Relatórios
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Sorteios Cadastrados
+                    </CardTitle>
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{draws.length}</div>
+                    <p className="text-xs text-muted-foreground">Total de sorteios na loteria atual.</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Bilhetes Vendidos (Total)
+                    </CardTitle>
+                    <TicketIconLucide className="h-5 w-5 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary">{vendedorManagedTickets.length}</div>
+                    <p className="text-xs text-muted-foreground">Todos os bilhetes que você já vendeu.</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Bilhetes (App Clientes) 
+                    </CardTitle>
+                    <TicketIconLucide className="h-5 w-5 text-secondary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-secondary">{clienteTicketsForSummary.length}</div> 
+                    <p className="text-xs text-muted-foreground">Total de bilhetes de clientes.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+
+            <section id="reports-commission-heading" aria-labelledby="reports-commission-heading-title" className="mt-0 scroll-mt-24">
+              <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl text-center font-semibold text-primary">Desempenho de Vendas (Ciclo Atual)</CardTitle>
+                  <CardDescription className="text-center text-muted-foreground">
+                    Seu resumo de vendas para o ciclo atual da loteria. A comissão é zerada ao iniciar uma nova loteria.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                  <div className="p-4 rounded-lg bg-background/70 shadow">
+                    <TrendingUp className="h-10 w-10 text-primary mx-auto mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Bilhetes Ativos Vendidos</p>
+                    <p className="text-2xl font-bold text-primary">{activeSellerTicketsCount}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-background/70 shadow">
+                    <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Valor Arrecadado (Ativos)</p>
+                    <p className="text-2xl font-bold text-green-500">
+                      R$ {totalRevenueFromActiveTickets.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-background/70 shadow">
+                    <Percent className="h-10 w-10 text-accent mx-auto mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Comissão ({lotteryConfig.sellerCommissionPercentage}%)</p>
+                    <p className="text-2xl font-bold text-accent">
+                      R$ {commissionEarned.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-6">
+                    <p className="text-xs text-muted-foreground text-center w-full">
+                        Preço atual do bilhete: R$ {lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}.
+                        A comissão é calculada sobre os bilhetes com status 'ativo' vendidos por você neste ciclo da loteria.
+                    </p>
+                </CardFooter>
+              </Card>
+            </section>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
@@ -158,7 +299,7 @@ export default function VendedorPage() {
             </div>
             <p className="text-lg text-muted-foreground mt-1">Painel de Controle e Vendas</p>
           </div>
-          <div className="w-10 md:hidden"> {/* Hamburger button container */}
+          <div className="w-10 md:hidden">
              <Button
                 variant="ghost"
                 size="icon"
@@ -173,180 +314,61 @@ export default function VendedorPage() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+      <div className="flex flex-col md:flex-row gap-x-8 gap-y-6 flex-grow mt-8">
+         {/* Vertical Menu - Mobile: Overlay, Desktop: Sticky Sidebar */}
         <aside 
           className={cn(
-            "fixed inset-0 z-40 w-full h-full flex flex-col bg-card/95 backdrop-blur-sm p-4",
-            "md:hidden"
+            "bg-card/90 backdrop-blur-sm p-4 rounded-lg shadow-md md:sticky md:top-20 md:self-start max-h-[calc(100vh-10rem)] overflow-y-auto transition-transform duration-300 ease-in-out md:translate-x-0",
+            "md:w-64 lg:w-72 flex-shrink-0",
+            isMobileMenuOpen 
+              ? "fixed inset-0 z-40 w-full h-full flex flex-col md:relative md:inset-auto md:h-auto md:w-64 lg:w-72" 
+              : "hidden md:flex" 
           )}
         >
-          <div className="flex justify-end p-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
-          <nav className="space-y-2 flex-grow mt-4">
-            {menuNavItems.map(item => (
-              <Link key={item.label} href={item.href} passHref>
-                <Button variant="ghost" className="w-full justify-start text-lg py-3" onClick={() => setIsMobileMenuOpen(false)}>
-                  <item.Icon className="mr-3 h-6 w-6" /> {item.label}
-                </Button>
-              </Link>
+          {isMobileMenuOpen && (
+            <div className="flex justify-end p-2 md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
+          <nav className="space-y-2 flex-grow md:flex-grow-0">
+            {menuItems.map(item => (
+              <Button
+                key={item.id}
+                variant={activeSection === item.id ? 'default' : 'ghost'}
+                className={cn(
+                  "w-full justify-start text-sm py-3 px-4 h-auto",
+                  activeSection === item.id 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "hover:bg-muted/50 hover:text-primary"
+                )}
+                onClick={() => handleSectionChange(item.id)}
+              >
+                <item.Icon className={cn("mr-3 h-5 w-5", activeSection === item.id ? "text-primary-foreground" : "text-primary")} />
+                {item.label}
+              </Button>
             ))}
-            {currentUser && (
-                <Button variant="outline" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10">
-                    <LogOut className="mr-3 h-6 w-6" /> Sair
+             {currentUser && (
+                <Button variant="outline" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full justify-start text-sm py-3 px-4 h-auto mt-6 border-primary text-primary hover:bg-primary/10">
+                    <LogOut className="mr-3 h-5 w-5" /> Sair
                 </Button>
             )}
             {!currentUser && (
               <Link href="/login" passHref>
-                  <Button variant="outline" className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10" onClick={() => setIsMobileMenuOpen(false)}>
-                      <LogIn className="mr-3 h-6 w-6" /> Login / Cadastro
+                  <Button variant="outline" className="w-full justify-start text-sm py-3 px-4 h-auto mt-6 border-primary text-primary hover:bg-primary/10" onClick={() => setIsMobileMenuOpen(false)}>
+                      <LogIn className="mr-3 h-5 w-5" /> Login / Cadastro
                   </Button>
               </Link>
             )}
           </nav>
         </aside>
-      )}
 
-      {/* Desktop Horizontal Navigation */}
-      <nav className="mb-10 py-3 bg-card/70 backdrop-blur-sm rounded-lg shadow-md sticky top-4 z-10 hidden md:flex">
-        <ul className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mx-auto">
-          {menuNavItems.map(item => (
-            <li key={item.label}>
-              <Link href={item.href} passHref>
-                <Button variant="ghost" className="text-primary hover:bg-primary/10">
-                  <item.Icon className="mr-2 h-5 w-5" /> {item.label}
-                </Button>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <main className="space-y-12 flex-grow">
-        <section id="seller-ticket-creation-heading" aria-labelledby="seller-ticket-creation-heading-title" className="scroll-mt-24">
-          <h2 id="seller-ticket-creation-heading-title" className="text-3xl font-bold text-primary mb-6 text-center flex items-center justify-center">
-            <PlusCircle className="mr-3 h-7 w-7" /> Registrar Nova Venda de Bilhete
-          </h2>
-          <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryActive={isLotteryActive} />
-        </section>
-
-        <section id="dashboard-summary-heading" aria-labelledby="dashboard-summary-heading-title" className="mt-16 scroll-mt-24">
-          <h2 id="dashboard-summary-heading-title" className="text-3xl font-bold text-primary mb-6 text-center">
-            Resumo Geral
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sorteios Cadastrados
-                </CardTitle>
-                <ClipboardList className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">{draws.length}</div>
-                 <p className="text-xs text-muted-foreground">Total de sorteios na loteria atual.</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Bilhetes Vendidos (Total)
-                </CardTitle>
-                <TicketIconLucide className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">{vendedorManagedTickets.length}</div>
-                <p className="text-xs text-muted-foreground">Todos os bilhetes que você já vendeu.</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg bg-card text-card-foreground border-border hover:shadow-xl transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Bilhetes (App Clientes) 
-                </CardTitle>
-                <TicketIconLucide className="h-5 w-5 text-secondary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-secondary">{clienteTicketsForSummary.length}</div> 
-                 <p className="text-xs text-muted-foreground">Total de bilhetes de clientes.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section id="reports-heading" aria-labelledby="reports-heading-title" className="mt-16 scroll-mt-24">
-          <h2 id="reports-heading-title" className="text-3xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-            <BarChart3 className="mr-3 h-8 w-8" /> Relatórios e Análises (Ciclo Atual)
-          </h2>
-          <Card className="shadow-xl bg-card/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl text-center font-semibold text-primary">Desempenho de Vendas</CardTitle>
-              <CardDescription className="text-center text-muted-foreground">
-                Seu resumo de vendas para o ciclo atual da loteria. A comissão é zerada ao iniciar uma nova loteria.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="p-4 rounded-lg bg-background/70 shadow">
-                <TrendingUp className="h-10 w-10 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium text-muted-foreground">Bilhetes Ativos Vendidos</p>
-                <p className="text-2xl font-bold text-primary">{activeSellerTicketsCount}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-background/70 shadow">
-                <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                <p className="text-sm font-medium text-muted-foreground">Valor Arrecadado (Ativos)</p>
-                <p className="text-2xl font-bold text-green-500">
-                  R$ {totalRevenueFromActiveTickets.toFixed(2).replace('.', ',')}
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-background/70 shadow">
-                <Percent className="h-10 w-10 text-accent mx-auto mb-2" />
-                <p className="text-sm font-medium text-muted-foreground">Comissão ({lotteryConfig.sellerCommissionPercentage}%)</p>
-                <p className="text-2xl font-bold text-accent">
-                  R$ {commissionEarned.toFixed(2).replace('.', ',')}
-                </p>
-              </div>
-            </CardContent>
-             <CardFooter className="pt-6">
-                <p className="text-xs text-muted-foreground text-center w-full">
-                    Preço atual do bilhete: R$ {lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}.
-                    A comissão é calculada sobre os bilhetes com status 'ativo' vendidos por você neste ciclo da loteria.
-                </p>
-            </CardFooter>
-          </Card>
-        </section>
-
-        <section id="seller-ticket-list-heading" aria-labelledby="seller-ticket-list-heading-title" className="mt-16 scroll-mt-24">
-          <h2 id="seller-ticket-list-heading-title" className="text-3xl font-bold text-primary mb-8 text-center">
-            Meus Bilhetes Vendidos
-          </h2>
-           {vendedorManagedTickets.length > 0 ? (
-            <TicketList tickets={vendedorManagedTickets} draws={draws} /> 
-          ) : (
-             <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                <TicketIconLucide size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground text-lg">Nenhum bilhete de vendedor registrado ainda.</p>
-                <p className="text-sm text-muted-foreground/80">Use o formulário acima para registrar uma venda.</p>
-             </div>
-          )}
-        </section>
-
-        <section id="seller-draw-history-heading" aria-labelledby="seller-draw-history-heading-title" className="mt-16 scroll-mt-24">
-          <h2 id="seller-draw-history-heading-title" className="text-3xl font-bold text-primary mb-8 text-center">
-            Histórico de Sorteios
-          </h2>
-          {draws.length > 0 ? (
-            <AdminDrawList draws={draws} />
-          ) : (
-             <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                <ClipboardList size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground text-lg">Nenhum sorteio cadastrado ainda.</p>
-             </div>
-          )}
-        </section>
-      </main>
+        {/* Content Area */}
+        <main className={cn("flex-grow", isMobileMenuOpen && "md:ml-0")}>
+          {renderSectionContent()}
+        </main>
+      </div>
 
       <footer className="mt-20 py-8 text-center border-t border-border/50">
         <p className="text-sm text-muted-foreground">
@@ -356,3 +378,6 @@ export default function VendedorPage() {
     </div>
   );
 }
+
+
+    
