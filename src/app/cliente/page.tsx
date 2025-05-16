@@ -9,9 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn } from 'lucide-react'; // Added Menu, X, TicketIconLucide, ListChecks, LogOut, LogIn
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
-import { useAuth } from '@/context/auth-context'; // Importar useAuth
+import { useAuth } from '@/context/auth-context';
+import { cn } from '@/lib/utils'; // Added cn
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets'; 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
@@ -20,9 +21,9 @@ export default function ClientePage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
-  const { currentUser } = useAuth(); // Obter o usuário logado
+  const { currentUser, logout } = useAuth(); 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
 
-  // Initial load of draws and tickets, and process tickets
   useEffect(() => {
     setIsClient(true);
     const storedDrawsRaw = localStorage.getItem(DRAWS_STORAGE_KEY);
@@ -34,24 +35,20 @@ export default function ClientePage() {
     if (storedTicketsRaw) {
       initialTickets = JSON.parse(storedTicketsRaw);
     } else {
-      // Add default ticket if none exist for cliente
       initialTickets = [
         { id: uuidv4(), numbers: [1,2,3,4,5,6,7,8,9,10].sort((a,b)=>a-b), status: 'active', createdAt: new Date().toISOString(), buyerName: currentUser?.username },
       ];
     }
-    // Se houver um usuário logado e os bilhetes iniciais não tiverem nome, atualize-os.
-    // Isso é mais relevante se os bilhetes foram criados antes da lógica de adicionar nome.
     if (currentUser) {
         initialTickets = initialTickets.map(ticket => ({
             ...ticket,
-            buyerName: ticket.buyerName || currentUser.username, // Adiciona nome se não existir
+            buyerName: ticket.buyerName || currentUser.username, 
         }));
     }
     setTickets(initialTickets);
 
-  }, [isClient, currentUser]); // Adicionar currentUser às dependências
+  }, [isClient, currentUser]); 
 
-  // Process tickets based on draws and save updated tickets to localStorage
   useEffect(() => {
     if (isClient) {
       if (tickets.length > 0 || localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY)) { 
@@ -72,7 +69,7 @@ export default function ClientePage() {
       numbers: newNumbers.sort((a, b) => a - b),
       status: 'active', 
       createdAt: new Date().toISOString(),
-      buyerName: currentUser?.username, // Adicionar nome do comprador se houver usuário logado
+      buyerName: currentUser?.username, 
     };
     setTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
@@ -110,18 +107,69 @@ export default function ClientePage() {
             </div>
              <p className="text-lg text-muted-foreground mt-1">Sua sorte começa aqui!</p>
           </div>
-           <div className="w-[150px] sm:w-[180px] md:w-[200px]"></div> 
+          <div className="w-10 md:hidden"> {/* Hamburger button container */}
+             <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+          </div>
+          <div className="hidden md:block w-[150px] sm:w-[180px] md:w-[200px]"></div>  {/* Spacer for desktop */}
         </div>
       </header>
 
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <aside 
+          className={cn(
+            "fixed inset-0 z-40 w-full h-full flex flex-col bg-card/95 backdrop-blur-sm p-4",
+            "md:hidden" // Ensure it's only for mobile
+          )}
+        >
+          <div className="flex justify-end p-2">
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          <nav className="space-y-2 flex-grow mt-4">
+            <Link href="#ticket-selection-heading" passHref>
+              <Button variant="ghost" className="w-full justify-start text-lg py-3" onClick={() => setIsMobileMenuOpen(false)}>
+                <TicketIconLucide className="mr-3 h-6 w-6" /> Montar Bilhete
+              </Button>
+            </Link>
+            <Link href="#ticket-management-heading" passHref>
+              <Button variant="ghost" className="w-full justify-start text-lg py-3" onClick={() => setIsMobileMenuOpen(false)}>
+                <ListChecks className="mr-3 h-6 w-6" /> Meus Bilhetes
+              </Button>
+            </Link>
+            {currentUser && (
+                <Button variant="outline" onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10">
+                    <LogOut className="mr-3 h-6 w-6" /> Sair
+                </Button>
+            )}
+            {!currentUser && (
+              <Link href="/login" passHref>
+                  <Button variant="outline" className="w-full justify-start text-lg py-3 mt-6 border-primary text-primary hover:bg-primary/10" onClick={() => setIsMobileMenuOpen(false)}>
+                      <LogIn className="mr-3 h-6 w-6" /> Login / Cadastro
+                  </Button>
+              </Link>
+            )}
+          </nav>
+        </aside>
+      )}
+
       <main className="space-y-12 flex-grow">
-        <section aria-labelledby="ticket-selection-heading">
-          <h2 id="ticket-selection-heading" className="sr-only">Seleção de Bilhetes</h2>
+        <section aria-labelledby="ticket-selection-heading" id="ticket-selection-heading" className="scroll-mt-20">
+          <h2 className="sr-only">Seleção de Bilhetes</h2>
           <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryActive={isLotteryActive} />
         </section>
 
-        <section aria-labelledby="ticket-management-heading" className="mt-16">
-          <h2 id="ticket-management-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
+        <section aria-labelledby="ticket-management-heading" id="ticket-management-heading" className="mt-16 scroll-mt-20">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
             Meus Bilhetes
           </h2>
           <TicketList
