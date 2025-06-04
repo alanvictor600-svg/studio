@@ -26,7 +26,7 @@ export const NumberButton: FC<NumberButtonProps> = ({
       className={cn(
         "relative aspect-square h-auto text-lg font-semibold p-1 flex flex-col items-center justify-center",
         "shadow-md hover:shadow-lg transition-shadow",
-        countInSelection > 0 && "bg-primary text-primary-foreground hover:bg-primary/90",
+        countInSelection > 0 && "bg-green-500 text-white hover:bg-green-600", // Changed to green for selected
         countInSelection === 0 && "bg-card hover:bg-secondary hover:text-secondary-foreground",
         disabled && countInSelection === 0 && "opacity-50 cursor-not-allowed bg-muted",
         disabled && countInSelection > 0 && "opacity-70 cursor-not-allowed" 
