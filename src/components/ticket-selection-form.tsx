@@ -95,11 +95,11 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket,
           <div className="flex flex-wrap gap-2 p-3 border border-border rounded-lg min-h-[52px] bg-background/50 items-center justify-center">
             {currentPicks.length === 0 && <span className="text-sm text-muted-foreground">Nenhum número selecionado</span>}
             {currentPicks.map((num, index) => (
-              <Badge key={index} variant="secondary" className="text-base relative pr-7 shadow-sm bg-primary text-primary-foreground">
+              <Badge key={index} variant="secondary" className="text-base relative pr-7 shadow-sm">
                 {num}
                 <button
                   onClick={() => handleRemoveNumber(index)}
-                  className="absolute top-1/2 right-1 transform -translate-y-1/2 p-0.5 rounded-full hover:bg-primary-foreground/20"
+                  className="absolute top-1/2 right-1 transform -translate-y-1/2 p-0.5 rounded-full hover:bg-secondary-foreground/20"
                   aria-label={`Remover número ${num}`}
                 >
                   <X size={14} />
