@@ -35,6 +35,7 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
   sellerCommissionPercentage: 10,
   ownerCommissionPercentage: 5,
+  clientSalesCommissionToOwnerPercentage: 10, // Default to 10%
 };
 
 type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas' | 'relatorios';
@@ -61,6 +62,7 @@ export default function AdminPage() {
   const [ticketPriceInput, setTicketPriceInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
   const [commissionInput, setCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
   const [ownerCommissionInput, setOwnerCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
+  const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
   const [activeSection, setActiveSection] = useState<AdminSection>('gerenciar-contas');
@@ -92,10 +94,12 @@ export default function AdminPage() {
       setTicketPriceInput(parsedConfig.ticketPrice.toString());
       setCommissionInput(parsedConfig.sellerCommissionPercentage.toString());
       setOwnerCommissionInput(parsedConfig.ownerCommissionPercentage?.toString() ?? DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
+      setClientSalesCommissionInput(parsedConfig.clientSalesCommissionToOwnerPercentage?.toString() ?? DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
     } else {
       setTicketPriceInput(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
       setCommissionInput(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
       setOwnerCommissionInput(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
+      setClientSalesCommissionInput(DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
       localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_LOTTERY_CONFIG));
     }
     
@@ -149,23 +153,27 @@ export default function AdminPage() {
     const activeClientTickets = allTickets.filter(t => t.status === 'active');
     const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
     
-    const totalActiveTicketsCount = activeClientTickets.length + activeVendedorTickets.length;
-    const totalRevenue = totalActiveTicketsCount * lotteryConfig.ticketPrice;
-    
-    const sellerSalesRevenue = activeVendedorTickets.length * lotteryConfig.ticketPrice;
-    const sellerCommission = sellerSalesRevenue * (lotteryConfig.sellerCommissionPercentage / 100);
-    
-    const ownerCommission = totalRevenue * (lotteryConfig.ownerCommissionPercentage / 100);
-    
-    const prizePool = totalRevenue - sellerCommission - ownerCommission;
+    // Revenue calculations
+    const clientRevenue = activeClientTickets.length * lotteryConfig.ticketPrice;
+    const sellerRevenue = activeVendedorTickets.length * lotteryConfig.ticketPrice;
+    const totalRevenue = clientRevenue + sellerRevenue;
+
+    // Commission calculations
+    const sellerCommission = sellerRevenue * (lotteryConfig.sellerCommissionPercentage / 100);
+    const ownerBaseCommission = totalRevenue * (lotteryConfig.ownerCommissionPercentage / 100);
+    const ownerExtraCommission = clientRevenue * (lotteryConfig.clientSalesCommissionToOwnerPercentage / 100);
+    const totalOwnerCommission = ownerBaseCommission + ownerExtraCommission;
+
+    const prizePool = totalRevenue - sellerCommission - totalOwnerCommission;
 
     return {
       totalRevenue,
       sellerCommission,
-      ownerCommission,
+      ownerCommission: totalOwnerCommission,
       prizePool
     };
   }, [allTickets, vendedorTickets, lotteryConfig]);
+
 
   const handleAddDraw = (newNumbers: number[], name?: string) => {
     if (winningTickets.length > 0) {
@@ -260,6 +268,7 @@ export default function AdminPage() {
     const price = parseFloat(ticketPriceInput);
     const commission = parseInt(commissionInput, 10);
     const ownerCommission = parseInt(ownerCommissionInput, 10);
+    const clientSalesCommission = parseInt(clientSalesCommissionInput, 10);
 
     if (isNaN(price) || price <= 0) {
       toast({ title: "Erro de Configuração", description: "Preço do bilhete inválido.", variant: "destructive" });
@@ -273,7 +282,16 @@ export default function AdminPage() {
       toast({ title: "Erro de Configuração", description: "Porcentagem de comissão do dono inválida (deve ser entre 0 e 100).", variant: "destructive" });
       return;
     }
-    setLotteryConfig({ ticketPrice: price, sellerCommissionPercentage: commission, ownerCommissionPercentage: ownerCommission });
+    if (isNaN(clientSalesCommission) || clientSalesCommission < 0 || clientSalesCommission > 100) {
+      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão de vendas de cliente inválida (deve ser entre 0 e 100).", variant: "destructive" });
+      return;
+    }
+    setLotteryConfig({ 
+      ticketPrice: price, 
+      sellerCommissionPercentage: commission, 
+      ownerCommissionPercentage: ownerCommission,
+      clientSalesCommissionToOwnerPercentage: clientSalesCommission
+    });
     toast({ title: "Configurações Salvas!", description: "Configurações da loteria atualizadas.", className: "bg-primary text-primary-foreground" });
   };
   
@@ -448,7 +466,7 @@ export default function AdminPage() {
                       <div className="space-y-2">
                           <Label htmlFor="ownerCommission" className="flex items-center">
                                <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Comissão do Dono (%)
+                              Comissão Geral do Dono (%)
                           </Label>
                           <Input 
                               id="ownerCommission" 
@@ -456,6 +474,22 @@ export default function AdminPage() {
                               value={ownerCommissionInput}
                               onChange={(e) => setOwnerCommissionInput(e.target.value)}
                               placeholder="Ex: 5"
+                              className="bg-background/70"
+                              min="0"
+                              max="100"
+                          />
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="clientSalesCommissionToOwner" className="flex items-center">
+                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                              Comissão Dono (Vendas Cliente %)
+                          </Label>
+                          <Input 
+                              id="clientSalesCommissionToOwner" 
+                              type="number" 
+                              value={clientSalesCommissionInput}
+                              onChange={(e) => setClientSalesCommissionInput(e.target.value)}
+                              placeholder="Ex: 10"
                               className="bg-background/70"
                               min="0"
                               max="100"
@@ -605,7 +639,7 @@ export default function AdminPage() {
                 </CardContent>
                 <CardFooter className="pt-6">
                     <p className="text-xs text-muted-foreground text-center w-full">
-                        Cálculos baseados em todos os bilhetes com status 'ativo' (clientes e vendedores). O prêmio é o total arrecadado menos todas as comissões.
+                        Cálculos baseados em todos os bilhetes com status 'ativo'. O prêmio é o total arrecadado menos todas as comissões.
                     </p>
                 </CardFooter>
             </Card>
