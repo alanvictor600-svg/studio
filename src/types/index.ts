@@ -26,6 +26,7 @@ export interface User {
 export interface LotteryConfig {
   ticketPrice: number;
   sellerCommissionPercentage: number; // Stored as a whole number, e.g., 10 for 10%
+  ownerCommissionPercentage: number; // Stored as a whole number, e.g., 5 for 5%
 }
 
 export interface SellerHistoryEntry {

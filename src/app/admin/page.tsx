@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -34,15 +34,17 @@ const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
   sellerCommissionPercentage: 10,
+  ownerCommissionPercentage: 5,
 };
 
-type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas';
+type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas' | 'relatorios';
 
 const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] = [
   { id: 'gerenciar-contas', label: 'Gerenciar Contas', Icon: Users },
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
+  { id: 'relatorios', label: 'Relatórios', Icon: PieChart },
   { id: 'historico-sorteios', label: 'Histórico Sorteios', Icon: History },
   { id: 'bilhetes-premiados', label: 'Bilhetes Premiados', Icon: Trophy },
 ];
@@ -50,6 +52,7 @@ const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] 
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [vendedorTickets, setVendedorTickets] = useState<Ticket[]>([]);
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [isClient, setIsClient] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -57,6 +60,7 @@ export default function AdminPage() {
 
   const [ticketPriceInput, setTicketPriceInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
   const [commissionInput, setCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
+  const [ownerCommissionInput, setOwnerCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
   const [activeSection, setActiveSection] = useState<AdminSection>('gerenciar-contas');
@@ -75,8 +79,11 @@ export default function AdminPage() {
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
     if (storedDraws) setDraws(JSON.parse(storedDraws));
     
-    const storedTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
-    if (storedTickets) setAllTickets(JSON.parse(storedTickets));
+    const storedClientTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    if (storedClientTickets) setAllTickets(JSON.parse(storedClientTickets));
+
+    const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
+    if(storedVendedorTickets) setVendedorTickets(JSON.parse(storedVendedorTickets));
 
     const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
     if (storedConfig) {
@@ -84,9 +91,11 @@ export default function AdminPage() {
       setLotteryConfig(parsedConfig);
       setTicketPriceInput(parsedConfig.ticketPrice.toString());
       setCommissionInput(parsedConfig.sellerCommissionPercentage.toString());
+      setOwnerCommissionInput(parsedConfig.ownerCommissionPercentage?.toString() ?? DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
     } else {
       setTicketPriceInput(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
       setCommissionInput(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
+      setOwnerCommissionInput(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
       localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_LOTTERY_CONFIG));
     }
     
@@ -96,15 +105,23 @@ export default function AdminPage() {
 
   }, []); 
 
+  const allSystemTickets = useMemo(() => [...allTickets, ...vendedorTickets], [allTickets, vendedorTickets]);
+
   useEffect(() => {
     if (isClient) {
-      const processedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
-      if (JSON.stringify(processedTickets) !== JSON.stringify(allTickets)) {
-         setAllTickets(processedTickets);
+      const processedClientTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
+      if (JSON.stringify(processedClientTickets) !== JSON.stringify(allTickets)) {
+         setAllTickets(processedClientTickets);
       }
-      localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
+      localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedClientTickets));
+      
+      const processedVendedorTickets = updateTicketStatusesBasedOnDraws(vendedorTickets, draws);
+      if (JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorTickets)) {
+         setVendedorTickets(processedVendedorTickets);
+      }
+      localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(processedVendedorTickets));
     }
-  }, [allTickets, draws, isClient]);
+  }, [allTickets, vendedorTickets, draws, isClient]);
 
   useEffect(() => {
     if (isClient) {
@@ -125,8 +142,30 @@ export default function AdminPage() {
   }, [allUsers, isClient]);
 
   const winningTickets = useMemo(() => {
-    return allTickets.filter(ticket => ticket.status === 'winning');
-  }, [allTickets]);
+    return allSystemTickets.filter(ticket => ticket.status === 'winning');
+  }, [allSystemTickets]);
+
+  const financialReport = useMemo(() => {
+    const activeClientTickets = allTickets.filter(t => t.status === 'active');
+    const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
+    
+    const totalActiveTicketsCount = activeClientTickets.length + activeVendedorTickets.length;
+    const totalRevenue = totalActiveTicketsCount * lotteryConfig.ticketPrice;
+    
+    const sellerRevenue = activeVendedorTickets.length * lotteryConfig.ticketPrice;
+    const sellerCommission = sellerRevenue * (lotteryConfig.sellerCommissionPercentage / 100);
+    
+    const ownerCommission = totalRevenue * (lotteryConfig.ownerCommissionPercentage / 100);
+    
+    const prizePool = totalRevenue - sellerCommission - ownerCommission;
+
+    return {
+      totalRevenue,
+      sellerCommission,
+      ownerCommission,
+      prizePool
+    };
+  }, [allTickets, vendedorTickets, lotteryConfig]);
 
   const handleAddDraw = (newNumbers: number[], name?: string) => {
     if (winningTickets.length > 0) {
@@ -186,6 +225,8 @@ export default function AdminPage() {
     captureAndSaveSellerHistory();
   
     setDraws([]);
+    
+    // Process client tickets
     setAllTickets(prevTickets =>
       prevTickets.map(ticket => {
         if (ticket.status === 'active' || ticket.status === 'winning') {
@@ -194,12 +235,16 @@ export default function AdminPage() {
         return ticket;
       })
     );
-    const sellerTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
-    if (sellerTicketsRaw) {
-        let sellerTickets: Ticket[] = JSON.parse(sellerTicketsRaw);
-        sellerTickets = sellerTickets.map(ticket => ({ ...ticket, status: 'expired' }));
-        localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(sellerTickets));
-    }
+    
+    // Process seller tickets
+    setVendedorTickets(prevTickets =>
+      prevTickets.map(ticket => {
+        if (ticket.status === 'active' || ticket.status === 'winning') {
+          return { ...ticket, status: 'expired' as Ticket['status'] };
+        }
+        return ticket;
+      })
+    );
 
 
     toast({
@@ -214,17 +259,22 @@ export default function AdminPage() {
   const handleSaveLotteryConfig = () => {
     const price = parseFloat(ticketPriceInput);
     const commission = parseInt(commissionInput, 10);
+    const ownerCommission = parseInt(ownerCommissionInput, 10);
 
     if (isNaN(price) || price <= 0) {
       toast({ title: "Erro de Configuração", description: "Preço do bilhete inválido.", variant: "destructive" });
       return;
     }
     if (isNaN(commission) || commission < 0 || commission > 100) {
-      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão inválida (deve ser entre 0 e 100).", variant: "destructive" });
+      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão do vendedor inválida (deve ser entre 0 e 100).", variant: "destructive" });
       return;
     }
-    setLotteryConfig({ ticketPrice: price, sellerCommissionPercentage: commission });
-    toast({ title: "Configurações Salvas!", description: "Preço do bilhete e comissão atualizados.", className: "bg-primary text-primary-foreground" });
+    if (isNaN(ownerCommission) || ownerCommission < 0 || ownerCommission > 100) {
+      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão do dono inválida (deve ser entre 0 e 100).", variant: "destructive" });
+      return;
+    }
+    setLotteryConfig({ ticketPrice: price, sellerCommissionPercentage: commission, ownerCommissionPercentage: ownerCommission });
+    toast({ title: "Configurações Salvas!", description: "Configurações da loteria atualizadas.", className: "bg-primary text-primary-foreground" });
   };
   
   // User Management Handlers
@@ -359,7 +409,7 @@ export default function AdminPage() {
                   <CardHeader>
                       <CardTitle className="text-xl text-center font-semibold">Definir Preços e Comissões</CardTitle>
                       <CardDescription className="text-center text-muted-foreground">
-                          Ajuste o valor dos bilhetes e a comissão dos vendedores.
+                          Ajuste os valores da loteria.
                       </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -390,6 +440,22 @@ export default function AdminPage() {
                               value={commissionInput}
                               onChange={(e) => setCommissionInput(e.target.value)}
                               placeholder="Ex: 10"
+                              className="bg-background/70"
+                              min="0"
+                              max="100"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="ownerCommission" className="flex items-center">
+                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                              Comissão do Dono (%)
+                          </Label>
+                          <Input 
+                              id="ownerCommission" 
+                              type="number" 
+                              value={ownerCommissionInput}
+                              onChange={(e) => setOwnerCommissionInput(e.target.value)}
+                              placeholder="Ex: 5"
                               className="bg-background/70"
                               min="0"
                               max="100"
@@ -490,6 +556,58 @@ export default function AdminPage() {
                   </AlertDialogContent>
                 </AlertDialog>
               </CardContent>
+            </Card>
+          </section>
+        );
+       case 'relatorios':
+        return (
+          <section aria-labelledby="financial-reports-heading">
+            <h2 id="financial-reports-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <PieChart className="mr-3 h-8 w-8 text-primary" />
+              Relatórios Financeiros
+            </h2>
+            <Card className="w-full max-w-3xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                    <CardTitle className="text-2xl text-center font-bold text-primary">Resumo do Ciclo Atual</CardTitle>
+                    <CardDescription className="text-center text-muted-foreground">
+                        Visão geral das finanças baseada nos bilhetes ativos.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                        <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Total Arrecadado</p>
+                        <p className="text-3xl font-bold text-green-500">
+                            R$ {financialReport.totalRevenue.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                        <Trophy className="h-10 w-10 text-accent mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Prêmio Estimado</p>
+                        <p className="text-3xl font-bold text-accent">
+                            R$ {financialReport.prizePool.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                        <Percent className="h-10 w-10 text-secondary mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Comissão (Vendedores)</p>
+                        <p className="text-3xl font-bold text-secondary">
+                            R$ {financialReport.sellerCommission.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                        <Percent className="h-10 w-10 text-primary mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Comissão (Dono)</p>
+                        <p className="text-3xl font-bold text-primary">
+                            R$ {financialReport.ownerCommission.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                </CardContent>
+                <CardFooter className="pt-6">
+                    <p className="text-xs text-muted-foreground text-center w-full">
+                        Cálculos baseados em todos os bilhetes com status 'ativo' (clientes e vendedores). O prêmio é o total arrecadado menos todas as comissões.
+                    </p>
+                </CardFooter>
             </Card>
           </section>
         );
