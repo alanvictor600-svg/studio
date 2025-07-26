@@ -34,28 +34,26 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
   storageKey = 'ui-theme',
   attribute = "class",
   enableSystem = true,
-  // disableTransitionOnChange is accepted but not explicitly used in this simplified version
   ...props
 }) => {
   const [theme, setThemeState] = useState<string>(() => {
+    // This part runs only on the client, so `window` is safe here.
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(storageKey) || defaultTheme;
+      try {
+        return localStorage.getItem(storageKey) || defaultTheme;
+      } catch (e) {
+        console.error("Could not access localStorage.", e);
+        return defaultTheme;
+      }
     }
+    // During SSR, return the default theme.
     return defaultTheme;
   });
   
-  const [resolvedTheme, setResolvedTheme] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-        if (theme === 'system' && enableSystem) {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        return theme;
-    }
-    // For SSR, if theme is system, we can't know, default to 'light' or 'defaultTheme' if not system
-    return theme === 'system' ? 'light' : theme; 
-  });
+  const [resolvedTheme, setResolvedTheme] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    // This effect runs only on the client.
     const root = window.document.documentElement;
     
     let effectiveTheme = theme;
@@ -69,25 +67,23 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
     if (attribute === "class") {
         root.classList.add(effectiveTheme);
     }
-    // Persist the user's explicit choice (light, dark, or system) in localStorage
-    // This is done in setTheme now, but initial load also needs to be correct.
   }, [theme, storageKey, enableSystem, attribute]);
 
 
   useEffect(() => {
+    // This effect handles system theme changes and runs only on the client.
     if (theme === 'system' && enableSystem && typeof window !== 'undefined') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => {
         const newSystemTheme = mediaQuery.matches ? 'dark' : 'light';
-        setResolvedTheme(newSystemTheme); // Update resolved theme
+        setResolvedTheme(newSystemTheme);
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         if (attribute === "class") {
             root.classList.add(newSystemTheme);
         }
       };
-      // Initial check
-      handleChange();
+      // No need to call handleChange() initially here, the other effect already handles it.
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
@@ -96,7 +92,11 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
 
   const setTheme = (newTheme: string) => {
      if (typeof window !== 'undefined') {
-        localStorage.setItem(storageKey, newTheme);
+        try {
+          localStorage.setItem(storageKey, newTheme);
+        } catch (e) {
+          console.error("Could not access localStorage.", e);
+        }
      }
     setThemeState(newTheme);
   };
