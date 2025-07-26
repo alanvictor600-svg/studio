@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -51,6 +51,7 @@ export default function AdminPage() {
 
   const [ticketPriceInput, setTicketPriceInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
   const [commissionInput, setCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
+  const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
   const [activeSection, setActiveSection] = useState<AdminSection>('cadastrar-sorteio');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,6 +154,12 @@ export default function AdminPage() {
 
 
   const handleStartNewLottery = () => {
+    const CONTROL_PASSWORD = "Al@n2099";
+    if (startLotteryPassword !== CONTROL_PASSWORD) {
+      toast({ title: "Ação Bloqueada", description: "Senha de controle incorreta.", variant: "destructive" });
+      return;
+    }
+    
     // Capture seller history before resetting everything
     captureAndSaveSellerHistory();
   
@@ -179,6 +186,7 @@ export default function AdminPage() {
       description: "Sorteios anteriores e bilhetes ativos/premiados foram resetados/expirados.",
       className: "bg-primary text-primary-foreground",
     });
+    setStartLotteryPassword('');
     setIsConfirmDialogOpen(false); 
   };
 
@@ -328,12 +336,29 @@ export default function AdminPage() {
                         Confirmar Nova Loteria?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação irá salvar um resumo do ciclo de vendas atual do vendedor, limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados.
-                        Esta ação não pode ser desfeita.
+                        Esta ação irá salvar um resumo do ciclo de vendas atual do vendedor, limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados. Esta ação não pode ser desfeita.
+                        <br/><br/>
+                        <span className="font-bold text-foreground">Digite a senha de controle para confirmar.</span>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="control-password" className="sr-only">
+                          Senha de Controle
+                        </Label>
+                        <div className="relative">
+                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                            id="control-password"
+                            type="password"
+                            placeholder="Senha de Controle"
+                            value={startLotteryPassword}
+                            onChange={(e) => setStartLotteryPassword(e.target.value)}
+                            className="pl-9"
+                            />
+                        </div>
+                    </div>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogCancel onClick={() => setStartLotteryPassword('')}>Cancelar</AlertDialogCancel>
                       <AlertDialogAction onClick={handleStartNewLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                         Confirmar e Iniciar
                       </AlertDialogAction>
