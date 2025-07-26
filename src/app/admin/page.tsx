@@ -153,15 +153,21 @@ export default function AdminPage() {
     const activeClientTickets = allTickets.filter(t => t.status === 'active');
     const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
     
+    // Ensure all config values are numbers, defaulting to 0 if not present
+    const price = lotteryConfig.ticketPrice || 0;
+    const sellerCommPercent = lotteryConfig.sellerCommissionPercentage || 0;
+    const ownerCommPercent = lotteryConfig.ownerCommissionPercentage || 0;
+    const clientSalesCommPercent = lotteryConfig.clientSalesCommissionToOwnerPercentage || 0;
+
     // Revenue calculations
-    const clientRevenue = activeClientTickets.length * lotteryConfig.ticketPrice;
-    const sellerRevenue = activeVendedorTickets.length * lotteryConfig.ticketPrice;
+    const clientRevenue = activeClientTickets.length * price;
+    const sellerRevenue = activeVendedorTickets.length * price;
     const totalRevenue = clientRevenue + sellerRevenue;
 
     // Commission calculations
-    const sellerCommission = sellerRevenue * (lotteryConfig.sellerCommissionPercentage / 100);
-    const ownerBaseCommission = totalRevenue * (lotteryConfig.ownerCommissionPercentage / 100);
-    const ownerExtraCommission = clientRevenue * (lotteryConfig.clientSalesCommissionToOwnerPercentage / 100);
+    const sellerCommission = sellerRevenue * (sellerCommPercent / 100);
+    const ownerBaseCommission = totalRevenue * (ownerCommPercent / 100);
+    const ownerExtraCommission = clientRevenue * (clientSalesCommPercent / 100);
     const totalOwnerCommission = ownerBaseCommission + ownerExtraCommission;
 
     const prizePool = totalRevenue - sellerCommission - totalOwnerCommission;
