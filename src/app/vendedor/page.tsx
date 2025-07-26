@@ -50,53 +50,49 @@ export default function VendedorPage() {
   const [activeSection, setActiveSection] = useState<VendedorSection>('registrar-venda');
 
 
+  // Effect for initial data loading from localStorage
   useEffect(() => {
     setIsClient(true);
+    
+    // Load Draws
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
-    if (storedDraws) {
-      setDraws(JSON.parse(storedDraws));
-    }
+    const localDraws = storedDraws ? JSON.parse(storedDraws) : [];
+    setDraws(localDraws);
+    
+    // Load Config
     const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
     if (storedConfig) {
       setLotteryConfig(JSON.parse(storedConfig));
     } else {
       localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_LOTTERY_CONFIG));
     }
-  }, []);
 
+    // Load Seller Tickets
+    const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
+    const initialVendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
+    setVendedorManagedTickets(updateTicketStatusesBasedOnDraws(initialVendedorTickets, localDraws));
+
+    // Load Client Tickets for summary
+    const storedClienteTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    const initialClienteTickets = storedClienteTickets ? JSON.parse(storedClienteTickets) : [];
+    setClienteTicketsForSummary(updateTicketStatusesBasedOnDraws(initialClienteTickets, localDraws));
+
+  }, []); // Empty dependency array: runs only once on mount
+
+  // Effect to re-evaluate ticket statuses when draws change
   useEffect(() => {
     if (isClient) {
-      const storedClienteTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
-      let initialClienteTickets: Ticket[] = [];
-      if (storedClienteTickets) {
-        initialClienteTickets = JSON.parse(storedClienteTickets);
-      }
-      const processedClienteTickets = updateTicketStatusesBasedOnDraws(initialClienteTickets, draws);
-      if(JSON.stringify(processedClienteTickets) !== JSON.stringify(clienteTicketsForSummary)){
-        setClienteTicketsForSummary(processedClienteTickets);
-      }
-      
-      const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
-      let initialVendedorTickets: Ticket[] = [];
-      if (storedVendedorTickets) {
-        initialVendedorTickets = JSON.parse(storedVendedorTickets);
-      }
-      const processedVendedorTickets = updateTicketStatusesBasedOnDraws(initialVendedorTickets, draws);
-       if (JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorManagedTickets) || initialVendedorTickets.length !== vendedorManagedTickets.length) {
-         setVendedorManagedTickets(processedVendedorTickets);
-       }
+      setVendedorManagedTickets(prev => updateTicketStatusesBasedOnDraws(prev, draws));
+      setClienteTicketsForSummary(prev => updateTicketStatusesBasedOnDraws(prev, draws));
     }
-  }, [isClient, draws, clienteTicketsForSummary, vendedorManagedTickets]); 
+  }, [draws, isClient]);
 
+  // Effect to save seller tickets to localStorage whenever they change
   useEffect(() => {
     if (isClient) {
       localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(vendedorManagedTickets));
-      const processedVendedorTickets = updateTicketStatusesBasedOnDraws(vendedorManagedTickets, draws);
-      if(JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorManagedTickets)){
-        setVendedorManagedTickets(processedVendedorTickets);
-      }
     }
-  }, [vendedorManagedTickets, draws, isClient]); 
+  }, [vendedorManagedTickets, isClient]);
 
 
   const handleAddSellerTicket = (numbers: number[], buyerName: string, buyerPhone: string) => {
@@ -157,7 +153,7 @@ export default function VendedorPage() {
         return (
           <section id="seller-ticket-list-heading" aria-labelledby="seller-ticket-list-heading-title" className="scroll-mt-24">
             <h2 id="seller-ticket-list-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <ListChecks className="mr-3 h-8 w-8 text-primary" /> Meus Bilhetes Vendidos
+              <ListChecks className="mr-3 h-8 w-8 text-primary" /> Bilhetes Vendidos
             </h2>
             {vendedorManagedTickets.length > 0 ? (
               <TicketList tickets={vendedorManagedTickets} draws={draws} /> 
@@ -383,4 +379,5 @@ export default function VendedorPage() {
       </footer>
     </div>
   );
-}
+
+    
