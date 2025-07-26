@@ -26,7 +26,7 @@ const menuItems: { id: ClienteSection; label: string; Icon: React.ElementType }[
 ];
 
 export default function ClientePage() { 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { currentUser, logout } = useAuth(); 
@@ -35,48 +35,71 @@ export default function ClientePage() {
 
   useEffect(() => {
     setIsClient(true);
+    // Load draws
     const storedDrawsRaw = localStorage.getItem(DRAWS_STORAGE_KEY);
     const localDraws = storedDrawsRaw ? JSON.parse(storedDrawsRaw) : [];
     setDraws(localDraws);
 
-    let initialTickets: Ticket[] = [];
-    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); 
-    if (storedTicketsRaw) {
-      initialTickets = JSON.parse(storedTicketsRaw);
-    }
+    // Load and filter tickets for the current user
     if (currentUser) {
-        initialTickets = initialTickets.map(ticket => ({
-            ...ticket,
-            buyerName: ticket.buyerName || currentUser.username, 
-        }));
-    }
-    setTickets(initialTickets);
-
-  }, [isClient, currentUser]); 
-
-  useEffect(() => {
-    if (isClient) {
-      if (tickets.length > 0 || localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY)) { 
-          const processedTickets = updateTicketStatusesBasedOnDraws(tickets, draws);
-
-          if (JSON.stringify(processedTickets) !== JSON.stringify(tickets)) {
-            setTickets(processedTickets); 
-          }
-          localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets)); 
+      const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY); 
+      if (storedTicketsRaw) {
+        const allClientTickets: Ticket[] = JSON.parse(storedTicketsRaw);
+        const userTickets = allClientTickets.filter(
+          ticket => ticket.buyerName === currentUser.username
+        );
+        setMyTickets(userTickets);
       }
     }
-  }, [tickets, draws, isClient]);
+  }, [isClient, currentUser]); 
+
+  // This effect updates statuses and saves ALL tickets back to localStorage
+  useEffect(() => {
+    if (isClient) {
+      // Get all tickets from storage to update statuses correctly
+      const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+      const allClientTickets = storedTicketsRaw ? JSON.parse(storedTicketsRaw) : [];
+      
+      const processedTickets = updateTicketStatusesBasedOnDraws(allClientTickets, draws);
+
+      // Save the processed list of ALL tickets back to storage
+      if (JSON.stringify(processedTickets) !== JSON.stringify(allClientTickets)) {
+        localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
+      }
+
+      // Update the component's state with just the current user's tickets
+      if (currentUser) {
+        const userTickets = processedTickets.filter(
+          (ticket: Ticket) => ticket.buyerName === currentUser.username
+        );
+        // Only update state if there's a meaningful change to avoid re-renders
+        if (JSON.stringify(userTickets) !== JSON.stringify(myTickets)) {
+            setMyTickets(userTickets);
+        }
+      }
+    }
+  }, [draws, isClient, currentUser, myTickets]);
 
 
   const handleAddTicket = (newNumbers: number[]) => {
+    if (!currentUser) return;
+
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
       status: 'active', 
       createdAt: new Date().toISOString(),
-      buyerName: currentUser?.username, 
+      buyerName: currentUser.username, 
     };
-    setTickets(prevTickets => [newTicket, ...prevTickets]); 
+
+    // Add the new ticket to the existing list in localStorage
+    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    const allClientTickets = storedTicketsRaw ? JSON.parse(storedTicketsRaw) : [];
+    const updatedAllTickets = [newTicket, ...allClientTickets];
+    localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(updatedAllTickets));
+
+    // Update the component state with the new ticket
+    setMyTickets(prevTickets => [newTicket, ...prevTickets]); 
   };
 
   const handleSectionChange = (sectionId: ClienteSection) => {
@@ -112,7 +135,7 @@ export default function ClientePage() {
               Meus Bilhetes
             </h2>
             <TicketList
-              tickets={tickets}
+              tickets={myTickets}
               draws={draws}
             />
           </section>
