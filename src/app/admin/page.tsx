@@ -400,29 +400,6 @@ export default function AdminPage() {
                 <p className="text-center text-muted-foreground py-10">Nenhum usuário registrado.</p>
               )}
             </div>
-            {userToEdit && (
-                <UserEditDialog
-                    isOpen={isUserEditDialogOpen}
-                    onOpenChange={setIsUserEditDialogOpen}
-                    user={userToEdit}
-                    onSave={handleSaveUser}
-                    onClose={() => setUserToEdit(null)}
-                />
-            )}
-            <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Exclusão?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                           Tem certeza que deseja excluir o usuário <span className="font-bold">{userToDelete?.username}</span>? Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
           </section>
         );
       case 'configuracoes':
@@ -785,6 +762,30 @@ export default function AdminPage() {
         </main>
       </div>
 
+      {userToEdit && (
+          <UserEditDialog
+              isOpen={isUserEditDialogOpen}
+              onOpenChange={setIsUserEditDialogOpen}
+              user={userToEdit}
+              onSave={handleSaveUser}
+              onClose={() => setUserToEdit(null)}
+          />
+      )}
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar Exclusão?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Tem certeza que deseja excluir o usuário <span className="font-bold">{userToDelete?.username}</span>? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
       <footer className="mt-20 py-8 text-center border-t border-border/50">
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} Bolão Potiguar - Admin.
@@ -796,3 +797,4 @@ export default function AdminPage() {
     
 
     
+
