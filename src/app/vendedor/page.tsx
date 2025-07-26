@@ -70,15 +70,18 @@ export default function VendedorPage() {
 
     const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
     const initialVendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
-    setVendedorManagedTickets(updateTicketStatusesBasedOnDraws(initialVendedorTickets, localDraws));
+    setVendedorManagedTickets(initialVendedorTickets);
 
     const storedClienteTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
     const initialClienteTickets = storedClienteTickets ? JSON.parse(storedClienteTickets) : [];
-    setClienteTicketsForSummary(updateTicketStatusesBasedOnDraws(initialClienteTickets, localDraws));
+    setClienteTicketsForSummary(initialClienteTickets);
     
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === LOTTERY_CONFIG_STORAGE_KEY && event.newValue) {
         setLotteryConfig(JSON.parse(event.newValue));
+      }
+      if (event.key === DRAWS_STORAGE_KEY && event.newValue) {
+        setDraws(JSON.parse(event.newValue));
       }
     };
 
@@ -117,15 +120,13 @@ export default function VendedorPage() {
     toast({ title: "Venda Registrada!", description: "Bilhete adicionado à sua lista de vendas.", className: "bg-primary text-primary-foreground" });
   };
   
-  const { activeSellerTicketsCount, totalRevenueFromActiveTickets, commissionEarned } = useMemo(() => {
+  const { activeSellerTicketsCount, totalRevenueFromActiveTickets } = useMemo(() => {
     const activeTickets = vendedorManagedTickets.filter(ticket => ticket.status === 'active');
     const count = activeTickets.length;
     const revenue = count * lotteryConfig.ticketPrice;
-    const commission = revenue * (lotteryConfig.sellerCommissionPercentage / 100);
     return {
       activeSellerTicketsCount: count,
       totalRevenueFromActiveTickets: revenue,
-      commissionEarned: commission,
     };
   }, [vendedorManagedTickets, lotteryConfig]);
 
@@ -243,10 +244,10 @@ export default function VendedorPage() {
                 <CardHeader>
                   <CardTitle className="text-xl text-center font-semibold text-primary">Desempenho de Vendas (Ciclo Atual)</CardTitle>
                   <CardDescription className="text-center text-muted-foreground">
-                    Seu resumo de vendas para o ciclo atual da loteria. A comissão é zerada ao iniciar uma nova loteria.
+                    Seu resumo de vendas para o ciclo atual da loteria (bilhetes com status 'ativo').
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
                   <div className="p-4 rounded-lg bg-background/70 shadow">
                     <TrendingUp className="h-10 w-10 text-primary mx-auto mb-2" />
                     <p className="text-sm font-medium text-muted-foreground">Bilhetes Ativos Vendidos</p>
@@ -259,18 +260,10 @@ export default function VendedorPage() {
                       R$ {totalRevenueFromActiveTickets.toFixed(2).replace('.', ',')}
                     </p>
                   </div>
-                  <div className="p-4 rounded-lg bg-background/70 shadow">
-                    <Percent className="h-10 w-10 text-accent mx-auto mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Comissão ({lotteryConfig.sellerCommissionPercentage}%)</p>
-                    <p className="text-2xl font-bold text-accent">
-                      R$ {commissionEarned.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
                 </CardContent>
                 <CardFooter className="pt-6">
                     <p className="text-xs text-muted-foreground text-center w-full">
                         Preço atual do bilhete: R$ {lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}.
-                        A comissão é calculada sobre os bilhetes com status 'ativo' vendidos por você neste ciclo da loteria.
                     </p>
                 </CardFooter>
               </Card>
