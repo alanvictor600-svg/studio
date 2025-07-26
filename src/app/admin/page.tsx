@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -153,18 +153,18 @@ export default function AdminPage() {
     const activeClientTickets = allTickets.filter(t => t.status === 'active');
     const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
     
-    // Ensure all config values are numbers, defaulting to 0 if not present
     const price = lotteryConfig.ticketPrice || 0;
     const sellerCommPercent = lotteryConfig.sellerCommissionPercentage || 0;
     const ownerCommPercent = lotteryConfig.ownerCommissionPercentage || 0;
     const clientSalesCommPercent = lotteryConfig.clientSalesCommissionToOwnerPercentage || 0;
+    
+    const clientTicketCount = activeClientTickets.length;
+    const sellerTicketCount = activeVendedorTickets.length;
 
-    // Revenue calculations
-    const clientRevenue = activeClientTickets.length * price;
-    const sellerRevenue = activeVendedorTickets.length * price;
+    const clientRevenue = clientTicketCount * price;
+    const sellerRevenue = sellerTicketCount * price;
     const totalRevenue = clientRevenue + sellerRevenue;
 
-    // Commission calculations
     const sellerCommission = sellerRevenue * (sellerCommPercent / 100);
     const ownerBaseCommission = totalRevenue * (ownerCommPercent / 100);
     const ownerExtraCommission = clientRevenue * (clientSalesCommPercent / 100);
@@ -176,7 +176,11 @@ export default function AdminPage() {
       totalRevenue,
       sellerCommission,
       ownerCommission: totalOwnerCommission,
-      prizePool
+      prizePool,
+      clientRevenue,
+      sellerRevenue,
+      clientTicketCount,
+      sellerTicketCount
     };
   }, [allTickets, vendedorTickets, lotteryConfig]);
 
@@ -606,40 +610,63 @@ export default function AdminPage() {
               <PieChart className="mr-3 h-8 w-8 text-primary" />
               Relatórios Financeiros
             </h2>
-            <Card className="w-full max-w-3xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+            <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl text-center font-bold text-primary">Resumo do Ciclo Atual</CardTitle>
                     <CardDescription className="text-center text-muted-foreground">
                         Visão geral das finanças baseada nos bilhetes ativos.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-center">
+                    {/* Vendas Clientes */}
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
+                        <UserIcon className="h-10 w-10 text-blue-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Vendas (Clientes)</p>
+                        <p className="text-3xl font-bold text-blue-500">
+                            R$ {financialReport.clientRevenue.toFixed(2).replace('.', ',')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount} bilhetes</p>
+                    </div>
+                    {/* Vendas Vendedores */}
+                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
+                        <ShoppingCart className="h-10 w-10 text-orange-500 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Vendas (Vendedores)</p>
+                        <p className="text-3xl font-bold text-orange-500">
+                            R$ {financialReport.sellerRevenue.toFixed(2).replace('.', ',')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{financialReport.sellerTicketCount} bilhetes</p>
+                    </div>
+                    {/* Total Arrecadado */}
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Total Arrecadado</p>
                         <p className="text-3xl font-bold text-green-500">
                             R$ {financialReport.totalRevenue.toFixed(2).replace('.', ',')}
                         </p>
+                        <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount + financialReport.sellerTicketCount} bilhetes</p>
                     </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
-                        <Trophy className="h-10 w-10 text-accent mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Prêmio Estimado</p>
-                        <p className="text-3xl font-bold text-accent">
-                            R$ {financialReport.prizePool.toFixed(2).replace('.', ',')}
-                        </p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                    {/* Comissão Vendedores */}
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <Percent className="h-10 w-10 text-secondary mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Comissão (Vendedores)</p>
                         <p className="text-3xl font-bold text-secondary">
                             R$ {financialReport.sellerCommission.toFixed(2).replace('.', ',')}
                         </p>
                     </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner">
+                    {/* Comissão Dono */}
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <Percent className="h-10 w-10 text-primary mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Comissão (Dono)</p>
                         <p className="text-3xl font-bold text-primary">
                             R$ {financialReport.ownerCommission.toFixed(2).replace('.', ',')}
+                        </p>
+                    </div>
+                    {/* Prêmio Estimado */}
+                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
+                        <Trophy className="h-10 w-10 text-accent mx-auto mb-2" />
+                        <p className="text-sm font-medium text-muted-foreground">Prêmio Estimado</p>
+                        <p className="text-3xl font-bold text-accent">
+                            R$ {financialReport.prizePool.toFixed(2).replace('.', ',')}
                         </p>
                     </div>
                 </CardContent>
