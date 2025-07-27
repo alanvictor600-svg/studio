@@ -101,8 +101,8 @@ export default function AdminPage() {
     setLotteryConfig(initialConfig);
     setTicketPriceInput(initialConfig.ticketPrice.toString());
     setCommissionInput(initialConfig.sellerCommissionPercentage.toString());
-    setOwnerCommissionInput(initialConfig.ownerCommissionPercentage.toString());
-    setClientSalesCommissionInput(initialConfig.clientSalesCommissionToOwnerPercentage.toString());
+    setOwnerCommissionInput((initialConfig.ownerCommissionPercentage || 0).toString());
+    setClientSalesCommissionInput((initialConfig.clientSalesCommissionToOwnerPercentage || 0).toString());
 
     const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
     setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
@@ -328,8 +328,8 @@ export default function AdminPage() {
 
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
     if (loggedInUserRaw) {
-        const loggedInUsername = loggedInUserRaw;
-         if (loggedInUsername === userToDelete.username) {
+        // The stored value is just the username string
+         if (loggedInUserRaw === userToDelete.username) {
             toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
             setIsDeleteConfirmOpen(false);
             setUserToDelete(null);
@@ -824,5 +824,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
