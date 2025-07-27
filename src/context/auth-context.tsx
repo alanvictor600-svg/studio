@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const storedCurrentUserUsername = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
       if (storedCurrentUserUsername) {
+        // The username is stored directly as a string, not JSON
         const foundUser = localUsers.find((u: User) => u.username === storedCurrentUserUsername);
         if (foundUser) {
           setCurrentUser(foundUser);
@@ -81,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // NOTE: This is plain text comparison, NOT secure for production.
     if (userToLogin.passwordHash === passwordAttempt) { // Direct comparison for prototype
       setCurrentUser(userToLogin);
+      // Store the username directly as a string
       localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, userToLogin.username);
       toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground" });
       
@@ -156,3 +158,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    

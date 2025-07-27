@@ -2,14 +2,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Draw, Ticket, LotteryConfig, SellerHistoryEntry, User } from '@/types';
+import type { Draw, Ticket, LotteryConfig, SellerHistoryEntry, User, AdminHistoryEntry } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminDrawForm } from '@/components/admin-draw-form';
 import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -21,6 +21,11 @@ import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { UserEditDialog } from '@/components/user-edit-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
@@ -29,6 +34,7 @@ const LOTTERY_CONFIG_STORAGE_KEY = 'bolaoPotiguarLotteryConfig';
 const SELLER_HISTORY_STORAGE_KEY = 'bolaoPotiguarSellerHistory';
 const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
 const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
+const ADMIN_HISTORY_STORAGE_KEY = 'bolaoPotiguarAdminHistory';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -74,6 +80,9 @@ export default function AdminPage() {
   const [isUserEditDialogOpen, setIsUserEditDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  
+  // State for admin history
+  const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -106,6 +115,10 @@ export default function AdminPage() {
     // Load user data
     const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
     if (storedUsers) setAllUsers(JSON.parse(storedUsers));
+    
+    // Load admin history
+    const storedAdminHistory = localStorage.getItem(ADMIN_HISTORY_STORAGE_KEY);
+    if (storedAdminHistory) setAdminHistory(JSON.parse(storedAdminHistory));
 
   }, []); 
 
@@ -144,6 +157,12 @@ export default function AdminPage() {
         localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(allUsers));
     }
   }, [allUsers, isClient]);
+  
+  useEffect(() => {
+    if (isClient) {
+        localStorage.setItem(ADMIN_HISTORY_STORAGE_KEY, JSON.stringify(adminHistory));
+    }
+  }, [adminHistory, isClient]);
 
   const winningTickets = useMemo(() => {
     return allSystemTickets.filter(ticket => ticket.status === 'winning');
@@ -231,6 +250,24 @@ export default function AdminPage() {
 
     toast({ title: "Histórico do Vendedor Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo.", className: "bg-secondary text-secondary-foreground" });
   };
+  
+  const captureAndSaveAdminHistory = () => {
+      const currentReport = financialReport; // Use the memoized report
+      
+      const newHistoryEntry: AdminHistoryEntry = {
+        id: uuidv4(),
+        endDate: new Date().toISOString(),
+        totalRevenue: currentReport.totalRevenue,
+        totalSellerCommission: currentReport.sellerCommission,
+        totalOwnerCommission: currentReport.ownerCommission,
+        totalPrizePool: currentReport.prizePool,
+        clientTicketCount: currentReport.clientTicketCount,
+        sellerTicketCount: currentReport.sellerTicketCount,
+      };
+
+      setAdminHistory(prevHistory => [...prevHistory, newHistoryEntry]);
+      toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo.", className: "bg-secondary text-secondary-foreground" });
+  };
 
 
   const handleStartNewLottery = () => {
@@ -240,7 +277,9 @@ export default function AdminPage() {
       return;
     }
     
+    // Capture history before clearing data
     captureAndSaveSellerHistory();
+    captureAndSaveAdminHistory();
   
     setDraws([]);
     
@@ -335,11 +374,14 @@ export default function AdminPage() {
 
     // Prevent deleting the currently logged-in user for safety
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    if(loggedInUserRaw && loggedInUserRaw === userToDelete.username) {
-        toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
-        setIsDeleteConfirmOpen(false);
-        setUserToDelete(null);
-        return;
+    if(loggedInUserRaw) {
+        const loggedInUsername = JSON.parse(loggedInUserRaw);
+         if(loggedInUsername === userToDelete.username) {
+            toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
+            setIsDeleteConfirmOpen(false);
+            setUserToDelete(null);
+            return;
+        }
     }
 
     setAllUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete.id));
@@ -582,7 +624,7 @@ export default function AdminPage() {
         );
        case 'relatorios':
         return (
-          <section aria-labelledby="financial-reports-heading">
+          <section aria-labelledby="financial-reports-heading" className="space-y-12">
             <h2 id="financial-reports-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <PieChart className="mr-3 h-8 w-8 text-primary" />
               Relatórios Financeiros
@@ -652,6 +694,51 @@ export default function AdminPage() {
                         Cálculos baseados em todos os bilhetes com status 'ativo'. O prêmio é o total arrecadado menos todas as comissões.
                     </p>
                 </CardFooter>
+            </Card>
+
+            <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-2xl text-center font-bold text-primary flex items-center justify-center">
+                  <BookText className="mr-3 h-6 w-6" />
+                  Histórico de Ciclos Anteriores (Admin)
+                </CardTitle>
+                <CardDescription className="text-center text-muted-foreground">
+                  Resumo financeiro de cada ciclo de loteria encerrado.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {adminHistory.length > 0 ? (
+                  <ScrollArea className="h-80 w-full rounded-md border">
+                      <Table>
+                        <TableCaption>Um registro financeiro de cada ciclo de loteria.</TableCaption>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-center">Data Fim</TableHead>
+                            <TableHead className="text-center">Receita Total</TableHead>
+                            <TableHead className="text-center">Comissão Vendedores</TableHead>
+                            <TableHead className="text-center">Comissão Bolão</TableHead>
+                            <TableHead className="text-right">Prêmio Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {adminHistory.slice().reverse().map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="text-center font-medium text-xs whitespace-nowrap">
+                                {format(parseISO(entry.endDate), "dd/MM/yy HH:mm", { locale: ptBR })}
+                              </TableCell>
+                              <TableCell className="text-center font-semibold text-green-500">R$ {entry.totalRevenue.toFixed(2).replace('.', ',')}</TableCell>
+                              <TableCell className="text-center">R$ {entry.totalSellerCommission.toFixed(2).replace('.', ',')}</TableCell>
+                              <TableCell className="text-center">R$ {entry.totalOwnerCommission.toFixed(2).replace('.', ',')}</TableCell>
+                              <TableCell className="text-right font-bold text-accent">R$ {entry.totalPrizePool.toFixed(2).replace('.', ',')}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                  </ScrollArea>
+                ) : (
+                  <p className="text-center text-muted-foreground py-10">Nenhum histórico de ciclo anterior encontrado.</p>
+                )}
+              </CardContent>
             </Card>
           </section>
         );
@@ -799,3 +886,6 @@ export default function AdminPage() {
     
 
 
+
+
+    

@@ -37,3 +37,16 @@ export interface SellerHistoryEntry {
   totalRevenue: number;
   totalCommission: number;
 }
+
+export interface AdminHistoryEntry {
+  id: string;
+  endDate: string; // ISO string for date when the lottery cycle ended
+  totalRevenue: number;
+  totalSellerCommission: number;
+  totalOwnerCommission: number;
+  totalPrizePool: number;
+  clientTicketCount: number;
+  sellerTicketCount: number;
+}
+
+    
