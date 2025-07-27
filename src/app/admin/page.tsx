@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Draw, Ticket, LotteryConfig, SellerHistoryEntry, User, AdminHistoryEntry } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminDrawForm } from '@/components/admin-draw-form';
@@ -26,7 +26,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
@@ -35,7 +34,6 @@ const SELLER_HISTORY_STORAGE_KEY = 'bolaoPotiguarSellerHistory';
 const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
 const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
 const ADMIN_HISTORY_STORAGE_KEY = 'bolaoPotiguarAdminHistory';
-
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -58,118 +56,96 @@ const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] 
 
 export default function AdminPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
-  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [clientTickets, setClientTickets] = useState<Ticket[]>([]);
   const [vendedorTickets, setVendedorTickets] = useState<Ticket[]>([]);
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [isClient, setIsClient] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const [ticketPriceInput, setTicketPriceInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
-  const [commissionInput, setCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
-  const [ownerCommissionInput, setOwnerCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
-  const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState<string>(DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
+  const [ticketPriceInput, setTicketPriceInput] = useState('');
+  const [commissionInput, setCommissionInput] = useState('');
+  const [ownerCommissionInput, setOwnerCommissionInput] = useState('');
+  const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState('');
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
   const [activeSection, setActiveSection] = useState<AdminSection>('gerenciar-contas');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // State for user management
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [isUserEditDialogOpen, setIsUserEditDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   
-  // State for admin history
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
 
+  // Load all data from localStorage on component mount
   useEffect(() => {
     setIsClient(true);
-    // Load lottery data
-    const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
-    if (storedDraws) setDraws(JSON.parse(storedDraws));
     
+    const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
+    const initialDraws = storedDraws ? JSON.parse(storedDraws) : [];
+    setDraws(initialDraws);
+
     const storedClientTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
-    if (storedClientTickets) setAllTickets(JSON.parse(storedClientTickets));
+    const initialClientTickets = storedClientTickets ? JSON.parse(storedClientTickets) : [];
+    setClientTickets(updateTicketStatusesBasedOnDraws(initialClientTickets, initialDraws));
 
     const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
-    if(storedVendedorTickets) setVendedorTickets(JSON.parse(storedVendedorTickets));
+    const initialVendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
+    setVendedorTickets(updateTicketStatusesBasedOnDraws(initialVendedorTickets, initialDraws));
 
     const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
-    if (storedConfig) {
-      const parsedConfig = JSON.parse(storedConfig);
-      setLotteryConfig(parsedConfig);
-      setTicketPriceInput(parsedConfig.ticketPrice.toString());
-      setCommissionInput(parsedConfig.sellerCommissionPercentage.toString());
-      setOwnerCommissionInput(parsedConfig.ownerCommissionPercentage?.toString() ?? DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
-      setClientSalesCommissionInput(parsedConfig.clientSalesCommissionToOwnerPercentage?.toString() ?? DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
-    } else {
-      setTicketPriceInput(DEFAULT_LOTTERY_CONFIG.ticketPrice.toString());
-      setCommissionInput(DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage.toString());
-      setOwnerCommissionInput(DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage.toString());
-      setClientSalesCommissionInput(DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage.toString());
-      localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(DEFAULT_LOTTERY_CONFIG));
-    }
-    
-    // Load user data
+    const initialConfig = storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG;
+    setLotteryConfig(initialConfig);
+    setTicketPriceInput(initialConfig.ticketPrice.toString());
+    setCommissionInput(initialConfig.sellerCommissionPercentage.toString());
+    setOwnerCommissionInput(initialConfig.ownerCommissionPercentage.toString());
+    setClientSalesCommissionInput(initialConfig.clientSalesCommissionToOwnerPercentage.toString());
+
     const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
-    if (storedUsers) setAllUsers(JSON.parse(storedUsers));
+    setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
     
-    // Load admin history
     const storedAdminHistory = localStorage.getItem(ADMIN_HISTORY_STORAGE_KEY);
-    if (storedAdminHistory) setAdminHistory(JSON.parse(storedAdminHistory));
+    setAdminHistory(storedAdminHistory ? JSON.parse(storedAdminHistory) : []);
+  }, []);
 
-  }, []); 
-
-  const allSystemTickets = useMemo(() => [...allTickets, ...vendedorTickets], [allTickets, vendedorTickets]);
-
+  // Save draws to localStorage whenever they change
   useEffect(() => {
-    if (isClient) {
-      const processedClientTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
-      if (JSON.stringify(processedClientTickets) !== JSON.stringify(allTickets)) {
-         setAllTickets(processedClientTickets);
-      }
-      localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedClientTickets));
-      
-      const processedVendedorTickets = updateTicketStatusesBasedOnDraws(vendedorTickets, draws);
-      if (JSON.stringify(processedVendedorTickets) !== JSON.stringify(vendedorTickets)) {
-         setVendedorTickets(processedVendedorTickets);
-      }
-      localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(processedVendedorTickets));
-    }
-  }, [allTickets, vendedorTickets, draws, isClient]);
-
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem(DRAWS_STORAGE_KEY, JSON.stringify(draws));
-    }
+    if (isClient) localStorage.setItem(DRAWS_STORAGE_KEY, JSON.stringify(draws));
   }, [draws, isClient]);
+  
+  // Save tickets to localStorage whenever they change
+  useEffect(() => {
+    if (isClient) localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(clientTickets));
+  }, [clientTickets, isClient]);
 
   useEffect(() => {
-    if (isClient) {
-      localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(lotteryConfig));
-    }
+    if (isClient) localStorage.setItem(VENDEDOR_TICKETS_STORAGE_KEY, JSON.stringify(vendedorTickets));
+  }, [vendedorTickets, isClient]);
+
+  // Save config to localStorage whenever it changes
+  useEffect(() => {
+    if (isClient) localStorage.setItem(LOTTERY_CONFIG_STORAGE_KEY, JSON.stringify(lotteryConfig));
   }, [lotteryConfig, isClient]);
   
+  // Save users to localStorage whenever they change
   useEffect(() => {
-    if (isClient) {
-        localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(allUsers));
-    }
+    if (isClient) localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(allUsers));
   }, [allUsers, isClient]);
   
+  // Save admin history to localStorage whenever it changes
   useEffect(() => {
-    if (isClient) {
-        localStorage.setItem(ADMIN_HISTORY_STORAGE_KEY, JSON.stringify(adminHistory));
-    }
+    if (isClient) localStorage.setItem(ADMIN_HISTORY_STORAGE_KEY, JSON.stringify(adminHistory));
   }, [adminHistory, isClient]);
 
-  const winningTickets = useMemo(() => {
-    return allSystemTickets.filter(ticket => ticket.status === 'winning');
-  }, [allSystemTickets]);
+  const allSystemTickets = useMemo(() => [...clientTickets, ...vendedorTickets], [clientTickets, vendedorTickets]);
+
+  const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
 
   const financialReport = useMemo(() => {
-    const activeClientTickets = allTickets.filter(t => t.status === 'active');
+    const activeClientTickets = clientTickets.filter(t => t.status === 'active');
     const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
     
     const price = lotteryConfig.ticketPrice || 0;
@@ -201,8 +177,7 @@ export default function AdminPage() {
       clientTicketCount,
       sellerTicketCount
     };
-  }, [allTickets, vendedorTickets, lotteryConfig]);
-
+  }, [clientTickets, vendedorTickets, lotteryConfig]);
 
   const handleAddDraw = (newNumbers: number[], name?: string) => {
     if (winningTickets.length > 0) {
@@ -219,11 +194,14 @@ export default function AdminPage() {
       createdAt: new Date().toISOString(),
       name: name || undefined,
     };
-    setDraws(prevDraws => [newDraw, ...prevDraws]);
+    const updatedDraws = [newDraw, ...draws];
+    setDraws(updatedDraws);
+    setClientTickets(updateTicketStatusesBasedOnDraws(clientTickets, updatedDraws));
+    setVendedorTickets(updateTicketStatusesBasedOnDraws(vendedorTickets, updatedDraws));
     toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado com sucesso.", className: "bg-primary text-primary-foreground" });
   };
   
-  const captureAndSaveSellerHistory = () => {
+  const captureAndSaveSellerHistory = useCallback(() => {
     const sellerTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
     const sellerTickets: Ticket[] = sellerTicketsRaw ? JSON.parse(sellerTicketsRaw) : [];
     
@@ -247,13 +225,11 @@ export default function AdminPage() {
     const history: SellerHistoryEntry[] = historyRaw ? JSON.parse(historyRaw) : [];
     history.push(newHistoryEntry);
     localStorage.setItem(SELLER_HISTORY_STORAGE_KEY, JSON.stringify(history));
-
     toast({ title: "Histórico do Vendedor Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo.", className: "bg-secondary text-secondary-foreground" });
-  };
+  }, []);
   
-  const captureAndSaveAdminHistory = () => {
-      const currentReport = financialReport; // Use the memoized report
-      
+  const captureAndSaveAdminHistory = useCallback(() => {
+      const currentReport = financialReport;
       const newHistoryEntry: AdminHistoryEntry = {
         id: uuidv4(),
         endDate: new Date().toISOString(),
@@ -264,11 +240,9 @@ export default function AdminPage() {
         clientTicketCount: currentReport.clientTicketCount,
         sellerTicketCount: currentReport.sellerTicketCount,
       };
-
       setAdminHistory(prevHistory => [...prevHistory, newHistoryEntry]);
       toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo.", className: "bg-secondary text-secondary-foreground" });
-  };
-
+  }, [financialReport]);
 
   const handleStartNewLottery = () => {
     const CONTROL_PASSWORD = "Al@n2099";
@@ -277,36 +251,17 @@ export default function AdminPage() {
       return;
     }
     
-    // Capture history before clearing data
     captureAndSaveSellerHistory();
     captureAndSaveAdminHistory();
   
     setDraws([]);
     
-    // Process client tickets
-    setAllTickets(prevTickets =>
-      prevTickets.map(ticket => {
-        if (ticket.status === 'active' || ticket.status === 'winning') {
-          return { ...ticket, status: 'expired' as Ticket['status'] };
-        }
-        return ticket;
-      })
-    );
-    
-    // Process seller tickets
-    setVendedorTickets(prevTickets =>
-      prevTickets.map(ticket => {
-        if (ticket.status === 'active' || ticket.status === 'winning') {
-          return { ...ticket, status: 'expired' as Ticket['status'] };
-        }
-        return ticket;
-      })
-    );
-
+    setClientTickets(prev => prev.map(t => (t.status === 'active' || t.status === 'winning') ? { ...t, status: 'expired' } : t));
+    setVendedorTickets(prev => prev.map(t => (t.status === 'active' || t.status === 'winning') ? { ...t, status: 'expired' } : t));
 
     toast({
       title: "Nova Loteria Iniciada!",
-      description: "Sorteios anteriores e bilhetes ativos/premiados foram resetados/expirados.",
+      description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
       className: "bg-primary text-primary-foreground",
     });
     setStartLotteryPassword('');
@@ -344,7 +299,6 @@ export default function AdminPage() {
     toast({ title: "Configurações Salvas!", description: "Configurações da loteria atualizadas.", className: "bg-primary text-primary-foreground" });
   };
   
-  // User Management Handlers
   const handleOpenEditUser = (user: User) => {
     setUserToEdit(user);
     setIsUserEditDialogOpen(true);
@@ -355,7 +309,7 @@ export default function AdminPage() {
         const isUsernameTaken = prevUsers.some(u => u.username === updatedUser.username && u.id !== updatedUser.id);
         if (isUsernameTaken) {
             toast({ title: "Erro ao Salvar", description: `O nome de usuário "${updatedUser.username}" já está em uso.`, variant: "destructive" });
-            return prevUsers; // Return original state if username is taken
+            return prevUsers;
         }
         toast({ title: "Usuário Atualizado!", description: `Os dados de ${updatedUser.username} foram salvos.`, className: "bg-primary text-primary-foreground" });
         return prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u));
@@ -372,11 +326,10 @@ export default function AdminPage() {
   const handleDeleteUser = () => {
     if (!userToDelete) return;
 
-    // Prevent deleting the currently logged-in user for safety
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    if(loggedInUserRaw) {
-        const loggedInUsername = JSON.parse(loggedInUserRaw);
-         if(loggedInUsername === userToDelete.username) {
+    if (loggedInUserRaw) {
+        const loggedInUsername = loggedInUserRaw;
+         if (loggedInUsername === userToDelete.username) {
             toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
             setIsDeleteConfirmOpen(false);
             setUserToDelete(null);
@@ -389,7 +342,6 @@ export default function AdminPage() {
     setIsDeleteConfirmOpen(false);
     setUserToDelete(null);
   };
-
 
   const handleSectionChange = (sectionId: AdminSection) => {
     setActiveSection(sectionId);
@@ -637,7 +589,6 @@ export default function AdminPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-center">
-                    {/* Vendas Clientes */}
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <UserIcon className="h-10 w-10 text-blue-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Vendas (Clientes)</p>
@@ -646,7 +597,6 @@ export default function AdminPage() {
                         </p>
                         <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount} bilhetes</p>
                     </div>
-                    {/* Vendas Vendedores */}
                      <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <ShoppingCart className="h-10 w-10 text-orange-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Vendas (Vendedores)</p>
@@ -655,7 +605,6 @@ export default function AdminPage() {
                         </p>
                         <p className="text-xs text-muted-foreground">{financialReport.sellerTicketCount} bilhetes</p>
                     </div>
-                    {/* Total Arrecadado */}
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Total Arrecadado</p>
@@ -664,7 +613,6 @@ export default function AdminPage() {
                         </p>
                         <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount + financialReport.sellerTicketCount} bilhetes</p>
                     </div>
-                    {/* Comissão Vendedores */}
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <Percent className="h-10 w-10 text-secondary mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Comissão (Vendedores)</p>
@@ -672,7 +620,6 @@ export default function AdminPage() {
                             R$ {financialReport.sellerCommission.toFixed(2).replace('.', ',')}
                         </p>
                     </div>
-                    {/* Comissão Bolão */}
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <Percent className="h-10 w-10 text-primary mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Comissão (Bolão)</p>
@@ -680,7 +627,6 @@ export default function AdminPage() {
                             R$ {financialReport.ownerCommission.toFixed(2).replace('.', ',')}
                         </p>
                     </div>
-                    {/* Prêmio Estimado */}
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
                         <Trophy className="h-10 w-10 text-accent mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Prêmio Estimado</p>
@@ -790,23 +736,21 @@ export default function AdminPage() {
              </h1>
              <p className="text-lg text-muted-foreground mt-2">Gerenciamento de Sorteios, Bilhetes e Configurações</p>
           </div>
-          <div className="w-10 md:hidden"> {/* Placeholder for hamburger button */}
+          <div className="w-10 md:hidden flex items-center justify-center">
              <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Abrir menu"
               >
                 <Menu className="h-6 w-6" />
               </Button>
           </div>
-          <div className="hidden md:block w-[150px] sm:w-[180px] md:w-[200px]"></div> 
+          <div className="hidden md:block w-10"></div>
         </div>
       </header>
 
       <div className="flex flex-col md:flex-row gap-x-8 gap-y-6 flex-grow mt-8">
-        {/* Vertical Menu - Mobile: Overlay, Desktop: Sticky Sidebar */}
         <aside 
           className={cn(
             "bg-card/90 backdrop-blur-sm p-4 rounded-lg shadow-md md:sticky md:top-20 md:self-start max-h-[calc(100vh-10rem)] overflow-y-auto transition-transform duration-300 ease-in-out md:translate-x-0",
@@ -843,7 +787,6 @@ export default function AdminPage() {
           </nav>
         </aside>
 
-        {/* Content Area */}
         <main className={cn("flex-grow", isMobileMenuOpen && "md:ml-0")}>
           {renderSectionContent()}
         </main>
@@ -881,11 +824,5 @@ export default function AdminPage() {
     </div>
   );
 }
-    
-
-    
-
-
-
 
     

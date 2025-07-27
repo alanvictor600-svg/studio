@@ -1,14 +1,12 @@
 
 "use client";
 
-import type { ReactNode } from 'react';
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 
-// localStorage keys
 const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
 const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
 
@@ -31,7 +29,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsLoading(true);
     try {
       const storedUsersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
       const localUsers = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
@@ -39,29 +36,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const storedCurrentUserUsername = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
       if (storedCurrentUserUsername) {
-        // The username is stored directly as a string, not JSON
         const foundUser = localUsers.find((u: User) => u.username === storedCurrentUserUsername);
-        if (foundUser) {
-          setCurrentUser(foundUser);
-        } else {
-          localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY); // Clean up if user not found
+        setCurrentUser(foundUser || null);
+        if (!foundUser) {
+            localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
         }
       }
     } catch (error) {
       console.error("Failed to load auth data from localStorage", error);
-      localStorage.removeItem(AUTH_USERS_STORAGE_KEY);
-      localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
+    // Persist users to localStorage whenever the list changes, but not on initial load.
     if (!isLoading) {
-      try {
-        localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
-      } catch (error) {
-        console.error("Failed to save users to localStorage", error);
-      }
+      localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
     }
   }, [users, isLoading]);
 
@@ -73,20 +64,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
     
-    // Check if the user's role matches the expected role for the login portal
     if (expectedRole && userToLogin.role !== expectedRole) {
       toast({ title: "Acesso Negado", description: `Esta conta é de ${userToLogin.role}. Use o portal correto.`, variant: "destructive" });
       return false;
     }
 
-    // NOTE: This is plain text comparison, NOT secure for production.
-    if (userToLogin.passwordHash === passwordAttempt) { // Direct comparison for prototype
+    if (userToLogin.passwordHash === passwordAttempt) { 
       setCurrentUser(userToLogin);
-      // Store the username directly as a string
       localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, userToLogin.username);
       toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground" });
       
-      // Redirect to the correct dashboard based on the user's actual role
       const redirectPath = userToLogin.role === 'cliente' ? '/cliente' : '/vendedor';
       router.push(redirectPath);
       return true;
@@ -97,32 +84,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [users, router, toast]);
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
-    // Re-check inside the function to ensure we have the latest user list
-    const currentUsersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
-    const currentUsers: User[] = currentUsersRaw ? JSON.parse(currentUsersRaw) : [];
-
-    if (currentUsers.find(u => u.username === username)) {
+    if (users.some(u => u.username === username)) {
       toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
       return false;
     }
-    // NOTE: Storing passwordRaw directly as passwordHash for prototype simplicity.
+
     const newUser: User = {
       id: uuidv4(),
       username,
-      passwordHash: passwordRaw, // Storing raw password as hash for simplicity
+      passwordHash: passwordRaw,
       role,
       createdAt: new Date().toISOString(),
     };
     
-    const updatedUsers = [...currentUsers, newUser];
-    setUsers(updatedUsers);
-    // Explicitly save to storage here to ensure it's available for the login page
-    localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    setUsers(prevUsers => [...prevUsers, newUser]);
 
     toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground" });
     router.push('/login');
     return true;
-  }, [router, toast]);
+  }, [users, router, toast]);
 
   const logout = useCallback(() => {
     setCurrentUser(null);
@@ -135,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = { currentUser, login, logout, register, isLoading, isAuthenticated };
 
-  // Render loading state until client-side hydration is complete
+  // Render children only after client-side hydration and loading is complete
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
