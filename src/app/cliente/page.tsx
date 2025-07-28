@@ -9,20 +9,22 @@ import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn, Palette } from 'lucide-react';
+import { Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn, Palette, History } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
+import { AdminDrawList } from '@/components/admin-draw-list';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 
-type ClienteSection = 'selecionar-bilhete' | 'meus-bilhetes';
+type ClienteSection = 'selecionar-bilhete' | 'meus-bilhetes' | 'historico-sorteios';
 
 const menuItems: { id: ClienteSection; label: string; Icon: React.ElementType }[] = [
   { id: 'selecionar-bilhete', label: 'Nova Aposta', Icon: TicketIconLucide },
   { id: 'meus-bilhetes', label: 'Meus Bilhetes', Icon: ListChecks },
+  { id: 'historico-sorteios', label: 'Resultados', Icon: History },
 ];
 
 export default function ClientePage() {
@@ -115,6 +117,15 @@ export default function ClientePage() {
               tickets={myTickets}
               draws={draws}
             />
+          </section>
+        );
+      case 'historico-sorteios':
+        return (
+          <section aria-labelledby="draw-history-heading" id="historico-sorteios" className="scroll-mt-20">
+            <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center">
+              Resultados dos Sorteios
+            </h2>
+            <AdminDrawList draws={draws} />
           </section>
         );
       default:
