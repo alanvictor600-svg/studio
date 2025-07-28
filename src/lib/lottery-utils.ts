@@ -66,25 +66,33 @@ export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[
   if (!Array.isArray(draws)) {
     console.error("updateTicketStatusesBasedOnDraws: draws is not an array", draws);
     // If draws are invalid, process tickets as if there are no draws
-    return tickets.map(ticket => ({
-      ...ticket,
-      status: ticket.status === 'winning' ? 'active' : ticket.status,
-    }));
+    return tickets.map(ticket => {
+        // Don't change awaiting_payment status
+        if (ticket.status === 'awaiting_payment') return ticket;
+        // Reset winning to active
+        return {...ticket, status: ticket.status === 'winning' ? 'active' : ticket.status };
+    });
   }
 
   if (draws.length === 0) {
     // If there are no draws, no ticket can be winning.
     // If a ticket was previously 'winning', reset it to 'active'.
-    return tickets.map(ticket => ({
-      ...ticket,
-      status: ticket.status === 'winning' ? 'active' : ticket.status,
-    }));
+    // Keep 'awaiting_payment' and 'expired' as they are.
+    return tickets.map(ticket => {
+      if (ticket.status === 'winning') return { ...ticket, status: 'active' };
+      return ticket;
+    });
   }
 
   const allDrawnNumbersFlattened: number[] = draws.flatMap(draw => draw.numbers);
   const drawnNumbersFrequency = countOccurrences(allDrawnNumbersFlattened);
 
   return tickets.map(ticket => {
+    // Tickets awaiting payment or already expired should not have their status changed by new draws.
+    if (ticket.status === 'awaiting_payment' || ticket.status === 'expired') {
+      return ticket;
+    }
+    
     if (!ticket || !Array.isArray(ticket.numbers)) {
       console.error("updateTicketStatusesBasedOnDraws: invalid ticket encountered", ticket);
       return { ...ticket, status: 'expired' }; // Or some default error state
@@ -111,8 +119,8 @@ export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[
     if (isCurrentlyWinning) {
       newStatus = 'winning';
     } else {
-      // If it's not currently winning, but its status was 'winning', revert it.
-      // Otherwise, keep its existing non-winning status (e.g., 'active', 'expired').
+      // If it's not currently winning, but its status was 'winning', revert it to active.
+      // Otherwise, keep its existing 'active' status.
       if (ticket.status === 'winning') {
         newStatus = 'active'; 
       }

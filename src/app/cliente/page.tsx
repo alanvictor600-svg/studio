@@ -46,12 +46,17 @@ export default function ClientePage() {
     const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
     const allClientTickets: Ticket[] = storedTicketsRaw ? JSON.parse(storedTicketsRaw) : [];
     
+    // Process all tickets first to determine their status
     const processedTickets = updateTicketStatusesBasedOnDraws(allClientTickets, localDraws);
     
+    // Then, filter to show only the current user's tickets
     const userTickets = processedTickets.filter(
       (ticket: Ticket) => ticket.buyerName === currentUser?.username
     );
     setMyTickets(userTickets);
+
+    // Also, re-save all tickets to ensure statuses are up-to-date in storage
+    localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
 
   }, [isAuthenticated, currentUser?.username]);
 
@@ -61,7 +66,7 @@ export default function ClientePage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'active',
+      status: 'awaiting_payment', // New tickets now start as awaiting payment
       createdAt: new Date().toISOString(),
       buyerName: currentUser.username,
     };
@@ -226,5 +231,3 @@ export default function ClientePage() {
     </div>
   );
 }
-
-    

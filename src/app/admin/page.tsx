@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText, CheckCircle2 } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -19,12 +19,13 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { UserEditDialog } from '@/components/user-edit-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TicketCard } from '@/components/ticket-card';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
@@ -42,10 +43,11 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   clientSalesCommissionToOwnerPercentage: 10,
 };
 
-type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas' | 'relatorios';
+type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas' | 'relatorios' | 'aprovar-bilhetes';
 
 const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] = [
   { id: 'gerenciar-contas', label: 'Gerenciar Contas', Icon: Users },
+  { id: 'aprovar-bilhetes', label: 'Aprovar Bilhetes', Icon: CheckCircle2 },
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
@@ -143,6 +145,7 @@ export default function AdminPage() {
   const allSystemTickets = useMemo(() => [...clientTickets, ...vendedorTickets], [clientTickets, vendedorTickets]);
 
   const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
+  const awaitingPaymentTickets = useMemo(() => clientTickets.filter(ticket => ticket.status === 'awaiting_payment'), [clientTickets]);
 
   const financialReport = useMemo(() => {
     const activeClientTickets = clientTickets.filter(t => t.status === 'active');
@@ -256,8 +259,9 @@ export default function AdminPage() {
   
     setDraws([]);
     
-    setClientTickets(prev => prev.map(t => (t.status === 'active' || t.status === 'winning') ? { ...t, status: 'expired' } : t));
-    setVendedorTickets(prev => prev.map(t => (t.status === 'active' || t.status === 'winning') ? { ...t, status: 'expired' } : t));
+    const expireStatuses: Ticket['status'][] = ['active', 'winning', 'awaiting_payment'];
+    setClientTickets(prev => prev.map(t => expireStatuses.includes(t.status) ? { ...t, status: 'expired' } : t));
+    setVendedorTickets(prev => prev.map(t => expireStatuses.includes(t.status) ? { ...t, status: 'expired' } : t));
 
     toast({
       title: "Nova Loteria Iniciada!",
@@ -325,22 +329,32 @@ export default function AdminPage() {
 
   const handleDeleteUser = () => {
     if (!userToDelete) return;
-
+    
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    if (loggedInUserRaw) {
-        // The stored value is just the username string
-         if (loggedInUserRaw === userToDelete.username) {
-            toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
-            setIsDeleteConfirmOpen(false);
-            setUserToDelete(null);
-            return;
-        }
+    if (loggedInUserRaw && loggedInUserRaw === userToDelete.username) {
+        toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
+        setIsDeleteConfirmOpen(false);
+        setUserToDelete(null);
+        return;
     }
 
     setAllUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete.id));
     toast({ title: "Usuário Excluído", description: `O usuário ${userToDelete.username} foi removido.`, className: "bg-destructive text-destructive-foreground" });
     setIsDeleteConfirmOpen(false);
     setUserToDelete(null);
+  };
+  
+  const handleApproveTicket = (ticketId: string) => {
+    setClientTickets(prevClientTickets => 
+      prevClientTickets.map(ticket => 
+        ticket.id === ticketId ? { ...ticket, status: 'active' } : ticket
+      )
+    );
+    toast({
+      title: 'Bilhete Aprovado!',
+      description: 'O bilhete agora está ativo e participando do sorteio.',
+      className: 'bg-primary text-primary-foreground',
+    });
   };
 
   const handleSectionChange = (sectionId: AdminSection) => {
@@ -394,6 +408,37 @@ export default function AdminPage() {
                 <p className="text-center text-muted-foreground py-10">Nenhum usuário registrado.</p>
               )}
             </div>
+          </section>
+        );
+      case 'aprovar-bilhetes':
+        return (
+          <section aria-labelledby="approve-tickets-heading">
+            <h2 id="approve-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
+              <CheckCircle2 className="mr-3 h-8 w-8 text-primary" />
+              Aprovar Bilhetes de Clientes ({awaitingPaymentTickets.length})
+            </h2>
+            {awaitingPaymentTickets.length > 0 ? (
+              <div className="space-y-6">
+                {awaitingPaymentTickets.map(ticket => (
+                  <div key={ticket.id} className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex-grow w-full">
+                       <TicketCard ticket={ticket} />
+                    </div>
+                    <Button 
+                      onClick={() => handleApproveTicket(ticket.id)} 
+                      className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                    >
+                      <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Pagamento
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
+                <CheckCircle2 size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground text-lg">Nenhum bilhete aguardando aprovação.</p>
+              </div>
+            )}
           </section>
         );
       case 'configuracoes':

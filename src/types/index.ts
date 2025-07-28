@@ -2,7 +2,7 @@
 export interface Ticket {
   id: string;
   numbers: number[];
-  status: 'active' | 'expired' | 'winning';
+  status: 'active' | 'expired' | 'winning' | 'awaiting_payment';
   createdAt: string; // ISO string for date
   buyerName?: string;
   buyerPhone?: string;
@@ -48,5 +48,3 @@ export interface AdminHistoryEntry {
   clientTicketCount: number;
   sellerTicketCount: number;
 }
-
-    
