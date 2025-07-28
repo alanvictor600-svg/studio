@@ -6,7 +6,7 @@ import type { Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, Hash, Edit3, Star } from 'lucide-react';
+import { CalendarDays, Hash, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminDrawCardProps {
@@ -34,8 +34,8 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
             </div>
         </div>
         {draw.name && (
-            <CardDescription className="text-sm text-primary-foreground/80 mt-2 flex items-center pt-2 border-t border-primary-foreground/20">
-                <Edit3 size={14} className="mr-2 shrink-0" />
+            <CardDescription className="text-base font-semibold text-primary-foreground mt-2 flex items-center pt-2 border-t border-primary-foreground/20">
+                <Star size={16} className="mr-2 shrink-0 text-yellow-300" />
                 <span>{draw.name}</span>
             </CardDescription>
         )}
