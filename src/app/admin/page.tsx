@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText, CheckCircle2, Search } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -84,6 +84,9 @@ export default function AdminPage() {
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
   const [selectedSellerTickets, setSelectedSellerTickets] = useState<Set<string>>(new Set());
   const [selectedClientTickets, setSelectedClientTickets] = useState<Set<string>>(new Set());
+
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [sellerSearchTerm, setSellerSearchTerm] = useState('');
 
 
   // Load all data from localStorage on component mount
@@ -480,6 +483,25 @@ export default function AdminPage() {
     }
   };
 
+  // Filtered data for search functionality
+  const filteredClients = useMemo(() => {
+    if (!clientSearchTerm) return awaitingClientTicketsByBuyer;
+    return Object.fromEntries(
+      Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
+        buyerName.toLowerCase().includes(clientSearchTerm.toLowerCase())
+      )
+    );
+  }, [clientSearchTerm, awaitingClientTicketsByBuyer]);
+
+  const filteredSellers = useMemo(() => {
+    if (!sellerSearchTerm) return awaitingSellerTicketsBySeller;
+    return Object.fromEntries(
+      Object.entries(awaitingSellerTicketsBySeller).filter(([sellerName]) =>
+        sellerName.toLowerCase().includes(sellerSearchTerm.toLowerCase())
+      )
+    );
+  }, [sellerSearchTerm, awaitingSellerTicketsBySeller]);
+
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -520,12 +542,21 @@ export default function AdminPage() {
                           Bilhetes de Clientes Pendentes
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
-                          Aprove os pagamentos dos bilhetes agrupados por cliente.
+                          Aprove os pagamentos dos bilhetes agrupados por cliente. Use a busca para filtrar.
                       </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {Object.keys(awaitingClientTicketsByBuyer).length > 0 ? (
-                      Object.entries(awaitingClientTicketsByBuyer).map(([buyerName, tickets]) => {
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        placeholder="Pesquisar cliente..."
+                        value={clientSearchTerm}
+                        onChange={(e) => setClientSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    {Object.keys(filteredClients).length > 0 ? (
+                      Object.entries(filteredClients).map(([buyerName, tickets]) => {
                         const buyerTotalAmount = tickets.length * lotteryConfig.ticketPrice;
                         const selectedForThisBuyer = tickets.filter(t => selectedClientTickets.has(t.id));
 
@@ -575,8 +606,8 @@ export default function AdminPage() {
                       })
                     ) : (
                       <div className="text-center py-6 bg-background/50 rounded-lg">
-                        <CheckCircle2 size={32} className="mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Nenhum bilhete de cliente aguardando aprovação.</p>
+                        <Search size={32} className="mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-muted-foreground">Nenhum cliente encontrado com o termo "{clientSearchTerm}".</p>
                       </div>
                     )}
                   </CardContent>
@@ -590,12 +621,21 @@ export default function AdminPage() {
                           Bilhetes de Vendedores Pendentes
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
-                          Aprove os pagamentos dos bilhetes agrupados por vendedor.
+                          Aprove os pagamentos dos bilhetes agrupados por vendedor. Use a busca para filtrar.
                       </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {Object.keys(awaitingSellerTicketsBySeller).length > 0 ? (
-                      Object.entries(awaitingSellerTicketsBySeller).map(([sellerName, tickets]) => {
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        placeholder="Pesquisar vendedor..."
+                        value={sellerSearchTerm}
+                        onChange={(e) => setSellerSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    {Object.keys(filteredSellers).length > 0 ? (
+                      Object.entries(filteredSellers).map(([sellerName, tickets]) => {
                         const sellerTotalAmount = tickets.length * lotteryConfig.ticketPrice;
                         const selectedForThisSeller = tickets.filter(t => selectedSellerTickets.has(t.id));
 
@@ -645,8 +685,8 @@ export default function AdminPage() {
                       })
                     ) : (
                       <div className="text-center py-6 bg-background/50 rounded-lg">
-                        <CheckCircle2 size={32} className="mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Nenhum bilhete de vendedor aguardando aprovação.</p>
+                        <Search size={32} className="mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-muted-foreground">Nenhum vendedor encontrado com o termo "{sellerSearchTerm}".</p>
                       </div>
                     )}
                   </CardContent>
