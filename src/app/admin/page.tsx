@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TicketCard } from '@/components/ticket-card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
@@ -81,6 +82,8 @@ export default function AdminPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
+  const [selectedSellerTickets, setSelectedSellerTickets] = useState<Set<string>>(new Set());
+
 
   // Load all data from localStorage on component mount
   useEffect(() => {
@@ -145,7 +148,8 @@ export default function AdminPage() {
   const allSystemTickets = useMemo(() => [...clientTickets, ...vendedorTickets], [clientTickets, vendedorTickets]);
 
   const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
-  const awaitingPaymentTickets = useMemo(() => clientTickets.filter(ticket => ticket.status === 'awaiting_payment'), [clientTickets]);
+  const awaitingClientTickets = useMemo(() => clientTickets.filter(ticket => ticket.status === 'awaiting_payment'), [clientTickets]);
+  const awaitingSellerTickets = useMemo(() => vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment'), [vendedorTickets]);
 
   const financialReport = useMemo(() => {
     const activeClientTickets = clientTickets.filter(t => t.status === 'active');
@@ -344,7 +348,7 @@ export default function AdminPage() {
     setUserToDelete(null);
   };
   
-  const handleApproveTicket = (ticketId: string) => {
+  const handleApproveClientTicket = (ticketId: string) => {
     setClientTickets(prevClientTickets => 
       prevClientTickets.map(ticket => 
         ticket.id === ticketId ? { ...ticket, status: 'active' } : ticket
@@ -352,10 +356,59 @@ export default function AdminPage() {
     );
     toast({
       title: 'Bilhete Aprovado!',
-      description: 'O bilhete agora está ativo e participando do sorteio.',
+      description: 'O bilhete do cliente agora está ativo.',
       className: 'bg-primary text-primary-foreground',
     });
   };
+
+  const handleToggleSellerTicketSelection = (ticketId: string) => {
+    setSelectedSellerTickets(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(ticketId)) {
+        newSelection.delete(ticketId);
+      } else {
+        newSelection.add(ticketId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleApproveSelectedSellerTickets = () => {
+    if (selectedSellerTickets.size === 0) {
+      toast({ title: 'Nenhum Bilhete Selecionado', description: 'Selecione um ou mais bilhetes para aprovar.', variant: 'destructive' });
+      return;
+    }
+    setVendedorTickets(prev =>
+      prev.map(ticket =>
+        selectedSellerTickets.has(ticket.id) ? { ...ticket, status: 'active' } : ticket
+      )
+    );
+    toast({
+      title: `${selectedSellerTickets.size} Bilhete(s) Aprovado(s)!`,
+      description: 'Os bilhetes de vendedor selecionados agora estão ativos.',
+      className: 'bg-primary text-primary-foreground',
+    });
+    setSelectedSellerTickets(new Set());
+  };
+
+  const handleApproveAllSellerTickets = () => {
+    if (awaitingSellerTickets.length === 0) {
+      toast({ title: 'Nenhum Bilhete para Aprovar', description: 'Não há bilhetes de vendedor aguardando pagamento.', variant: 'destructive' });
+      return;
+    }
+    setVendedorTickets(prev =>
+      prev.map(ticket =>
+        ticket.status === 'awaiting_payment' ? { ...ticket, status: 'active' } : ticket
+      )
+    );
+    toast({
+      title: 'Todos os Bilhetes Aprovados!',
+      description: 'Todos os bilhetes de vendedor pendentes agora estão ativos.',
+      className: 'bg-primary text-primary-foreground',
+    });
+    setSelectedSellerTickets(new Set());
+  };
+
 
   const handleSectionChange = (sectionId: AdminSection) => {
     setActiveSection(sectionId);
@@ -411,34 +464,97 @@ export default function AdminPage() {
           </section>
         );
       case 'aprovar-bilhetes':
+        const totalAwaiting = awaitingClientTickets.length + awaitingSellerTickets.length;
         return (
-          <section aria-labelledby="approve-tickets-heading">
+          <section aria-labelledby="approve-tickets-heading" className="space-y-12">
             <h2 id="approve-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <CheckCircle2 className="mr-3 h-8 w-8 text-primary" />
-              Aprovar Bilhetes de Clientes ({awaitingPaymentTickets.length})
+              Aprovar Bilhetes ({totalAwaiting})
             </h2>
-            {awaitingPaymentTickets.length > 0 ? (
-              <div className="space-y-6">
-                {awaitingPaymentTickets.map(ticket => (
-                  <div key={ticket.id} className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="flex-grow w-full">
-                       <TicketCard ticket={ticket} />
+
+            {/* Seller Tickets Approval */}
+            <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                    <CardTitle className="text-xl font-semibold flex items-center">
+                        <ShoppingCart className="mr-2 h-5 w-5 text-secondary" />
+                        Bilhetes de Vendedores ({awaitingSellerTickets.length})
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                        Aprove os pagamentos dos bilhetes registrados por vendedores.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {awaitingSellerTickets.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button onClick={handleApproveSelectedSellerTickets} disabled={selectedSellerTickets.size === 0} className="w-full sm:w-auto">
+                            <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedSellerTickets.size})
+                        </Button>
+                        <Button onClick={handleApproveAllSellerTickets} variant="secondary" className="w-full sm:w-auto">
+                            Aprovar Todos ({awaitingSellerTickets.length})
+                        </Button>
+                      </div>
+                      <div className="space-y-4 max-h-[500px] overflow-y-auto p-2 border rounded-md">
+                        {awaitingSellerTickets.map(ticket => (
+                          <div key={ticket.id} className="flex items-center gap-4">
+                             <Checkbox
+                                id={`seller-ticket-${ticket.id}`}
+                                checked={selectedSellerTickets.has(ticket.id)}
+                                onCheckedChange={() => handleToggleSellerTicketSelection(ticket.id)}
+                                aria-label={`Selecionar bilhete ${ticket.id.substring(0,6)}`}
+                            />
+                            <div className="flex-grow">
+                              <TicketCard ticket={ticket} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <Button 
-                      onClick={() => handleApproveTicket(ticket.id)} 
-                      className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                    >
-                      <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Pagamento
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                <CheckCircle2 size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground text-lg">Nenhum bilhete aguardando aprovação.</p>
-              </div>
-            )}
+                  ) : (
+                    <div className="text-center py-6 bg-background/50 rounded-lg">
+                      <CheckCircle2 size={32} className="mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-muted-foreground">Nenhum bilhete de vendedor aguardando aprovação.</p>
+                    </div>
+                  )}
+                </CardContent>
+            </Card>
+
+            {/* Client Tickets Approval */}
+            <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                    <CardTitle className="text-xl font-semibold flex items-center">
+                        <UserIcon className="mr-2 h-5 w-5 text-blue-500" />
+                        Bilhetes de Clientes ({awaitingClientTickets.length})
+                    </CardTitle>
+                     <CardDescription className="text-muted-foreground">
+                        Aprove os pagamentos dos bilhetes gerados por clientes.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {awaitingClientTickets.length > 0 ? (
+                      <div className="space-y-6 max-h-[500px] overflow-y-auto p-2 border rounded-md">
+                        {awaitingClientTickets.map(ticket => (
+                          <div key={ticket.id} className="flex flex-col sm:flex-row items-center gap-4">
+                            <div className="flex-grow w-full">
+                               <TicketCard ticket={ticket} />
+                            </div>
+                            <Button 
+                              onClick={() => handleApproveClientTicket(ticket.id)} 
+                              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+                            >
+                              <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Pagamento
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                       <div className="text-center py-6 bg-background/50 rounded-lg">
+                          <CheckCircle2 size={32} className="mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-muted-foreground">Nenhum bilhete de cliente aguardando aprovação.</p>
+                      </div>
+                    )}
+                </CardContent>
+            </Card>
           </section>
         );
       case 'configuracoes':

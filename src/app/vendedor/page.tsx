@@ -31,6 +31,8 @@ const SELLER_HISTORY_STORAGE_KEY = 'bolaoPotiguarSellerHistory';
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
   sellerCommissionPercentage: 10,
+  ownerCommissionPercentage: 5,
+  clientSalesCommissionToOwnerPercentage: 10,
 };
 
 type VendedorSection = 'nova-venda' | 'meus-bilhetes' | 'historico-sorteios' | 'relatorios';
@@ -112,13 +114,13 @@ export default function VendedorPage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: numbers.sort((a, b) => a - b),
-      status: 'active', 
+      status: 'awaiting_payment', // Changed from 'active'
       createdAt: new Date().toISOString(),
       buyerName,
       buyerPhone,
     };
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
-    toast({ title: "Venda Registrada!", description: "Bilhete adicionado à sua lista de vendas.", className: "bg-primary text-primary-foreground" });
+    toast({ title: "Venda Registrada!", description: "Bilhete adicionado e aguarda aprovação do Admin.", className: "bg-primary text-primary-foreground" });
   };
   
   const { activeSellerTicketsCount, totalRevenueFromActiveTickets, commissionEarned } = useMemo(() => {
@@ -425,5 +427,6 @@ export default function VendedorPage() {
     
 
     
+
 
 
