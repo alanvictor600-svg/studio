@@ -152,30 +152,8 @@ export default function AdminPage() {
   const allSystemTickets = useMemo(() => [...clientTickets, ...vendedorTickets], [clientTickets, vendedorTickets]);
 
   const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
-  const awaitingClientTickets = useMemo(() => clientTickets.filter(ticket => ticket.status === 'awaiting_payment'), [clientTickets]);
-  
-  const awaitingClientTicketsByBuyer = useMemo(() => {
-    return awaitingClientTickets.reduce((acc, ticket) => {
-      const buyerName = ticket.buyerName || 'Desconhecido';
-      if (!acc[buyerName]) {
-        acc[buyerName] = [];
-      }
-      acc[buyerName].push(ticket);
-      return acc;
-    }, {} as Record<string, Ticket[]>);
-  }, [awaitingClientTickets]);
-  
-  const awaitingSellerTicketsBySeller = useMemo(() => {
-    const awaiting = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
-    return awaiting.reduce((acc, ticket) => {
-      const seller = ticket.sellerUsername || 'Desconhecido';
-      if (!acc[seller]) {
-        acc[seller] = [];
-      }
-      acc[seller].push(ticket);
-      return acc;
-    }, {} as Record<string, Ticket[]>);
-  }, [vendedorTickets]);
+  const awaitingClientTickets = clientTickets.filter(ticket => ticket.status === 'awaiting_payment');
+  const awaitingSellerTickets = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
 
   const financialReport = useMemo(() => {
     const activeClientTickets = clientTickets.filter(t => t.status === 'active');
@@ -394,6 +372,7 @@ export default function AdminPage() {
     if (!userToDelete) return;
     
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
+     // Corrected check: Compare usernames directly
     if (loggedInUserRaw && loggedInUserRaw === userToDelete.username) {
         toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
         setIsDeleteConfirmOpen(false);
@@ -437,8 +416,8 @@ export default function AdminPage() {
     setSelectedClientTickets(new Set());
   };
 
-  const handleApproveAllClientTicketsForBuyer = (buyerName: string) => {
-    const ticketsToApprove = awaitingClientTicketsByBuyer[buyerName]?.map(t => t.id) || [];
+  const handleApproveAllClientTicketsForBuyer = (buyerName: string, ticketsForBuyer: Ticket[]) => {
+    const ticketsToApprove = ticketsForBuyer.map(t => t.id);
     if (ticketsToApprove.length === 0) {
       toast({ title: 'Nenhum Bilhete para Aprovar', description: `Não há bilhetes de ${buyerName} aguardando pagamento.`, variant: 'destructive' });
       return;
@@ -487,8 +466,8 @@ export default function AdminPage() {
     setSelectedSellerTickets(new Set());
   };
 
-  const handleApproveAllSellerTicketsForSeller = (sellerName: string) => {
-    const ticketsToApprove = awaitingSellerTicketsBySeller[sellerName]?.map(t => t.id) || [];
+  const handleApproveAllSellerTicketsForSeller = (sellerName: string, ticketsForSeller: Ticket[]) => {
+    const ticketsToApprove = ticketsForSeller.map(t => t.id);
     if (ticketsToApprove.length === 0) {
       toast({ title: 'Nenhum Bilhete para Aprovar', description: `Não há bilhetes de ${sellerName} aguardando pagamento.`, variant: 'destructive' });
       return;
@@ -514,26 +493,7 @@ export default function AdminPage() {
       setIsMobileMenuOpen(false);
     }
   };
-
-  // Filtered data for search functionality
-  const filteredClients = useMemo(() => {
-    if (!clientSearchTerm) return awaitingClientTicketsByBuyer;
-    return Object.fromEntries(
-      Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
-        buyerName.toLowerCase().includes(clientSearchTerm.toLowerCase())
-      )
-    );
-  }, [clientSearchTerm, awaitingClientTicketsByBuyer]);
-
-  const filteredSellers = useMemo(() => {
-    if (!sellerSearchTerm) return awaitingSellerTicketsBySeller;
-    return Object.fromEntries(
-      Object.entries(awaitingSellerTicketsBySeller).filter(([sellerName]) =>
-        sellerName.toLowerCase().includes(sellerSearchTerm.toLowerCase())
-      )
-    );
-  }, [sellerSearchTerm, awaitingSellerTicketsBySeller]);
-
+  
   if (!isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -546,7 +506,40 @@ export default function AdminPage() {
     switch (activeSection) {
       case 'aprovar-bilhetes':
         const totalAwaitingClients = awaitingClientTickets.length;
-        const totalAwaitingSellers = Object.values(awaitingSellerTicketsBySeller).flat().length;
+        const totalAwaitingSellers = awaitingSellerTickets.length;
+        
+        // Group client tickets by buyer name
+        const awaitingClientTicketsByBuyer = awaitingClientTickets.reduce((acc, ticket) => {
+          const buyerName = ticket.buyerName || 'Desconhecido';
+          if (!acc[buyerName]) {
+            acc[buyerName] = [];
+          }
+          acc[buyerName].push(ticket);
+          return acc;
+        }, {} as Record<string, Ticket[]>);
+
+        // Group seller tickets by seller name
+        const awaitingSellerTicketsBySeller = awaitingSellerTickets.reduce((acc, ticket) => {
+          const seller = ticket.sellerUsername || 'Desconhecido';
+          if (!acc[seller]) {
+            acc[seller] = [];
+          }
+          acc[seller].push(ticket);
+          return acc;
+        }, {} as Record<string, Ticket[]>);
+
+        // Filtered data for search functionality
+        const filteredClients = Object.fromEntries(
+          Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
+            buyerName.toLowerCase().includes(clientSearchTerm.toLowerCase())
+          )
+        );
+
+        const filteredSellers = Object.fromEntries(
+          Object.entries(awaitingSellerTicketsBySeller).filter(([sellerName]) =>
+            sellerName.toLowerCase().includes(sellerSearchTerm.toLowerCase())
+          )
+        );
 
         return (
           <section aria-labelledby="approve-tickets-heading">
@@ -610,7 +603,7 @@ export default function AdminPage() {
                                       <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedForThisBuyer.length})
                                   </Button>
                                   <Button 
-                                    onClick={() => handleApproveAllClientTicketsForBuyer(buyerName)} 
+                                    onClick={() => handleApproveAllClientTicketsForBuyer(buyerName, tickets)} 
                                     variant="secondary" 
                                     className="w-full sm:w-auto"
                                   >
@@ -689,7 +682,7 @@ export default function AdminPage() {
                                       <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedForThisSeller.length})
                                   </Button>
                                   <Button 
-                                    onClick={() => handleApproveAllSellerTicketsForSeller(sellerName)} 
+                                    onClick={() => handleApproveAllSellerTicketsForSeller(sellerName, tickets)} 
                                     variant="secondary" 
                                     className="w-full sm:w-auto"
                                   >
@@ -1199,5 +1192,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
