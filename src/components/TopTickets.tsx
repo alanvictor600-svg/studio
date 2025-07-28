@@ -102,7 +102,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                     });
 
                     return (
-                    <li key={ticket.id} className="p-3 rounded-lg bg-background/70 shadow-sm border">
+                    <li key={ticket.id} className="relative p-3 rounded-lg bg-background/70 shadow-sm border pb-8">
                         <div className="flex items-start gap-4">
                             <div className="flex-grow min-w-0">
                                 <div className="flex items-center gap-2">
@@ -114,9 +114,6 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                                         {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
                                     </p>
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                    ID: #{ticket.id.substring(0,6)}
-                                </p>
                             </div>
                             <Badge variant="secondary" className="text-base font-bold py-1 px-3">
                             {ticket.matches} Acerto{ticket.matches !== 1 ? 's' : ''}
@@ -138,6 +135,9 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                                 ))}
                             </div>
                         </div>
+                        <p className="absolute bottom-2 left-3 text-xs text-muted-foreground/70">
+                            ID: #{ticket.id.substring(0,6)}
+                        </p>
                     </li>
                     )
                 })}
