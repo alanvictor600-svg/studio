@@ -111,20 +111,25 @@ export default function VendedorPage() {
 
 
   const handleAddSellerTicket = (numbers: number[], buyerName: string, buyerPhone: string) => {
+    if (!currentUser) {
+      toast({ title: "Erro", description: "Vendedor não autenticado.", variant: "destructive" });
+      return;
+    }
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: numbers.sort((a, b) => a - b),
-      status: 'awaiting_payment', // Changed from 'active'
+      status: 'awaiting_payment',
       createdAt: new Date().toISOString(),
       buyerName,
       buyerPhone,
+      sellerUsername: currentUser.username, // Add seller username to the ticket
     };
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
     toast({ title: "Venda Registrada!", description: "Bilhete adicionado e aguarda aprovação do Admin.", className: "bg-primary text-primary-foreground" });
   };
   
   const { activeSellerTicketsCount, totalRevenueFromActiveTickets, commissionEarned } = useMemo(() => {
-    const activeTickets = vendedorManagedTickets.filter(ticket => ticket.status === 'active');
+    const activeTickets = vendedorManagedTickets.filter(ticket => ticket.status === 'active' && ticket.sellerUsername === currentUser?.username);
     const count = activeTickets.length;
     const revenue = count * lotteryConfig.ticketPrice;
     const commission = revenue * (lotteryConfig.sellerCommissionPercentage / 100);
@@ -133,7 +138,7 @@ export default function VendedorPage() {
       totalRevenueFromActiveTickets: revenue,
       commissionEarned: commission,
     };
-  }, [vendedorManagedTickets, lotteryConfig]);
+  }, [vendedorManagedTickets, lotteryConfig, currentUser?.username]);
 
 
   const isLotteryActive = draws.length > 0;
@@ -165,18 +170,19 @@ export default function VendedorPage() {
           </section>
         );
       case 'meus-bilhetes':
+        const mySoldTickets = vendedorManagedTickets.filter(t => t.sellerUsername === currentUser?.username);
         return (
           <section id="seller-ticket-list-heading" aria-labelledby="seller-ticket-list-heading-title" className="scroll-mt-24">
             <h2 id="seller-ticket-list-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <ListChecks className="mr-3 h-8 w-8 text-primary" /> Bilhetes Vendidos
+              <ListChecks className="mr-3 h-8 w-8 text-primary" /> Bilhetes Vendidos Por Mim
             </h2>
-            {vendedorManagedTickets.length > 0 ? (
-              <TicketList tickets={vendedorManagedTickets} draws={draws} /> 
+            {mySoldTickets.length > 0 ? (
+              <TicketList tickets={mySoldTickets} draws={draws} /> 
             ) : (
                <div className="text-center py-10 bg-card/50 rounded-lg shadow">
                   <TicketIconLucide size={48} className="mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground text-lg">Nenhum bilhete de vendedor registrado ainda.</p>
-                  <p className="text-sm text-muted-foreground/80">Use o formulário acima para registrar uma venda.</p>
+                  <p className="text-muted-foreground text-lg">Nenhum bilhete vendido por você ainda.</p>
+                  <p className="text-sm text-muted-foreground/80">Use o formulário de "Nova Venda" para registrar.</p>
                </div>
             )}
           </section>
@@ -198,6 +204,7 @@ export default function VendedorPage() {
           </section>
         );
       case 'relatorios':
+        const myHistory = sellerHistory.filter(h => h.id.startsWith(currentUser?.username + '-'));
         return (
           <>
             <section id="dashboard-summary-heading" aria-labelledby="dashboard-summary-heading-title" className="scroll-mt-24 space-y-12">
@@ -225,7 +232,7 @@ export default function VendedorPage() {
                     <TicketIconLucide className="h-5 w-5 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-primary">{vendedorManagedTickets.length}</div>
+                    <div className="text-3xl font-bold text-primary">{vendedorManagedTickets.filter(t => t.sellerUsername === currentUser?.username).length}</div>
                     <p className="text-xs text-muted-foreground">Todos os bilhetes que você já vendeu.</p>
                   </CardContent>
                 </Card>
@@ -277,7 +284,7 @@ export default function VendedorPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {sellerHistory.length > 0 ? (
+                  {myHistory.length > 0 ? (
                     <ScrollArea className="h-72 w-full rounded-md border">
                         <Table>
                           <TableCaption>Um registro do seu desempenho de vendas por ciclo.</TableCaption>
@@ -290,7 +297,7 @@ export default function VendedorPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {sellerHistory.slice().reverse().map((entry) => (
+                            {myHistory.slice().reverse().map((entry) => (
                               <TableRow key={entry.id}>
                                 <TableCell className="text-center font-medium">
                                   {format(parseISO(entry.endDate), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
@@ -423,10 +430,3 @@ export default function VendedorPage() {
       </footer>
     </div>
   );
-
-    
-
-    
-
-
-

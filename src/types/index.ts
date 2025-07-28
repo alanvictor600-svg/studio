@@ -4,8 +4,9 @@ export interface Ticket {
   numbers: number[];
   status: 'active' | 'expired' | 'winning' | 'awaiting_payment';
   createdAt: string; // ISO string for date
-  buyerName?: string;
+  buyerName?: string; // For client tickets, this is the client's username. For seller tickets, the customer's name.
   buyerPhone?: string;
+  sellerUsername?: string; // The username of the seller who created the ticket
 }
 
 export interface Draw {

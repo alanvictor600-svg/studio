@@ -149,7 +149,18 @@ export default function AdminPage() {
 
   const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
   const awaitingClientTickets = useMemo(() => clientTickets.filter(ticket => ticket.status === 'awaiting_payment'), [clientTickets]);
-  const awaitingSellerTickets = useMemo(() => vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment'), [vendedorTickets]);
+  
+  const awaitingSellerTicketsBySeller = useMemo(() => {
+    const awaiting = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
+    return awaiting.reduce((acc, ticket) => {
+      const seller = ticket.sellerUsername || 'Desconhecido';
+      if (!acc[seller]) {
+        acc[seller] = [];
+      }
+      acc[seller].push(ticket);
+      return acc;
+    }, {} as Record<string, Ticket[]>);
+  }, [vendedorTickets]);
 
   const financialReport = useMemo(() => {
     const activeClientTickets = clientTickets.filter(t => t.status === 'active');
@@ -209,6 +220,7 @@ export default function AdminPage() {
   };
   
   const captureAndSaveSellerHistory = useCallback(() => {
+    // This logic might need refinement if you want per-seller history
     const sellerTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
     const sellerTickets: Ticket[] = sellerTicketsRaw ? JSON.parse(sellerTicketsRaw) : [];
     
@@ -221,7 +233,7 @@ export default function AdminPage() {
     const commissionEarned = totalRevenueFromActiveTickets * (currentConfig.sellerCommissionPercentage / 100);
 
     const newHistoryEntry: SellerHistoryEntry = {
-      id: uuidv4(),
+      id: uuidv4(), // Or create a more meaningful ID
       endDate: new Date().toISOString(),
       activeTicketsCount: activeSellerTicketsCount,
       totalRevenue: totalRevenueFromActiveTickets,
@@ -391,22 +403,24 @@ export default function AdminPage() {
     setSelectedSellerTickets(new Set());
   };
 
-  const handleApproveAllSellerTickets = () => {
-    if (awaitingSellerTickets.length === 0) {
-      toast({ title: 'Nenhum Bilhete para Aprovar', description: 'Não há bilhetes de vendedor aguardando pagamento.', variant: 'destructive' });
+  const handleApproveAllSellerTicketsForSeller = (sellerName: string) => {
+    const ticketsToApprove = awaitingSellerTicketsBySeller[sellerName]?.map(t => t.id) || [];
+    if (ticketsToApprove.length === 0) {
+      toast({ title: 'Nenhum Bilhete para Aprovar', description: `Não há bilhetes de ${sellerName} aguardando pagamento.`, variant: 'destructive' });
       return;
     }
+    
     setVendedorTickets(prev =>
       prev.map(ticket =>
-        ticket.status === 'awaiting_payment' ? { ...ticket, status: 'active' } : ticket
+        ticketsToApprove.includes(ticket.id) ? { ...ticket, status: 'active' } : ticket
       )
     );
+    
     toast({
-      title: 'Todos os Bilhetes Aprovados!',
-      description: 'Todos os bilhetes de vendedor pendentes agora estão ativos.',
+      title: `Bilhetes de ${sellerName} Aprovados!`,
+      description: `Todos os bilhetes pendentes de ${sellerName} agora estão ativos.`,
       className: 'bg-primary text-primary-foreground',
     });
-    setSelectedSellerTickets(new Set());
   };
 
 
@@ -464,7 +478,10 @@ export default function AdminPage() {
           </section>
         );
       case 'aprovar-bilhetes':
-        const totalAwaiting = awaitingClientTickets.length + awaitingSellerTickets.length;
+        const totalAwaitingClients = awaitingClientTickets.length;
+        const totalAwaitingSellers = Object.values(awaitingSellerTicketsBySeller).flat().length;
+        const totalAwaiting = totalAwaitingClients + totalAwaitingSellers;
+
         return (
           <section aria-labelledby="approve-tickets-heading" className="space-y-12">
             <h2 id="approve-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
@@ -472,44 +489,67 @@ export default function AdminPage() {
               Aprovar Bilhetes ({totalAwaiting})
             </h2>
 
-            {/* Seller Tickets Approval */}
+            {/* Seller Tickets Approval By Seller */}
             <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold flex items-center">
                         <ShoppingCart className="mr-2 h-5 w-5 text-secondary" />
-                        Bilhetes de Vendedores ({awaitingSellerTickets.length})
+                        Bilhetes de Vendedores ({totalAwaitingSellers})
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                        Aprove os pagamentos dos bilhetes registrados por vendedores.
+                        Aprove os pagamentos dos bilhetes agrupados por vendedor.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {awaitingSellerTickets.length > 0 ? (
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button onClick={handleApproveSelectedSellerTickets} disabled={selectedSellerTickets.size === 0} className="w-full sm:w-auto">
-                            <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedSellerTickets.size})
-                        </Button>
-                        <Button onClick={handleApproveAllSellerTickets} variant="secondary" className="w-full sm:w-auto">
-                            Aprovar Todos ({awaitingSellerTickets.length})
-                        </Button>
-                      </div>
-                      <div className="space-y-4 max-h-[500px] overflow-y-auto p-2 border rounded-md">
-                        {awaitingSellerTickets.map(ticket => (
-                          <div key={ticket.id} className="flex items-center gap-4">
-                             <Checkbox
-                                id={`seller-ticket-${ticket.id}`}
-                                checked={selectedSellerTickets.has(ticket.id)}
-                                onCheckedChange={() => handleToggleSellerTicketSelection(ticket.id)}
-                                aria-label={`Selecionar bilhete ${ticket.id.substring(0,6)}`}
-                            />
-                            <div className="flex-grow">
-                              <TicketCard ticket={ticket} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                <CardContent className="space-y-6">
+                  {Object.keys(awaitingSellerTicketsBySeller).length > 0 ? (
+                    Object.entries(awaitingSellerTicketsBySeller).map(([sellerName, tickets]) => {
+                      const sellerTotalAmount = tickets.length * lotteryConfig.ticketPrice;
+                      const selectedForThisSeller = tickets.filter(t => selectedSellerTickets.has(t.id));
+
+                      return (
+                        <Card key={sellerName} className="bg-background/50 p-4">
+                           <CardHeader className="p-2 mb-4">
+                              <CardTitle className="text-lg flex justify-between items-center">
+                                <span>Vendedor: <span className="font-bold text-primary">{sellerName}</span></span>
+                                <Badge variant="secondary">{tickets.length} bilhete(s) / R$ {sellerTotalAmount.toFixed(2)}</Badge>
+                              </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-2 space-y-4">
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <Button 
+                                  onClick={handleApproveSelectedSellerTickets} 
+                                  disabled={selectedForThisSeller.length === 0}
+                                  className="w-full sm:w-auto"
+                                >
+                                    <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedForThisSeller.length})
+                                </Button>
+                                <Button 
+                                  onClick={() => handleApproveAllSellerTicketsForSeller(sellerName)} 
+                                  variant="secondary" 
+                                  className="w-full sm:w-auto"
+                                >
+                                    Aprovar Todos de {sellerName} ({tickets.length})
+                                </Button>
+                              </div>
+                              <div className="space-y-4 max-h-[400px] overflow-y-auto p-2 border rounded-md">
+                                {tickets.map(ticket => (
+                                  <div key={ticket.id} className="flex items-center gap-4">
+                                    <Checkbox
+                                        id={`seller-ticket-${ticket.id}`}
+                                        checked={selectedSellerTickets.has(ticket.id)}
+                                        onCheckedChange={() => handleToggleSellerTicketSelection(ticket.id)}
+                                        aria-label={`Selecionar bilhete ${ticket.id.substring(0,6)}`}
+                                    />
+                                    <div className="flex-grow">
+                                      <TicketCard ticket={ticket} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })
                   ) : (
                     <div className="text-center py-6 bg-background/50 rounded-lg">
                       <CheckCircle2 size={32} className="mx-auto mb-2 text-muted-foreground" />
@@ -524,7 +564,7 @@ export default function AdminPage() {
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold flex items-center">
                         <UserIcon className="mr-2 h-5 w-5 text-blue-500" />
-                        Bilhetes de Clientes ({awaitingClientTickets.length})
+                        Bilhetes de Clientes ({totalAwaitingClients})
                     </CardTitle>
                      <CardDescription className="text-muted-foreground">
                         Aprove os pagamentos dos bilhetes gerados por clientes.
