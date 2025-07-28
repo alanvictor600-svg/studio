@@ -4,19 +4,19 @@
 import type { FC } from 'react';
 import { useMemo } from 'react';
 import type { Ticket, Draw } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { calculateTicketMatches } from '@/lib/lottery-utils';
 import { Trophy, User, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TopTicketsProps {
   tickets: Ticket[];
   draws: Draw[];
-  count?: number;
 }
 
-export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws, count = 5 }) => {
+export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
   const rankedTickets = useMemo(() => {
     if (!tickets || !draws || draws.length === 0) {
       return [];
@@ -38,8 +38,8 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws, count = 5 }) =
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-    return sortedTickets.slice(0, count);
-  }, [tickets, draws, count]);
+    return sortedTickets;
+  }, [tickets, draws]);
 
   if (rankedTickets.length === 0) {
     return (
@@ -60,39 +60,40 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws, count = 5 }) =
     return 'bg-muted text-muted-foreground';
   };
 
-
   return (
     <Card className="h-full">
-      <CardContent className="p-4 space-y-3">
-        <ul className="space-y-3">
-          {rankedTickets.map((ticket, index) => {
-            const isClientTicket = !ticket.sellerUsername;
-            return (
-              <li key={ticket.id} className="flex items-center gap-4 p-3 rounded-lg bg-background/70 shadow-sm">
-                <div className={cn("flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center font-bold", getRankColor(index))}>
-                    {index + 1}
-                </div>
-                <div className="flex-grow min-w-0">
-                   <div className="flex items-center gap-2">
-                     {isClientTicket 
-                        ? <User className="h-4 w-4 text-blue-500 flex-shrink-0" title="Cliente" /> 
-                        : <ShoppingCart className="h-4 w-4 text-orange-500 flex-shrink-0" title="Vendedor" />
-                     }
-                     <p className="font-semibold truncate text-foreground text-sm">
-                        {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
-                     </p>
-                   </div>
-                   <p className="text-xs text-muted-foreground truncate">
-                    ID: #{ticket.id.substring(0,6)}
-                   </p>
-                </div>
-                <Badge variant="secondary" className="text-base font-bold py-1 px-3">
-                  {ticket.matches} Acerto{ticket.matches !== 1 ? 's' : ''}
-                </Badge>
-              </li>
-            )
-          })}
-        </ul>
+      <CardContent className="p-0">
+        <ScrollArea className="h-80 rounded-md">
+            <ul className="p-4 space-y-3">
+            {rankedTickets.map((ticket, index) => {
+                const isClientTicket = !ticket.sellerUsername;
+                return (
+                <li key={ticket.id} className="flex items-center gap-4 p-3 rounded-lg bg-background/70 shadow-sm">
+                    <div className={cn("flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center font-bold", getRankColor(index))}>
+                        {index + 1}
+                    </div>
+                    <div className="flex-grow min-w-0">
+                    <div className="flex items-center gap-2">
+                        {isClientTicket 
+                            ? <User className="h-4 w-4 text-blue-500 flex-shrink-0" title="Cliente" /> 
+                            : <ShoppingCart className="h-4 w-4 text-orange-500 flex-shrink-0" title="Vendedor" />
+                        }
+                        <p className="font-semibold truncate text-foreground text-sm">
+                            {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
+                        </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                        ID: #{ticket.id.substring(0,6)}
+                    </p>
+                    </div>
+                    <Badge variant="secondary" className="text-base font-bold py-1 px-3">
+                    {ticket.matches} Acerto{ticket.matches !== 1 ? 's' : ''}
+                    </Badge>
+                </li>
+                )
+            })}
+            </ul>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

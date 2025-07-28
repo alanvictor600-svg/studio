@@ -109,9 +109,9 @@ export default function LandingPage() {
             </div>
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-primary text-center mb-4 flex items-center justify-center">
-                  <Award className="mr-3 h-6 w-6" /> Top 5 Bilhetes
+                  <Award className="mr-3 h-6 w-6" /> Placar de Acertos
               </h2>
-              <TopTickets tickets={allTickets} draws={draws} count={5} />
+              <TopTickets tickets={allTickets} draws={draws} />
             </div>
          </section>
       )}
