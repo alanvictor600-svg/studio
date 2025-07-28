@@ -152,8 +152,6 @@ export default function AdminPage() {
   const allSystemTickets = useMemo(() => [...clientTickets, ...vendedorTickets], [clientTickets, vendedorTickets]);
 
   const winningTickets = useMemo(() => allSystemTickets.filter(ticket => ticket.status === 'winning'), [allSystemTickets]);
-  const awaitingClientTickets = clientTickets.filter(ticket => ticket.status === 'awaiting_payment');
-  const awaitingSellerTickets = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
 
   const financialReport = useMemo(() => {
     const activeClientTickets = clientTickets.filter(t => t.status === 'active');
@@ -213,7 +211,6 @@ export default function AdminPage() {
   };
   
   const captureAndSaveSellerHistory = useCallback(() => {
-    // This logic might need refinement if you want per-seller history
     const sellerTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
     const sellerTickets: Ticket[] = sellerTicketsRaw ? JSON.parse(sellerTicketsRaw) : [];
     
@@ -326,32 +323,26 @@ export default function AdminPage() {
     const oldUsername = oldUser.username;
     const newUsername = updatedUser.username;
 
-    // Check if new username is taken by someone else
     const isUsernameTaken = allUsers.some(u => u.username === newUsername && u.id !== updatedUser.id);
     if (isUsernameTaken) {
         toast({ title: "Erro ao Salvar", description: `O nome de usuário "${newUsername}" já está em uso.`, variant: "destructive" });
         return;
     }
     
-    // Update the user in the main users list
     setAllUsers(prevUsers => prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u)));
 
-    // If username changed, update all related data
     if (oldUsername !== newUsername) {
-        // Update seller tickets
         setVendedorTickets(prevTickets => 
             prevTickets.map(ticket => 
                 ticket.sellerUsername === oldUsername ? { ...ticket, sellerUsername: newUsername } : ticket
             )
         );
-        // Update client tickets
         setClientTickets(prevTickets => 
             prevTickets.map(ticket => 
                 ticket.buyerName === oldUsername ? { ...ticket, buyerName: newUsername } : ticket
             )
         );
         
-        // Update current user session if the edited user is the one logged in
         const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
         if (loggedInUserRaw && loggedInUserRaw === oldUsername) {
             localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, newUsername);
@@ -372,7 +363,6 @@ export default function AdminPage() {
     if (!userToDelete) return;
     
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-     // Corrected check: Compare usernames directly
     if (loggedInUserRaw && loggedInUserRaw === userToDelete.username) {
         toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
         setIsDeleteConfirmOpen(false);
@@ -505,10 +495,12 @@ export default function AdminPage() {
   const renderSectionContent = () => {
     switch (activeSection) {
       case 'aprovar-bilhetes':
+        const awaitingClientTickets = clientTickets.filter(ticket => ticket.status === 'awaiting_payment');
+        const awaitingSellerTickets = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
+        
         const totalAwaitingClients = awaitingClientTickets.length;
         const totalAwaitingSellers = awaitingSellerTickets.length;
         
-        // Group client tickets by buyer name
         const awaitingClientTicketsByBuyer = awaitingClientTickets.reduce((acc, ticket) => {
           const buyerName = ticket.buyerName || 'Desconhecido';
           if (!acc[buyerName]) {
@@ -518,7 +510,6 @@ export default function AdminPage() {
           return acc;
         }, {} as Record<string, Ticket[]>);
 
-        // Group seller tickets by seller name
         const awaitingSellerTicketsBySeller = awaitingSellerTickets.reduce((acc, ticket) => {
           const seller = ticket.sellerUsername || 'Desconhecido';
           if (!acc[seller]) {
@@ -528,7 +519,6 @@ export default function AdminPage() {
           return acc;
         }, {} as Record<string, Ticket[]>);
 
-        // Filtered data for search functionality
         const filteredClients = Object.fromEntries(
           Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
             buyerName.toLowerCase().includes(clientSearchTerm.toLowerCase())

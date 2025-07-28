@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
+    // NOTE: This is plain text comparison. In a real app, use a hashing library like bcrypt.
     if (userToLogin.passwordHash === passwordAttempt) { 
       setCurrentUser(userToLogin);
       localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, userToLogin.username);
@@ -102,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const newUser: User = {
       id: uuidv4(),
       username,
-      passwordHash: passwordRaw,
+      passwordHash: passwordRaw, // Storing plain text for prototype simplicity
       role,
       createdAt: new Date().toISOString(),
     };
@@ -129,6 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = { currentUser, login, logout, register, isLoading, isAuthenticated };
 
+  // This prevents rendering children until the auth state is determined,
+  // avoiding flashes of incorrect content.
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">

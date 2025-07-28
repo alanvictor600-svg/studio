@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 interface UserEditDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  user: User;
+  user: User | null;
   onSave: (updatedUser: User) => void;
   onClose: () => void;
 }
@@ -33,18 +33,22 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
   onSave,
   onClose,
 }) => {
-  const [username, setUsername] = useState(user.username);
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'cliente' | 'vendedor'>(user.role);
+  const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
       setUsername(user.username);
       setRole(user.role);
       setPassword(''); // Reset password field on open
     }
   }, [isOpen, user]);
+
+  if (!user) {
+    return null;
+  }
 
   const handleSave = () => {
     if (!username.trim()) {
@@ -135,5 +139,3 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
     </Dialog>
   );
 };
-
-    
