@@ -135,7 +135,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                                 ))}
                             </div>
                         </div>
-                        <p className="absolute bottom-2 left-3 text-xs text-muted-foreground/70">
+                        <p className="absolute bottom-2 right-3 text-xs text-muted-foreground/70">
                             ID: #{ticket.id.substring(0,6)}
                         </p>
                     </li>
