@@ -6,7 +6,7 @@ import type { Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, Hash, Star } from 'lucide-react';
+import { CalendarDays, Hash, Clover } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminDrawCardProps {
@@ -21,7 +21,7 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-white/10 rounded-full blur-3xl animate-pulse delay-500"></div>
 
       <CardHeader className="pb-4 relative z-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-y-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-2">
             <CardTitle className="text-lg flex items-center font-bold">
                 <Hash className="mr-2 h-5 w-5 shrink-0" />
                 <span className="truncate">
@@ -34,8 +34,8 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
             </div>
         </div>
         {draw.name && (
-            <CardDescription className="text-base font-semibold text-primary-foreground mt-2 flex items-center pt-2 border-t border-primary-foreground/20">
-                <Star size={16} className="mr-2 shrink-0 text-yellow-300" />
+            <CardDescription className="text-base font-semibold text-primary-foreground mt-2 flex items-center justify-center text-center pt-2 border-t border-primary-foreground/20">
+                <Clover size={16} className="mr-2 shrink-0 text-green-300" />
                 <span>{draw.name}</span>
             </CardDescription>
         )}
@@ -54,7 +54,7 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
                   "transform transition-transform hover:scale-110"
                 )}
               >
-                 <Star className="absolute h-full w-full text-yellow-300/20 animate-[spin_15s_linear_infinite]" />
+                 <Clover className="absolute h-full w-full text-green-300/20 animate-[spin_15s_linear_infinite]" />
                  <span className="z-10">{num}</span>
               </div>
             ))}
