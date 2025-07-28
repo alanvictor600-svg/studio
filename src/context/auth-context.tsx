@@ -60,32 +60,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userToLogin = users.find(u => u.username === username);
     
     if (!userToLogin) {
-      toast({ title: "Erro de Login", description: "Usuário não encontrado.", variant: "destructive" });
+      setTimeout(() => {
+        toast({ title: "Erro de Login", description: "Usuário não encontrado.", variant: "destructive" });
+      }, 0);
       return false;
     }
     
     if (expectedRole && userToLogin.role !== expectedRole) {
-      toast({ title: "Acesso Negado", description: `Esta conta é de ${userToLogin.role}. Use o portal correto.`, variant: "destructive" });
+       setTimeout(() => {
+        toast({ title: "Acesso Negado", description: `Esta conta é de ${userToLogin.role}. Use o portal correto.`, variant: "destructive" });
+      }, 0);
       return false;
     }
 
     if (userToLogin.passwordHash === passwordAttempt) { 
       setCurrentUser(userToLogin);
       localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, userToLogin.username);
-      toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground" });
+      setTimeout(() => {
+        toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground" });
+      }, 0);
       
       const redirectPath = userToLogin.role === 'cliente' ? '/cliente' : '/vendedor';
       router.push(redirectPath);
       return true;
     } else {
-      toast({ title: "Erro de Login", description: "Senha incorreta.", variant: "destructive" });
+      setTimeout(() => {
+        toast({ title: "Erro de Login", description: "Senha incorreta.", variant: "destructive" });
+      }, 0);
       return false;
     }
   }, [users, router, toast]);
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
     if (users.some(u => u.username === username)) {
-      toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
+      setTimeout(() => {
+        toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
+      }, 0);
       return false;
     }
 
@@ -98,8 +108,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setUsers(prevUsers => [...prevUsers, newUser]);
-
-    toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground" });
+    
+    setTimeout(() => {
+      toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground" });
+    }, 0);
     router.push('/login');
     return true;
   }, [users, router, toast]);
@@ -107,7 +119,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    toast({ title: "Logout realizado", description: "Até logo!" });
+    setTimeout(() => {
+      toast({ title: "Logout realizado", description: "Até logo!" });
+    }, 0);
     router.push('/');
   }, [router, toast]);
 
@@ -115,7 +129,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = { currentUser, login, logout, register, isLoading, isAuthenticated };
 
-  // Render children only after client-side hydration and loading is complete
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -138,5 +151,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
