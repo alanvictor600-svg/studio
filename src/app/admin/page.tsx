@@ -53,7 +53,7 @@ const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] 
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
   { id: 'relatorios', label: 'Relatórios', Icon: PieChart },
-  { id: 'historico-sorteios', label: 'Histórico Sorteios', Icon: History },
+  { id: 'historico-sorteios', label: 'Resultados', Icon: History },
   { id: 'bilhetes-premiados', label: 'Bilhetes Premiados', Icon: Trophy },
 ];
 
@@ -1066,7 +1066,7 @@ export default function AdminPage() {
           <section aria-labelledby="draw-history-heading">
             <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <History className="mr-3 h-8 w-8 text-primary" />
-              Histórico de Sorteios
+              Resultados dos Sorteios
             </h2>
             <AdminDrawList draws={draws} />
           </section>
@@ -1200,3 +1200,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
