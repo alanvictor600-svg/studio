@@ -110,7 +110,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                                         ? <User className="h-4 w-4 text-blue-500 flex-shrink-0" title="Cliente" /> 
                                         : <ShoppingCart className="h-4 w-4 text-orange-500 flex-shrink-0" title="Vendedor" />
                                     }
-                                    <p className="font-semibold truncate text-foreground text-sm">
+                                    <p className="font-semibold truncate text-foreground text-base">
                                         {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
                                     </p>
                                 </div>
