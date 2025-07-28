@@ -64,13 +64,6 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
     );
   }
 
-  const getRankColor = (rank: number) => {
-    if (rank === 0) return 'bg-yellow-400 text-yellow-900';
-    if (rank === 1) return 'bg-gray-300 text-gray-800';
-    if (rank === 2) return 'bg-yellow-600/70 text-yellow-100';
-    return 'bg-muted text-muted-foreground';
-  };
-
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="p-4 border-b">
@@ -88,32 +81,42 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
         <ScrollArea className="h-80 rounded-md">
             {filteredTickets.length > 0 ? (
                 <ul className="p-4 space-y-3">
-                {filteredTickets.map((ticket, index) => {
+                {filteredTickets.map((ticket) => {
                     const isClientTicket = !ticket.sellerUsername;
-                    // Use the original index from the main ranked list for coloring
-                    const originalIndex = rankedTickets.findIndex(t => t.id === ticket.id);
                     return (
-                    <li key={ticket.id} className="flex items-center gap-4 p-3 rounded-lg bg-background/70 shadow-sm">
-                        <div className={cn("flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center font-bold", getRankColor(originalIndex))}>
-                            {originalIndex + 1}
+                    <li key={ticket.id} className="p-3 rounded-lg bg-background/70 shadow-sm border">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-grow min-w-0">
+                                <div className="flex items-center gap-2">
+                                    {isClientTicket 
+                                        ? <User className="h-4 w-4 text-blue-500 flex-shrink-0" title="Cliente" /> 
+                                        : <ShoppingCart className="h-4 w-4 text-orange-500 flex-shrink-0" title="Vendedor" />
+                                    }
+                                    <p className="font-semibold truncate text-foreground text-sm">
+                                        {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
+                                    </p>
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    ID: #{ticket.id.substring(0,6)}
+                                </p>
+                            </div>
+                            <Badge variant="secondary" className="text-base font-bold py-1 px-3">
+                            {ticket.matches} Acerto{ticket.matches !== 1 ? 's' : ''}
+                            </Badge>
                         </div>
-                        <div className="flex-grow min-w-0">
-                        <div className="flex items-center gap-2">
-                            {isClientTicket 
-                                ? <User className="h-4 w-4 text-blue-500 flex-shrink-0" title="Cliente" /> 
-                                : <ShoppingCart className="h-4 w-4 text-orange-500 flex-shrink-0" title="Vendedor" />
-                            }
-                            <p className="font-semibold truncate text-foreground text-sm">
-                                {ticket.buyerName || `Venda de ${ticket.sellerUsername}`}
-                            </p>
+                        <div className="mt-3">
+                            <div className="flex flex-wrap gap-1.5">
+                                {ticket.numbers.map((num, index) => (
+                                <Badge
+                                    key={`${ticket.id}-num-${index}`}
+                                    variant="outline"
+                                    className="font-mono text-xs"
+                                >
+                                    {num}
+                                </Badge>
+                                ))}
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                            ID: #{ticket.id.substring(0,6)}
-                        </p>
-                        </div>
-                        <Badge variant="secondary" className="text-base font-bold py-1 px-3">
-                        {ticket.matches} Acerto{ticket.matches !== 1 ? 's' : ''}
-                        </Badge>
                     </li>
                     )
                 })}
