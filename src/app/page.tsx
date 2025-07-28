@@ -80,7 +80,7 @@ export default function LandingPage() {
        <div className="fixed top-6 left-6 z-50">
         <Popover>
           <PopoverTrigger asChild>
-              <Button size="lg" className="shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-transform duration-200">
+              <Button>
                 <LogIn className="mr-2 h-5 w-5" /> Entrar na sua conta
               </Button>
           </PopoverTrigger>
