@@ -197,6 +197,11 @@ export default function AdminPage() {
       toast({ title: "Erro de Validação", description: "O sorteio deve conter exatamente 5 números.", variant: "destructive" });
       return;
     }
+
+    // Invalidate pending tickets
+    const updatedClientTickets = clientTickets.map(t => t.status === 'awaiting_payment' ? { ...t, status: 'unpaid' } : t);
+    const updatedVendedorTickets = vendedorTickets.map(t => t.status === 'awaiting_payment' ? { ...t, status: 'unpaid' } : t);
+    
     const newDraw: Draw = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
@@ -205,9 +210,12 @@ export default function AdminPage() {
     };
     const updatedDraws = [newDraw, ...draws];
     setDraws(updatedDraws);
-    setClientTickets(updateTicketStatusesBasedOnDraws(clientTickets, updatedDraws));
-    setVendedorTickets(updateTicketStatusesBasedOnDraws(vendedorTickets, updatedDraws));
-    toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado com sucesso.", className: "bg-primary text-primary-foreground" });
+
+    // Update ticket statuses based on the new draw, using the already updated ticket lists
+    setClientTickets(updateTicketStatusesBasedOnDraws(updatedClientTickets, updatedDraws));
+    setVendedorTickets(updateTicketStatusesBasedOnDraws(updatedVendedorTickets, updatedDraws));
+    
+    toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes pendentes foram invalidados.", className: "bg-primary text-primary-foreground" });
   };
   
   const captureAndSaveSellerHistory = useCallback(() => {
@@ -265,7 +273,7 @@ export default function AdminPage() {
   
     setDraws([]);
     
-    const expireStatuses: Ticket['status'][] = ['active', 'winning', 'awaiting_payment'];
+    const expireStatuses: Ticket['status'][] = ['active', 'winning', 'awaiting_payment', 'unpaid'];
     setClientTickets(prev => prev.map(t => expireStatuses.includes(t.status) ? { ...t, status: 'expired' } : t));
     setVendedorTickets(prev => prev.map(t => expireStatuses.includes(t.status) ? { ...t, status: 'expired' } : t));
 
@@ -1200,5 +1208,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     

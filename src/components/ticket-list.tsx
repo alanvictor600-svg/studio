@@ -5,7 +5,7 @@ import { useState, type FC } from 'react';
 import type { Ticket, Draw } from '@/types'; // Import Draw
 import { TicketCard } from '@/components/ticket-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { List, PlayCircle, Trophy, Clock3, Clock } from 'lucide-react';
+import { List, PlayCircle, Trophy, Clock, Ban } from 'lucide-react';
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -13,30 +13,41 @@ interface TicketListProps {
 }
 
 export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'expired' | 'awaiting_payment'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'invalid' | 'awaiting_payment'>('all');
 
   const filteredTickets = tickets.filter(ticket => {
     if (activeTab === 'all') return true;
+    if (activeTab === 'invalid') return ticket.status === 'expired' || ticket.status === 'unpaid';
     return ticket.status === activeTab;
   });
+
+  const getCount = (status: typeof activeTab) => {
+    if (status === 'all') return tickets.length;
+    if (status === 'invalid') return tickets.filter(t => t.status === 'expired' || t.status === 'unpaid').length;
+    return tickets.filter(t => t.status === status).length;
+  }
 
   const tabItems = [
     { value: 'all', label: 'Todos', Icon: List },
     { value: 'awaiting_payment', label: 'Aguardando', Icon: Clock },
     { value: 'active', label: 'Ativos', Icon: PlayCircle },
     { value: 'winning', label: 'Premiados', Icon: Trophy },
-    { value: 'expired', label: 'Expirados', Icon: Clock3 },
+    { value: 'invalid', label: 'Inválidos', Icon: Ban },
   ];
 
   return (
     <div>
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full mb-6">
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
-          {tabItems.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
-              <tab.Icon className="mr-2 h-4 w-4" /> {tab.label} ({ tab.value === 'all' ? tickets.length : tickets.filter(t => t.status === tab.value).length })
-            </TabsTrigger>
-          ))}
+          {tabItems.map(tab => {
+            const count = getCount(tab.value as typeof activeTab);
+            if(count === 0 && tab.value !== 'all') return null;
+            return (
+              <TabsTrigger key={tab.value} value={tab.value} className="py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
+                <tab.Icon className="mr-2 h-4 w-4" /> {tab.label} ({count})
+              </TabsTrigger>
+            )
+          })}
         </TabsList>
       </Tabs>
 
@@ -58,3 +69,5 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
     </div>
   );
 };
+
+    

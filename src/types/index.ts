@@ -2,7 +2,7 @@
 export interface Ticket {
   id: string;
   numbers: number[];
-  status: 'active' | 'expired' | 'winning' | 'awaiting_payment';
+  status: 'active' | 'expired' | 'winning' | 'awaiting_payment' | 'unpaid';
   createdAt: string; // ISO string for date
   buyerName?: string; // For client tickets, this is the client's username. For seller tickets, the customer's name.
   buyerPhone?: string;
@@ -49,3 +49,5 @@ export interface AdminHistoryEntry {
   clientTicketCount: number;
   sellerTicketCount: number;
 }
+
+    

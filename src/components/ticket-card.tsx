@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Award, CircleDot, TimerOff, CalendarDays, User, Phone, Clock } from 'lucide-react';
+import { Award, CircleDot, TimerOff, CalendarDays, User, Phone, Clock, Ban } from 'lucide-react';
 
 
 interface TicketCardProps {
@@ -35,6 +35,14 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
           borderColor: 'border-orange-500',
           Icon: Clock,
           label: 'Aguardando Pagamento',
+        };
+       case 'unpaid':
+        return {
+          bgColor: 'bg-red-200',
+          textColor: 'text-red-900',
+          borderColor: 'border-red-400',
+          Icon: Ban,
+          label: 'Não Pago',
         };
       case 'expired':
         return {
@@ -151,3 +159,5 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
     </Card>
   );
 };
+
+    
