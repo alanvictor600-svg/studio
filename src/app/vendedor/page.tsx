@@ -193,14 +193,7 @@ export default function VendedorPage() {
             <h2 id="seller-draw-history-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <History className="mr-3 h-8 w-8 text-primary" /> Histórico de Sorteios
             </h2>
-            {draws.length > 0 ? (
-              <AdminDrawList draws={draws} />
-            ) : (
-               <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                  <ClipboardList size={48} className="mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground text-lg">Nenhum sorteio cadastrado ainda.</p>
-               </div>
-            )}
+            <AdminDrawList draws={draws} />
           </section>
         );
       case 'relatorios':
@@ -430,3 +423,5 @@ export default function VendedorPage() {
       </footer>
     </div>
   );
+
+    
