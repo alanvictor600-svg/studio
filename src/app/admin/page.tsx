@@ -271,7 +271,7 @@ export default function AdminPage() {
 
     toast({
       title: "Nova Loteria Iniciada!",
-      description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
+      description: "Sorteios e bilhetes ativos/premiados/pendentes foram resetados/expirados.",
       className: "bg-primary text-primary-foreground",
     });
     setStartLotteryPassword('');
@@ -344,8 +344,11 @@ export default function AdminPage() {
         );
         
         const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-        if (loggedInUserRaw && loggedInUserRaw === oldUsername) {
-            localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, newUsername);
+        if (loggedInUserRaw) {
+            const loggedInUser = JSON.parse(loggedInUserRaw);
+            if (loggedInUser.username === oldUsername) {
+                localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify({ ...loggedInUser, username: newUsername }));
+            }
         }
     }
 
@@ -363,22 +366,23 @@ export default function AdminPage() {
     if (!userToDelete) return;
 
     const loggedInUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    const currentUser = loggedInUserRaw ? JSON.parse(loggedInUserRaw) : null;
-    
-    if (currentUser && currentUser.username === userToDelete.username) {
-        toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
-        setIsDeleteConfirmOpen(false);
-        setUserToDelete(null);
-        return;
+    if (loggedInUserRaw) {
+      const currentUser = JSON.parse(loggedInUserRaw);
+      if (currentUser && currentUser.username === userToDelete.username) {
+          toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
+          setIsDeleteConfirmOpen(false);
+          setUserToDelete(null);
+          return;
+      }
     }
-
+    
     // Remove tickets associated with the user
     if (userToDelete.role === 'vendedor') {
       setVendedorTickets(prev => prev.filter(ticket => ticket.sellerUsername !== userToDelete.username));
     }
-    if (userToDelete.role === 'cliente') {
-      setClientTickets(prev => prev.filter(ticket => ticket.buyerName !== userToDelete.username));
-    }
+    // For clients, buyerName is their username
+    setClientTickets(prev => prev.filter(ticket => ticket.buyerName !== userToDelete.username));
+    
 
     // Remove the user
     setAllUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete.id));
@@ -507,37 +511,30 @@ export default function AdminPage() {
 
   const renderSectionContent = () => {
     switch (activeSection) {
-      case 'aprovar-bilhetes':
+      case 'aprovar-bilhetes': {
         const awaitingClientTickets = clientTickets.filter(ticket => ticket.status === 'awaiting_payment');
         const awaitingSellerTickets = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
         
         const totalAwaitingClients = awaitingClientTickets.length;
         const totalAwaitingSellers = awaitingSellerTickets.length;
         
-        let awaitingClientTicketsByBuyer = {};
-        if (isClient) {
-            awaitingClientTicketsByBuyer = awaitingClientTickets.reduce((acc, ticket) => {
-              const buyerName = ticket.buyerName || 'Desconhecido';
-              if (!acc[buyerName]) {
-                acc[buyerName] = [];
-              }
-              acc[buyerName].push(ticket);
-              return acc;
-            }, {} as Record<string, Ticket[]>);
-        }
-
-
-        let awaitingSellerTicketsBySeller = {};
-        if (isClient) {
-            awaitingSellerTicketsBySeller = awaitingSellerTickets.reduce((acc, ticket) => {
-              const seller = ticket.sellerUsername || 'Desconhecido';
-              if (!acc[seller]) {
-                acc[seller] = [];
-              }
-              acc[seller].push(ticket);
-              return acc;
-            }, {} as Record<string, Ticket[]>);
-        }
+        const awaitingClientTicketsByBuyer = awaitingClientTickets.reduce((acc, ticket) => {
+          const buyerName = ticket.buyerName || 'Desconhecido';
+          if (!acc[buyerName]) {
+            acc[buyerName] = [];
+          }
+          acc[buyerName].push(ticket);
+          return acc;
+        }, {} as Record<string, Ticket[]>);
+        
+        const awaitingSellerTicketsBySeller = awaitingSellerTickets.reduce((acc, ticket) => {
+          const seller = ticket.sellerUsername || 'Desconhecido';
+          if (!acc[seller]) {
+            acc[seller] = [];
+          }
+          acc[seller].push(ticket);
+          return acc;
+        }, {} as Record<string, Ticket[]>);
 
         const filteredClients = Object.fromEntries(
           Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
@@ -730,6 +727,7 @@ export default function AdminPage() {
             </Tabs>
           </section>
         );
+      }
       case 'configuracoes':
         return (
           <section aria-labelledby="lottery-settings-heading">
@@ -916,7 +914,7 @@ export default function AdminPage() {
                         Confirmar Nova Loteria?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação irá salvar um resumo do ciclo de vendas atual do vendedor, limpar todos os sorteios existentes e marcar todos os bilhetes ativos e premiados como expirados. Esta ação não pode ser desfeita.
+                        Esta ação irá salvar um resumo do ciclo de vendas atual, limpar todos os sorteios existentes e marcar todos os bilhetes ativos, premiados e aguardando pagamento como 'expirados'. Esta ação não pode ser desfeita.
                         <br/><br/>
                         <span className="font-bold text-foreground">Digite a senha de controle para confirmar.</span>
                       </AlertDialogDescription>
