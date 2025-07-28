@@ -5,7 +5,7 @@ import type { FC } from 'react';
 import { useMemo, useState } from 'react';
 import type { Ticket, Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { calculateTicketMatches } from '@/lib/lottery-utils';
+import { calculateTicketMatches, countOccurrences } from '@/lib/lottery-utils';
 import { Trophy, User, ShoppingCart, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -52,6 +52,13 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
     });
   }, [rankedTickets, searchTerm]);
 
+  const drawnNumbersFrequency = useMemo(() => {
+    if (!draws || draws.length === 0) {
+      return {} as Record<number, number>;
+    }
+    return countOccurrences(draws.flatMap(draw => draw.numbers));
+  }, [draws]);
+
   if (rankedTickets.length === 0) {
     return (
       <Card className="h-full">
@@ -83,6 +90,17 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                 <ul className="p-4 space-y-3">
                 {filteredTickets.map((ticket) => {
                     const isClientTicket = !ticket.sellerUsername;
+                    
+                    const tempDrawnFrequency = { ...drawnNumbersFrequency };
+                    const processedTicketNumbers = ticket.numbers.map(num => {
+                      let isMatchedInstance = false;
+                      if (tempDrawnFrequency[num] && tempDrawnFrequency[num] > 0) {
+                        isMatchedInstance = true;
+                        tempDrawnFrequency[num]--;
+                      }
+                      return { numberValue: num, isMatched: isMatchedInstance };
+                    });
+
                     return (
                     <li key={ticket.id} className="p-3 rounded-lg bg-background/70 shadow-sm border">
                         <div className="flex items-start gap-4">
@@ -106,13 +124,16 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
                         </div>
                         <div className="mt-3">
                             <div className="flex flex-wrap gap-1.5">
-                                {ticket.numbers.map((num, index) => (
+                                {processedTicketNumbers.map(({ numberValue, isMatched }, index) => (
                                 <Badge
                                     key={`${ticket.id}-num-${index}`}
                                     variant="outline"
-                                    className="font-mono text-xs"
+                                    className={cn(
+                                        "font-mono text-xs",
+                                        isMatched ? "bg-green-500 text-white border-green-600 ring-2 ring-yellow-400" : "bg-muted/50 text-muted-foreground"
+                                    )}
                                 >
-                                    {num}
+                                    {numberValue}
                                 </Badge>
                                 ))}
                             </div>
