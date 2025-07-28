@@ -30,8 +30,6 @@ export default function LandingPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // This effect should run once on mount to get data from localStorage
-    // regardless of the authentication status.
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
     if (storedDraws) {
       setDraws(JSON.parse(storedDraws));
@@ -68,8 +66,18 @@ export default function LandingPage() {
   };
 
 
-  if (!isClient || isLoading) {
+  if (!isClient) {
     return (
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <p className="text-foreground text-xl">Carregando Bolão Potiguar...</p>
+      </div>
+    );
+  }
+  
+  if (isLoading) {
+    // Show a loading state but don't block the initial render for non-auth data.
+    // This part can be enhanced with a better skeleton loader.
+     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Bolão Potiguar...</p>
       </div>
@@ -99,26 +107,25 @@ export default function LandingPage() {
         </div>
         <p className="text-lg text-muted-foreground mt-2">Sua sorte começa aqui!</p> 
       </header>
-      
-      {draws.length > 0 && (
-         <section className="w-full max-w-3xl mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-4">
+
+      <main className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8">
+        {draws.length > 0 && (
+          <>
+            <div className="md:col-span-1 space-y-4">
                <h2 className="text-2xl font-bold text-primary text-center mb-4 flex items-center justify-center">
                   <History className="mr-3 h-6 w-6" /> Último Sorteio
                </h2>
                <AdminDrawCard draw={draws[0]} />
             </div>
-            <div className="space-y-4">
+            <div className="md:col-span-1 space-y-4">
               <h2 className="text-2xl font-bold text-primary text-center mb-4 flex items-center justify-center">
                   <Award className="mr-3 h-6 w-6" /> Placar de Acertos
               </h2>
               <TopTickets tickets={allTickets} draws={draws} />
             </div>
-         </section>
-      )}
-
-
-      <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-8">
+          </>
+        )}
+        
         {/* Cliente Card */}
         <Card className="text-center h-full flex flex-col justify-between shadow-xl hover:shadow-2xl bg-card/90 backdrop-blur-sm border-primary/50 transform hover:scale-105 transition-transform duration-300">
           <CardHeader>
