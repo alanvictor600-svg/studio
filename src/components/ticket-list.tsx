@@ -5,7 +5,7 @@ import { useState, type FC } from 'react';
 import type { Ticket, Draw } from '@/types'; // Import Draw
 import { TicketCard } from '@/components/ticket-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { List, PlayCircle, Trophy, Clock, Ban } from 'lucide-react';
+import { List, PlayCircle, Trophy, Clock, Ban, TimerOff } from 'lucide-react';
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -13,17 +13,17 @@ interface TicketListProps {
 }
 
 export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'invalid' | 'awaiting_payment'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'expired' | 'awaiting_payment'>('all');
 
   const filteredTickets = tickets.filter(ticket => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'invalid') return ticket.status === 'expired' || ticket.status === 'unpaid';
+    if (activeTab === 'expired') return ticket.status === 'expired' || ticket.status === 'unpaid';
     return ticket.status === activeTab;
   });
 
   const getCount = (status: typeof activeTab) => {
     if (status === 'all') return tickets.length;
-    if (status === 'invalid') return tickets.filter(t => t.status === 'expired' || t.status === 'unpaid').length;
+    if (status === 'expired') return tickets.filter(t => t.status === 'expired' || t.status === 'unpaid').length;
     return tickets.filter(t => t.status === status).length;
   }
 
@@ -32,7 +32,7 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
     { value: 'awaiting_payment', label: 'Aguardando', Icon: Clock },
     { value: 'active', label: 'Ativos', Icon: PlayCircle },
     { value: 'winning', label: 'Premiados', Icon: Trophy },
-    { value: 'invalid', label: 'Inválidos', Icon: Ban },
+    { value: 'expired', label: 'Expirados', Icon: TimerOff },
   ];
 
   return (
@@ -69,5 +69,3 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
     </div>
   );
 };
-
-    
