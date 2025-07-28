@@ -45,10 +45,9 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   clientSalesCommissionToOwnerPercentage: 10,
 };
 
-type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'gerenciar-contas' | 'relatorios' | 'aprovar-bilhetes';
+type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios' | 'aprovar-bilhetes';
 
 const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] = [
-  { id: 'gerenciar-contas', label: 'Gerenciar Contas', Icon: Users },
   { id: 'aprovar-bilhetes', label: 'Aprovar Bilhetes', Icon: CheckCircle2 },
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
@@ -73,7 +72,7 @@ export default function AdminPage() {
   const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState('');
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
-  const [activeSection, setActiveSection] = useState<AdminSection>('gerenciar-contas');
+  const [activeSection, setActiveSection] = useState<AdminSection>('aprovar-bilhetes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -491,42 +490,6 @@ export default function AdminPage() {
 
   const renderSectionContent = () => {
     switch (activeSection) {
-      case 'gerenciar-contas':
-        return (
-          <section aria-labelledby="user-management-heading">
-            <h2 id="user-management-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-                <Users className="mr-3 h-8 w-8 text-primary" />
-                Gerenciar Contas de Usuários
-            </h2>
-            <div className="space-y-4">
-              {allUsers.length > 0 ? allUsers.map(user => (
-                <Card key={user.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card/80 backdrop-blur-sm shadow-md">
-                   <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                     <Avatar>
-                        <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
-                     </Avatar>
-                     <div className="flex-grow">
-                        <p className="font-semibold text-foreground">{user.username}</p>
-                        <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
-                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </Badge>
-                     </div>
-                   </div>
-                   <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleOpenEditUser(user)}>
-                            <Edit className="mr-2 h-4 w-4"/> Editar
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleConfirmDeleteUser(user)}>
-                            <Trash2 className="mr-2 h-4 w-4"/> Excluir
-                        </Button>
-                   </div>
-                </Card>
-              )) : (
-                <p className="text-center text-muted-foreground py-10">Nenhum usuário registrado.</p>
-              )}
-            </div>
-          </section>
-        );
       case 'aprovar-bilhetes':
         const totalAwaitingClients = awaitingClientTickets.length;
         const totalAwaitingSellers = Object.values(awaitingSellerTicketsBySeller).flat().length;
@@ -697,104 +660,145 @@ export default function AdminPage() {
           <section aria-labelledby="lottery-settings-heading">
             <h2 id="lottery-settings-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
                 <Settings className="mr-3 h-8 w-8 text-primary" />
-                Configurações da Loteria
+                Configurações
             </h2>
-            <div className="space-y-8">
-              <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                      <CardTitle className="text-xl text-center font-semibold">Definir Preços e Comissões</CardTitle>
-                      <CardDescription className="text-center text-muted-foreground">
-                          Ajuste os valores da loteria.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                          <Label htmlFor="ticketPrice" className="flex items-center">
-                              <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Preço do Bilhete (R$)
-                          </Label>
-                          <Input 
-                              id="ticketPrice" 
-                              type="number" 
-                              value={ticketPriceInput}
-                              onChange={(e) => setTicketPriceInput(e.target.value)}
-                              placeholder="Ex: 2.50"
-                              className="bg-background/70"
-                              step="0.01"
-                              min="0.01"
-                          />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="sellerCommission" className="flex items-center">
-                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Comissão do Vendedor (%)
-                          </Label>
-                          <Input 
-                              id="sellerCommission" 
-                              type="number" 
-                              value={commissionInput}
-                              onChange={(e) => setCommissionInput(e.target.value)}
-                              placeholder="Ex: 10"
-                              className="bg-background/70"
-                              min="0"
-                              max="100"
-                          />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="ownerCommission" className="flex items-center">
-                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Comissão Geral (Bolão %)
-                          </Label>
-                          <Input 
-                              id="ownerCommission" 
-                              type="number" 
-                              value={ownerCommissionInput}
-                              onChange={(e) => setOwnerCommissionInput(e.target.value)}
-                              placeholder="Ex: 5"
-                              className="bg-background/70"
-                              min="0"
-                              max="100"
-                          />
-                      </div>
-                       <div className="space-y-2">
-                          <Label htmlFor="clientSalesCommissionToOwner" className="flex items-center">
-                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              Comissão Dono (Vendas Cliente %)
-                          </Label>
-                          <Input 
-                              id="clientSalesCommissionToOwner" 
-                              type="number" 
-                              value={clientSalesCommissionInput}
-                              onChange={(e) => setClientSalesCommissionInput(e.target.value)}
-                              placeholder="Ex: 10"
-                              className="bg-background/70"
-                              min="0"
-                              max="100"
-                          />
-                      </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                      <Button onClick={handleSaveLotteryConfig} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                          <Settings className="mr-2 h-4 w-4" /> Salvar Configurações
-                      </Button>
-                  </CardFooter>
-              </Card>
+            <Tabs defaultValue="geral" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 h-auto">
+                <TabsTrigger value="geral" className="py-2.5">
+                    <PaletteIcon className="mr-2 h-4 w-4" /> Geral
+                </TabsTrigger>
+                <TabsTrigger value="contas" className="py-2.5">
+                    <Users className="mr-2 h-4 w-4" /> Contas de Usuários
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="geral" className="mt-6">
+                <div className="space-y-8">
+                  <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                      <CardHeader>
+                          <CardTitle className="text-xl text-center font-semibold">Definir Preços e Comissões</CardTitle>
+                          <CardDescription className="text-center text-muted-foreground">
+                              Ajuste os valores da loteria.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                          <div className="space-y-2">
+                              <Label htmlFor="ticketPrice" className="flex items-center">
+                                  <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  Preço do Bilhete (R$)
+                              </Label>
+                              <Input 
+                                  id="ticketPrice" 
+                                  type="number" 
+                                  value={ticketPriceInput}
+                                  onChange={(e) => setTicketPriceInput(e.target.value)}
+                                  placeholder="Ex: 2.50"
+                                  className="bg-background/70"
+                                  step="0.01"
+                                  min="0.01"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="sellerCommission" className="flex items-center">
+                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  Comissão do Vendedor (%)
+                              </Label>
+                              <Input 
+                                  id="sellerCommission" 
+                                  type="number" 
+                                  value={commissionInput}
+                                  onChange={(e) => setCommissionInput(e.target.value)}
+                                  placeholder="Ex: 10"
+                                  className="bg-background/70"
+                                  min="0"
+                                  max="100"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="ownerCommission" className="flex items-center">
+                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  Comissão Geral (Bolão %)
+                              </Label>
+                              <Input 
+                                  id="ownerCommission" 
+                                  type="number" 
+                                  value={ownerCommissionInput}
+                                  onChange={(e) => setOwnerCommissionInput(e.target.value)}
+                                  placeholder="Ex: 5"
+                                  className="bg-background/70"
+                                  min="0"
+                                  max="100"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="clientSalesCommissionToOwner" className="flex items-center">
+                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  Comissão Dono (Vendas Cliente %)
+                              </Label>
+                              <Input 
+                                  id="clientSalesCommissionToOwner" 
+                                  type="number" 
+                                  value={clientSalesCommissionInput}
+                                  onChange={(e) => setClientSalesCommissionInput(e.target.value)}
+                                  placeholder="Ex: 10"
+                                  className="bg-background/70"
+                                  min="0"
+                                  max="100"
+                              />
+                          </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-end">
+                          <Button onClick={handleSaveLotteryConfig} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                              <Settings className="mr-2 h-4 w-4" /> Salvar Configurações
+                          </Button>
+                      </CardFooter>
+                  </Card>
 
-              <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle className="text-xl text-center font-semibold flex items-center justify-center">
-                        <PaletteIcon className="mr-2 h-5 w-5" />
-                        Tema da Aplicação
-                    </CardTitle>
-                    <CardDescription className="text-center text-muted-foreground">
-                        Escolha entre o tema claro ou escuro para a interface.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center items-center py-6">
-                    <ThemeToggleButton />
-                </CardContent>
-              </Card>
-            </div>
+                  <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="text-xl text-center font-semibold flex items-center justify-center">
+                            <PaletteIcon className="mr-2 h-5 w-5" />
+                            Tema da Aplicação
+                        </CardTitle>
+                        <CardDescription className="text-center text-muted-foreground">
+                            Escolha entre o tema claro ou escuro para a interface.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center items-center py-6">
+                        <ThemeToggleButton />
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              <TabsContent value="contas" className="mt-6">
+                 <div className="space-y-4">
+                  {allUsers.length > 0 ? allUsers.map(user => (
+                    <Card key={user.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card/80 backdrop-blur-sm shadow-md">
+                      <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                        <Avatar>
+                            <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-grow">
+                            <p className="font-semibold text-foreground">{user.username}</p>
+                            <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
+                                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleOpenEditUser(user)}>
+                                <Edit className="mr-2 h-4 w-4"/> Editar
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleConfirmDeleteUser(user)}>
+                                <Trash2 className="mr-2 h-4 w-4"/> Excluir
+                            </Button>
+                      </div>
+                    </Card>
+                  )) : (
+                    <p className="text-center text-muted-foreground py-10">Nenhum usuário registrado.</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </section>
         );
       case 'cadastrar-sorteio':
