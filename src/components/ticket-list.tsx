@@ -12,22 +12,29 @@ interface TicketListProps {
   draws?: Draw[]; // Added to receive draw information
 }
 
+type TabValue = 'all' | 'active' | 'winning' | 'awaiting_payment' | 'expired';
+
+
 export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'winning' | 'expired' | 'awaiting_payment'>('all');
+  const [activeTab, setActiveTab] = useState<TabValue>('all');
 
   const filteredTickets = tickets.filter(ticket => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'expired') return ticket.status === 'expired' || ticket.status === 'unpaid';
+    if (activeTab === 'all') {
+      return ticket.status !== 'expired';
+    }
+    if (activeTab === 'expired') {
+      return ticket.status === 'expired' || ticket.status === 'unpaid';
+    }
     return ticket.status === activeTab;
   });
 
-  const getCount = (status: typeof activeTab) => {
-    if (status === 'all') return tickets.length;
+  const getCount = (status: TabValue) => {
+    if (status === 'all') return tickets.filter(t => t.status !== 'expired').length;
     if (status === 'expired') return tickets.filter(t => t.status === 'expired' || t.status === 'unpaid').length;
     return tickets.filter(t => t.status === status).length;
   }
 
-  const tabItems = [
+  const tabItems: { value: TabValue; label: string; Icon: React.ElementType }[] = [
     { value: 'all', label: 'Todos', Icon: List },
     { value: 'awaiting_payment', label: 'Aguardando', Icon: Clock },
     { value: 'active', label: 'Ativos', Icon: PlayCircle },
@@ -37,10 +44,10 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
 
   return (
     <div>
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full mb-6">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)} className="w-full mb-6">
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
           {tabItems.map(tab => {
-            const count = getCount(tab.value as typeof activeTab);
+            const count = getCount(tab.value);
             if(count === 0 && tab.value !== 'all') return null;
             return (
               <TabsTrigger key={tab.value} value={tab.value} className="py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
