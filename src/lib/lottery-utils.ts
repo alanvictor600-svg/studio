@@ -59,7 +59,7 @@ export function countOccurrences(arr: number[]): Record<number, number> {
 }
 
 export function calculateTicketMatches(ticket: Ticket, draws: Draw[]): number {
-    if (!draws || draws.length === 0 || ticket.status !== 'active') {
+    if (!draws || draws.length === 0 || (ticket.status !== 'active' && ticket.status !== 'winning')) {
         return 0;
     }
 
