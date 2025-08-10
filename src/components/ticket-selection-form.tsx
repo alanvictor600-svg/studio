@@ -13,19 +13,19 @@ import { useToast } from "@/hooks/use-toast";
 
 interface TicketSelectionFormProps {
   onAddTicket: (numbers: number[]) => void;
-  isLotteryPaused?: boolean;
+  isLotteryActive?: boolean;
 }
 
 const MAX_PICKS = 10;
 const MAX_REPETITION = 4;
 
-export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket, isLotteryPaused = false }) => {
+export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket, isLotteryActive = false }) => {
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const { toast } = useToast();
 
   const numberCounts = countOccurrences(currentPicks);
 
-  if (isLotteryPaused) {
+  if (isLotteryActive) {
     return (
       <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
@@ -36,7 +36,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket,
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Compras Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              Novas compras estão suspensas, pois já existem bilhetes premiados.
+              Novas compras estão suspensas, pois a loteria já começou.
               Aguarde o administrador iniciar uma nova loteria para poder comprar.
             </AlertDescription>
           </Alert>

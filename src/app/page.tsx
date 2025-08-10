@@ -79,7 +79,7 @@ export default function LandingPage() {
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
        {draws.length > 0 && (
-          <div className="fixed top-6 left-6 z-50">
+          <div className="fixed top-6 left-6 z-50 mt-2">
             <Popover>
               <PopoverTrigger asChild>
                   <Button type="button" className="shadow-lg">
