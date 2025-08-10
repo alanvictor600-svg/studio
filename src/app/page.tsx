@@ -82,7 +82,7 @@ export default function LandingPage() {
           <div className="fixed top-6 left-6 z-50">
             <Popover>
               <PopoverTrigger asChild>
-                  <Button type="button">
+                  <Button type="button" className="shadow-lg">
                     <LogIn className="mr-2 h-5 w-5" /> Entrar na sua conta
                   </Button>
               </PopoverTrigger>
@@ -151,13 +151,13 @@ export default function LandingPage() {
         {draws.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-               <h2 className="text-2xl font-bold text-primary text-center mb-2 flex items-center justify-center">
+               <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center">
                   <History className="mr-3 h-6 w-6" /> Último Sorteio
                </h2>
                <AdminDrawCard draw={draws[0]} />
             </div>
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-primary text-center mb-2 flex items-center justify-center">
+              <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center">
                   <Award className="mr-3 h-6 w-6" /> Acertos
               </h2>
               <TopTickets tickets={allTickets} draws={draws} />

@@ -15,13 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface SellerTicketCreationFormProps {
   onAddTicket: (numbers: number[], buyerName: string, buyerPhone: string) => void;
-  isLotteryActive?: boolean;
+  isLotteryPaused?: boolean;
 }
 
 const MAX_PICKS = 10;
 const MAX_REPETITION = 4;
 
-export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({ onAddTicket, isLotteryActive = false }) => {
+export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({ onAddTicket, isLotteryPaused = false }) => {
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
@@ -29,7 +29,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({ on
 
   const numberCounts = countOccurrences(currentPicks);
 
-  if (isLotteryActive) {
+  if (isLotteryPaused) {
     return (
       <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
@@ -40,8 +40,8 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({ on
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Vendas Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              O registro de novas vendas de bilhetes está temporariamente suspenso pois um bolão já foi iniciado.
-              Aguarde o administrador reiniciar o bolão para registrar novas vendas.
+              O registro de novas vendas está suspenso, pois já existem bilhetes premiados.
+              Aguarde o administrador iniciar uma nova loteria para continuar.
             </AlertDescription>
           </Alert>
         </CardContent>

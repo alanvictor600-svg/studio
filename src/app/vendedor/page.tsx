@@ -25,6 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
+const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const LOTTERY_CONFIG_STORAGE_KEY = 'bolaoPotiguarLotteryConfig';
 const SELLER_HISTORY_STORAGE_KEY = 'bolaoPotiguarSellerHistory';
 
@@ -48,6 +49,7 @@ const menuItems: { id: VendedorSection; label: string; Icon: React.ElementType }
 export default function VendedorPage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [vendedorManagedTickets, setVendedorManagedTickets] = useState<Ticket[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [sellerHistory, setSellerHistory] = useState<SellerHistoryEntry[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -64,7 +66,12 @@ export default function VendedorPage() {
     setDraws(storedDraws ? JSON.parse(storedDraws) : []);
     
     const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
-    setVendedorManagedTickets(storedVendedorTickets ? JSON.parse(storedVendedorTickets) : []);
+    const vendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
+    setVendedorManagedTickets(vendedorTickets);
+
+    const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    const clientTickets = clientTicketsRaw ? JSON.parse(clientTicketsRaw) : [];
+    setAllTickets([...vendedorTickets, ...clientTickets]);
 
     const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
     setLotteryConfig(storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG);
@@ -81,7 +88,15 @@ export default function VendedorPage() {
         setDraws(JSON.parse(event.newValue));
       }
       if (event.key === VENDEDOR_TICKETS_STORAGE_KEY && event.newValue) {
-        setVendedorManagedTickets(JSON.parse(event.newValue));
+        const updatedVendedorTickets = JSON.parse(event.newValue);
+        setVendedorManagedTickets(updatedVendedorTickets);
+        const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY) || '[]';
+        setAllTickets([...updatedVendedorTickets, ...JSON.parse(clientTicketsRaw)]);
+      }
+       if (event.key === CLIENTE_TICKETS_STORAGE_KEY && event.newValue) {
+        const updatedClientTickets = JSON.parse(event.newValue);
+        const vendedorTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY) || '[]';
+        setAllTickets([...JSON.parse(vendedorTicketsRaw), ...updatedClientTickets]);
       }
       if (event.key === SELLER_HISTORY_STORAGE_KEY && event.newValue) {
         setSellerHistory(JSON.parse(event.newValue));
@@ -143,7 +158,9 @@ export default function VendedorPage() {
   }, [vendedorManagedTickets, lotteryConfig, currentUser?.username]);
 
 
-  const isLotteryPaused = draws.length > 0;
+  const isLotteryPaused = useMemo(() => {
+    return allTickets.some(ticket => ticket.status === 'winning');
+  }, [allTickets]);
 
   const handleSectionChange = (sectionId: VendedorSection) => {
     setActiveSection(sectionId);
@@ -168,7 +185,7 @@ export default function VendedorPage() {
             <h2 id="seller-ticket-creation-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <PlusCircle className="mr-3 h-8 w-8 text-primary" /> Nova Venda
             </h2>
-            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryActive={isLotteryPaused} />
+            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryPaused={isLotteryPaused} />
           </section>
         );
       case 'meus-bilhetes':
@@ -425,12 +442,3 @@ export default function VendedorPage() {
       </footer>
     </div>
   );
-
-    
-
-
-
-    
-
-
-    

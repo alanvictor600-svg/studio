@@ -130,19 +130,18 @@ export const AdminDrawForm: FC<AdminDrawFormProps> = ({ onAddDraw, hasWinningTic
           </>
         )}
       </CardContent>
-      {!hasWinningTickets && (
-        <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
-           <Button variant="outline" onClick={handleClear} className="w-full sm:w-auto shadow-md hover:shadow-lg">
-              <RotateCcw className="mr-2 h-4 w-4" /> Limpar Campos
-            </Button>
-          <Button 
-            onClick={validateAndSubmit} 
-            className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl text-base py-3 px-6"
-          >
-            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Sorteio
+      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
+          <Button variant="outline" onClick={handleClear} disabled={hasWinningTickets} className="w-full sm:w-auto shadow-md hover:shadow-lg">
+            <RotateCcw className="mr-2 h-4 w-4" /> Limpar Campos
           </Button>
-        </CardFooter>
-      )}
+        <Button 
+          onClick={validateAndSubmit} 
+          disabled={hasWinningTickets}
+          className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl text-base py-3 px-6"
+        >
+          <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Sorteio
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

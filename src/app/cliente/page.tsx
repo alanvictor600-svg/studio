@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
 import type { Ticket, Draw } from '@/types';
@@ -17,6 +17,7 @@ import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AdminDrawList } from '@/components/admin-draw-list';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
+const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
 
 type ClienteSection = 'selecionar-bilhete' | 'meus-bilhetes' | 'resultados';
@@ -30,6 +31,7 @@ const menuItems: { id: ClienteSection; label: string; Icon: React.ElementType }[
 export default function ClientePage() {
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { currentUser, logout, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,8 +47,14 @@ export default function ClientePage() {
     const localDraws = storedDrawsRaw ? JSON.parse(storedDrawsRaw) : [];
     setDraws(localDraws);
 
-    const storedTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
-    const allClientTickets: Ticket[] = storedTicketsRaw ? JSON.parse(storedTicketsRaw) : [];
+    const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+    const allClientTickets: Ticket[] = clientTicketsRaw ? JSON.parse(clientTicketsRaw) : [];
+    
+    const vendedorTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
+    const allVendedorTickets: Ticket[] = vendedorTicketsRaw ? JSON.parse(vendedorTicketsRaw) : [];
+    
+    const combinedTickets = [...allClientTickets, ...allVendedorTickets];
+    setAllTickets(combinedTickets);
     
     // Process all tickets first to determine their status
     const processedTickets = updateTicketStatusesBasedOnDraws(allClientTickets, localDraws);
@@ -88,7 +96,9 @@ export default function ClientePage() {
     }
   };
 
-  const isLotteryActive = draws.length > 0;
+  const isLotteryPaused = useMemo(() => {
+    return allTickets.some(ticket => ticket.status === 'winning');
+  }, [allTickets]);
 
   if (!isClient) {
     return (
@@ -104,7 +114,7 @@ export default function ClientePage() {
         return (
           <section aria-labelledby="ticket-selection-heading" id="selecionar-bilhete" className="scroll-mt-20">
             <h2 id="ticket-selection-heading" className="sr-only">Seleção de Bilhetes</h2>
-            <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryActive={isLotteryActive} />
+            <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryPaused={isLotteryPaused} />
           </section>
         );
       case 'meus-bilhetes':
@@ -242,5 +252,3 @@ export default function ClientePage() {
     </div>
   );
 }
-
-    
