@@ -63,16 +63,19 @@ export default function VendedorPage() {
     
     // Load initial data from localStorage once
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
-    setDraws(storedDraws ? JSON.parse(storedDraws) : []);
+    const localDraws = storedDraws ? JSON.parse(storedDraws) : [];
+    setDraws(localDraws);
     
     const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
     const vendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
-    setVendedorManagedTickets(vendedorTickets);
-
+    
     const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
     const clientTickets = clientTicketsRaw ? JSON.parse(clientTicketsRaw) : [];
-    setAllTickets([...vendedorTickets, ...clientTickets]);
 
+    const combinedTickets = [...vendedorTickets, ...clientTickets];
+    setAllTickets(combinedTickets);
+    setVendedorManagedTickets(updateTicketStatusesBasedOnDraws(vendedorTickets, localDraws));
+    
     const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
     setLotteryConfig(storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG);
     
@@ -85,13 +88,15 @@ export default function VendedorPage() {
         setLotteryConfig(JSON.parse(event.newValue));
       }
       if (event.key === DRAWS_STORAGE_KEY && event.newValue) {
-        setDraws(JSON.parse(event.newValue));
+        const newDraws = JSON.parse(event.newValue);
+        setDraws(newDraws);
       }
       if (event.key === VENDEDOR_TICKETS_STORAGE_KEY && event.newValue) {
         const updatedVendedorTickets = JSON.parse(event.newValue);
-        setVendedorManagedTickets(updatedVendedorTickets);
         const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY) || '[]';
         setAllTickets([...updatedVendedorTickets, ...JSON.parse(clientTicketsRaw)]);
+        const localDrawsForUpdate = JSON.parse(localStorage.getItem(DRAWS_STORAGE_KEY) || '[]');
+        setVendedorManagedTickets(updateTicketStatusesBasedOnDraws(updatedVendedorTickets, localDrawsForUpdate));
       }
        if (event.key === CLIENTE_TICKETS_STORAGE_KEY && event.newValue) {
         const updatedClientTickets = JSON.parse(event.newValue);
@@ -108,14 +113,7 @@ export default function VendedorPage() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Effect to update ticket statuses when draws change
-  useEffect(() => {
-    if (isClient) {
-      setVendedorManagedTickets(prev => updateTicketStatusesBasedOnDraws(prev, draws));
-    }
-  }, [draws, isClient]);
+  }, []);
 
   // Effect to save tickets to localStorage when they change
   useEffect(() => {
@@ -133,7 +131,7 @@ export default function VendedorPage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: numbers.sort((a, b) => a - b),
-      status: 'awaiting_payment',
+      status: 'active',
       createdAt: new Date().toISOString(),
       buyerName,
       buyerPhone,
@@ -141,7 +139,7 @@ export default function VendedorPage() {
     };
     
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
-    toast({ title: "Venda Registrada!", description: "Bilhete adicionado e aguarda aprovação do Admin.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    toast({ title: "Venda Registrada!", description: "O bilhete foi ativado com sucesso.", className: "bg-primary text-primary-foreground", duration: 3000 });
   }, [currentUser, toast]);
 
   
@@ -158,9 +156,10 @@ export default function VendedorPage() {
   }, [vendedorManagedTickets, lotteryConfig, currentUser?.username]);
 
 
-  const isLotteryActive = useMemo(() => {
-    return draws.length > 0;
-  }, [draws]);
+  const isLotteryPaused = useMemo(() => {
+    // Sales are paused if there are winning tickets
+    return allTickets.some(ticket => ticket.status === 'winning');
+  }, [allTickets]);
 
   const handleSectionChange = (sectionId: VendedorSection) => {
     setActiveSection(sectionId);
@@ -185,7 +184,7 @@ export default function VendedorPage() {
             <h2 id="seller-ticket-creation-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <PlusCircle className="mr-3 h-8 w-8 text-primary" /> Nova Venda
             </h2>
-            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryActive={isLotteryActive} />
+            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryPaused={isLotteryPaused} />
           </section>
         );
       case 'meus-bilhetes':

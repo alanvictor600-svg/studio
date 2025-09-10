@@ -12,7 +12,7 @@ interface TicketListProps {
   draws?: Draw[]; // Added to receive draw information
 }
 
-type TabValue = 'all' | 'active' | 'winning' | 'awaiting_payment' | 'expired';
+type TabValue = 'all' | 'active' | 'winning' | 'expired' | 'unpaid';
 
 
 export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
@@ -23,22 +23,26 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws }) => {
       return ticket.status !== 'expired';
     }
     if (activeTab === 'expired') {
-      return ticket.status === 'expired' || ticket.status === 'unpaid';
+      return ticket.status === 'expired';
+    }
+    if (activeTab === 'unpaid') {
+      return ticket.status === 'unpaid';
     }
     return ticket.status === activeTab;
   });
 
   const getCount = (status: TabValue) => {
     if (status === 'all') return tickets.filter(t => t.status !== 'expired').length;
-    if (status === 'expired') return tickets.filter(t => t.status === 'expired' || t.status === 'unpaid').length;
+    if (status === 'expired') return tickets.filter(t => t.status === 'expired').length;
+    if (status === 'unpaid') return tickets.filter(t => t.status === 'unpaid').length;
     return tickets.filter(t => t.status === status).length;
   }
 
   const tabItems: { value: TabValue; label: string; Icon: React.ElementType }[] = [
     { value: 'all', label: 'Todos', Icon: List },
-    { value: 'awaiting_payment', label: 'Aguardando', Icon: Clock },
     { value: 'active', label: 'Ativos', Icon: PlayCircle },
     { value: 'winning', label: 'Premiados', Icon: Trophy },
+    { value: 'unpaid', label: 'Não Pagos', Icon: Ban },
     { value: 'expired', label: 'Expirados', Icon: TimerOff },
   ];
 

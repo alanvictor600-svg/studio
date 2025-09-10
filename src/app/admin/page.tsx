@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, User as UserIcon, ShoppingCart, BookText, CheckCircle2, Search } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -25,8 +25,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TicketCard } from '@/components/ticket-card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
@@ -45,10 +43,9 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   clientSalesCommissionToOwnerPercentage: 10,
 };
 
-type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios' | 'aprovar-bilhetes';
+type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios';
 
 const menuItems: { id: AdminSection; label: string; Icon: React.ElementType }[] = [
-  { id: 'aprovar-bilhetes', label: 'Aprovar Bilhetes', Icon: CheckCircle2 },
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
@@ -72,7 +69,7 @@ export default function AdminPage() {
   const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState('');
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
 
-  const [activeSection, setActiveSection] = useState<AdminSection>('aprovar-bilhetes');
+  const [activeSection, setActiveSection] = useState<AdminSection>('configuracoes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -82,12 +79,6 @@ export default function AdminPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
-  const [selectedSellerTickets, setSelectedSellerTickets] = useState<Set<string>>(new Set());
-  const [selectedClientTickets, setSelectedClientTickets] = useState<Set<string>>(new Set());
-
-  const [clientSearchTerm, setClientSearchTerm] = useState('');
-  const [sellerSearchTerm, setSellerSearchTerm] = useState('');
-
 
   // Load all data from localStorage on component mount
   useEffect(() => {
@@ -198,10 +189,6 @@ export default function AdminPage() {
       return;
     }
 
-    // Invalidate pending tickets
-    const updatedClientTickets = clientTickets.map(t => t.status === 'awaiting_payment' ? { ...t, status: 'unpaid' } : t);
-    const updatedVendedorTickets = vendedorTickets.map(t => t.status === 'awaiting_payment' ? { ...t, status: 'unpaid' } : t);
-    
     const newDraw: Draw = {
       id: uuidv4(),
       numbers: newNumbers,
@@ -211,11 +198,11 @@ export default function AdminPage() {
     const updatedDraws = [newDraw, ...draws];
     setDraws(updatedDraws);
 
-    // Update ticket statuses based on the new draw, using the already updated ticket lists
-    setClientTickets(updateTicketStatusesBasedOnDraws(updatedClientTickets, updatedDraws));
-    setVendedorTickets(updateTicketStatusesBasedOnDraws(updatedVendedorTickets, updatedDraws));
+    // Update ticket statuses based on the new draw
+    setClientTickets(updateTicketStatusesBasedOnDraws(clientTickets, updatedDraws));
+    setVendedorTickets(updateTicketStatusesBasedOnDraws(vendedorTickets, updatedDraws));
     
-    toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes pendentes foram invalidados.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
   
   const captureAndSaveSellerHistory = useCallback(() => {
@@ -287,7 +274,7 @@ export default function AdminPage() {
 
     toast({
       title: "Nova Loteria Iniciada!",
-      description: "Sorteios e bilhetes ativos/premiados/pendentes foram resetados/expirados.",
+      description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
       className: "bg-primary text-primary-foreground",
       duration: 3000,
     });
@@ -409,111 +396,6 @@ export default function AdminPage() {
     setIsDeleteConfirmOpen(false);
     setUserToDelete(null);
   };
-  
-  const handleToggleClientTicketSelection = (ticketId: string) => {
-    setSelectedClientTickets(prev => {
-      const newSelection = new Set(prev);
-      if (newSelection.has(ticketId)) {
-        newSelection.delete(ticketId);
-      } else {
-        newSelection.add(ticketId);
-      }
-      return newSelection;
-    });
-  };
-
-  const handleApproveSelectedClientTickets = () => {
-    if (selectedClientTickets.size === 0) {
-      toast({ title: 'Nenhum Bilhete Selecionado', description: 'Selecione um ou mais bilhetes para aprovar.', variant: 'destructive' });
-      return;
-    }
-    setClientTickets(prev =>
-      prev.map(ticket =>
-        selectedClientTickets.has(ticket.id) ? { ...ticket, status: 'active' } : ticket
-      )
-    );
-    toast({
-      title: `${selectedClientTickets.size} Bilhete(s) de Cliente Aprovado(s)!`,
-      description: 'Os bilhetes selecionados agora estão ativos.',
-      className: 'bg-primary text-primary-foreground',
-      duration: 3000
-    });
-    setSelectedClientTickets(new Set());
-  };
-
-  const handleApproveAllClientTicketsForBuyer = (buyerName: string, ticketsForBuyer: Ticket[]) => {
-    const ticketsToApprove = ticketsForBuyer.map(t => t.id);
-    if (ticketsToApprove.length === 0) {
-      toast({ title: 'Nenhum Bilhete para Aprovar', description: `Não há bilhetes de ${buyerName} aguardando pagamento.`, variant: 'destructive' });
-      return;
-    }
-    
-    setClientTickets(prev =>
-      prev.map(ticket =>
-        ticketsToApprove.includes(ticket.id) ? { ...ticket, status: 'active' } : ticket
-      )
-    );
-    
-    toast({
-      title: `Bilhetes de ${buyerName} Aprovados!`,
-      description: `Todos os bilhetes pendentes de ${buyerName} agora estão ativos.`,
-      className: 'bg-primary text-primary-foreground',
-      duration: 3000,
-    });
-  };
-
-  const handleToggleSellerTicketSelection = (ticketId: string) => {
-    setSelectedSellerTickets(prev => {
-      const newSelection = new Set(prev);
-      if (newSelection.has(ticketId)) {
-        newSelection.delete(ticketId);
-      } else {
-        newSelection.add(ticketId);
-      }
-      return newSelection;
-    });
-  };
-
-  const handleApproveSelectedSellerTickets = () => {
-    if (selectedSellerTickets.size === 0) {
-      toast({ title: 'Nenhum Bilhete Selecionado', description: 'Selecione um ou mais bilhetes para aprovar.', variant: 'destructive' });
-      return;
-    }
-    setVendedorTickets(prev =>
-      prev.map(ticket =>
-        selectedSellerTickets.has(ticket.id) ? { ...ticket, status: 'active' } : ticket
-      )
-    );
-    toast({
-      title: `${selectedSellerTickets.size} Bilhete(s) Aprovado(s)!`,
-      description: 'Os bilhetes de vendedor selecionados agora estão ativos.',
-      className: 'bg-primary text-primary-foreground',
-      duration: 3000,
-    });
-    setSelectedSellerTickets(new Set());
-  };
-
-  const handleApproveAllSellerTicketsForSeller = (sellerName: string, ticketsForSeller: Ticket[]) => {
-    const ticketsToApprove = ticketsForSeller.map(t => t.id);
-    if (ticketsToApprove.length === 0) {
-      toast({ title: 'Nenhum Bilhete para Aprovar', description: `Não há bilhetes de ${sellerName} aguardando pagamento.`, variant: 'destructive' });
-      return;
-    }
-    
-    setVendedorTickets(prev =>
-      prev.map(ticket =>
-        ticketsToApprove.includes(ticket.id) ? { ...ticket, status: 'active' } : ticket
-      )
-    );
-    
-    toast({
-      title: `Bilhetes de ${sellerName} Aprovados!`,
-      description: `Todos os bilhetes pendentes de ${sellerName} agora estão ativos.`,
-      className: 'bg-primary text-primary-foreground',
-      duration: 3000,
-    });
-  };
-
 
   const handleSectionChange = (sectionId: AdminSection) => {
     setActiveSection(sectionId);
@@ -532,223 +414,6 @@ export default function AdminPage() {
 
   const renderSectionContent = () => {
     switch (activeSection) {
-      case 'aprovar-bilhetes': {
-        const awaitingClientTickets = clientTickets.filter(ticket => ticket.status === 'awaiting_payment');
-        const awaitingSellerTickets = vendedorTickets.filter(ticket => ticket.status === 'awaiting_payment');
-        
-        const totalAwaitingClients = awaitingClientTickets.length;
-        const totalAwaitingSellers = awaitingSellerTickets.length;
-        
-        const awaitingClientTicketsByBuyer = awaitingClientTickets.reduce((acc, ticket) => {
-          const buyerName = ticket.buyerName || 'Desconhecido';
-          if (!acc[buyerName]) {
-            acc[buyerName] = [];
-          }
-          acc[buyerName].push(ticket);
-          return acc;
-        }, {} as Record<string, Ticket[]>);
-        
-        const awaitingSellerTicketsBySeller = awaitingSellerTickets.reduce((acc, ticket) => {
-          const seller = ticket.sellerUsername || 'Desconhecido';
-          if (!acc[seller]) {
-            acc[seller] = [];
-          }
-          acc[seller].push(ticket);
-          return acc;
-        }, {} as Record<string, Ticket[]>);
-
-        const filteredClients = Object.fromEntries(
-          Object.entries(awaitingClientTicketsByBuyer).filter(([buyerName]) =>
-            buyerName.toLowerCase().includes(clientSearchTerm.toLowerCase())
-          )
-        );
-
-        const filteredSellers = Object.fromEntries(
-          Object.entries(awaitingSellerTicketsBySeller).filter(([sellerName]) =>
-            sellerName.toLowerCase().includes(sellerSearchTerm.toLowerCase())
-          )
-        );
-
-        return (
-          <section aria-labelledby="approve-tickets-heading">
-            <h2 id="approve-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <CheckCircle2 className="mr-3 h-8 w-8 text-primary" />
-              Aprovar Bilhetes ({totalAwaitingClients + totalAwaitingSellers})
-            </h2>
-
-            <Tabs defaultValue="clientes" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-auto">
-                <TabsTrigger value="clientes" className="py-2.5">
-                  <UserIcon className="mr-2 h-4 w-4" />
-                  Clientes ({totalAwaitingClients})
-                </TabsTrigger>
-                <TabsTrigger value="vendedores" className="py-2.5">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Vendedores ({totalAwaitingSellers})
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="clientes" className="mt-6">
-                <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                      <CardTitle className="text-xl font-semibold flex items-center">
-                          <UserIcon className="mr-2 h-5 w-5 text-blue-500" />
-                          Bilhetes de Clientes Pendentes
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                          Aprove os pagamentos dos bilhetes agrupados por cliente. Use a busca para filtrar.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        placeholder="Pesquisar cliente..."
-                        value={clientSearchTerm}
-                        onChange={(e) => setClientSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {Object.keys(filteredClients).length > 0 ? (
-                      Object.entries(filteredClients).map(([buyerName, tickets]) => {
-                        const buyerTotalAmount = tickets.length * lotteryConfig.ticketPrice;
-                        const selectedForThisBuyer = tickets.filter(t => selectedClientTickets.has(t.id));
-
-                        return (
-                          <Card key={buyerName} className="bg-background/50 p-4">
-                            <CardHeader className="p-2 mb-4">
-                                <CardTitle className="text-lg flex justify-between items-center">
-                                  <span>Cliente: <span className="font-bold text-primary">{buyerName}</span></span>
-                                  <Badge variant="secondary">{tickets.length} bilhete(s) / R$ {buyerTotalAmount.toFixed(2)}</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 space-y-4">
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <Button 
-                                    onClick={handleApproveSelectedClientTickets} 
-                                    disabled={selectedForThisBuyer.length === 0}
-                                    className="w-full sm:w-auto"
-                                  >
-                                      <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedForThisBuyer.length})
-                                  </Button>
-                                  <Button 
-                                    onClick={() => handleApproveAllClientTicketsForBuyer(buyerName, tickets)} 
-                                    variant="secondary" 
-                                    className="w-full sm:w-auto"
-                                  >
-                                      Aprovar Todos de {buyerName} ({tickets.length})
-                                  </Button>
-                                </div>
-                                <div className="space-y-4 max-h-[400px] overflow-y-auto p-2 border rounded-md">
-                                  {tickets.map(ticket => (
-                                    <div key={ticket.id} className="flex items-center gap-4">
-                                      <Checkbox
-                                          id={`client-ticket-${ticket.id}`}
-                                          checked={selectedClientTickets.has(ticket.id)}
-                                          onCheckedChange={() => handleToggleClientTicketSelection(ticket.id)}
-                                          aria-label={`Selecionar bilhete ${ticket.id.substring(0,6)}`}
-                                      />
-                                      <div className="flex-grow">
-                                        <TicketCard ticket={ticket} />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })
-                    ) : (
-                      <div className="text-center py-6 bg-background/50 rounded-lg">
-                        <Search size={32} className="mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Nenhum cliente encontrado com o termo "{clientSearchTerm}".</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="vendedores" className="mt-6">
-                <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                      <CardTitle className="text-xl font-semibold flex items-center">
-                          <ShoppingCart className="mr-2 h-5 w-5 text-orange-500" />
-                          Bilhetes de Vendedores Pendentes
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                          Aprove os pagamentos dos bilhetes agrupados por vendedor. Use a busca para filtrar.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        placeholder="Pesquisar vendedor..."
-                        value={sellerSearchTerm}
-                        onChange={(e) => setSellerSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {Object.keys(filteredSellers).length > 0 ? (
-                      Object.entries(filteredSellers).map(([sellerName, tickets]) => {
-                        const sellerTotalAmount = tickets.length * lotteryConfig.ticketPrice;
-                        const selectedForThisSeller = tickets.filter(t => selectedSellerTickets.has(t.id));
-
-                        return (
-                          <Card key={sellerName} className="bg-background/50 p-4">
-                            <CardHeader className="p-2 mb-4">
-                                <CardTitle className="text-lg flex justify-between items-center">
-                                  <span>Vendedor: <span className="font-bold text-primary">{sellerName}</span></span>
-                                  <Badge variant="secondary">{tickets.length} bilhete(s) / R$ {sellerTotalAmount.toFixed(2)}</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 space-y-4">
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <Button 
-                                    onClick={handleApproveSelectedSellerTickets} 
-                                    disabled={selectedForThisSeller.length === 0}
-                                    className="w-full sm:w-auto"
-                                  >
-                                      <CheckCircle2 className="mr-2 h-5 w-5" /> Aprovar Selecionados ({selectedForThisSeller.length})
-                                  </Button>
-                                  <Button 
-                                    onClick={() => handleApproveAllSellerTicketsForSeller(sellerName, tickets)} 
-                                    variant="secondary" 
-                                    className="w-full sm:w-auto"
-                                  >
-                                      Aprovar Todos de {sellerName} ({tickets.length})
-                                  </Button>
-                                </div>
-                                <div className="space-y-4 max-h-[400px] overflow-y-auto p-2 border rounded-md">
-                                  {tickets.map(ticket => (
-                                    <div key={ticket.id} className="flex items-center gap-4">
-                                      <Checkbox
-                                          id={`seller-ticket-${ticket.id}`}
-                                          checked={selectedSellerTickets.has(ticket.id)}
-                                          onCheckedChange={() => handleToggleSellerTicketSelection(ticket.id)}
-                                          aria-label={`Selecionar bilhete ${ticket.id.substring(0,6)}`}
-                                      />
-                                      <div className="flex-grow">
-                                        <TicketCard ticket={ticket} />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })
-                    ) : (
-                      <div className="text-center py-6 bg-background/50 rounded-lg">
-                        <Search size={32} className="mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Nenhum vendedor encontrado com o termo "{sellerSearchTerm}".</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </section>
-        );
-      }
       case 'configuracoes':
         return (
           <section aria-labelledby="lottery-settings-heading">
@@ -984,7 +649,7 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-center">
                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <UserIcon className="h-10 w-10 text-blue-500 mx-auto mb-2" />
+                        <Users className="h-10 w-10 text-blue-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Vendas (Clientes)</p>
                         <p className="text-3xl font-bold text-blue-500">
                             R$ {financialReport.clientRevenue.toFixed(2).replace('.', ',')}
@@ -992,7 +657,7 @@ export default function AdminPage() {
                         <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount} bilhetes</p>
                     </div>
                      <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <ShoppingCart className="h-10 w-10 text-orange-500 mx-auto mb-2" />
+                        <Users className="h-10 w-10 text-orange-500 mx-auto mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">Vendas (Vendedores)</p>
                         <p className="text-3xl font-bold text-orange-500">
                             R$ {financialReport.sellerRevenue.toFixed(2).replace('.', ',')}
@@ -1221,7 +886,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
-
-    

@@ -13,19 +13,19 @@ import { useToast } from "@/hooks/use-toast";
 
 interface TicketSelectionFormProps {
   onAddTicket: (numbers: number[]) => void;
-  isLotteryActive?: boolean;
+  isLotteryPaused?: boolean;
 }
 
 const MAX_PICKS = 10;
 const MAX_REPETITION = 4;
 
-export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket, isLotteryActive = false }) => {
+export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket, isLotteryPaused = false }) => {
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const { toast } = useToast();
 
   const numberCounts = countOccurrences(currentPicks);
 
-  if (isLotteryActive) {
+  if (isLotteryPaused) {
     return (
       <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
@@ -36,8 +36,8 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket,
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Compras Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              Novas compras estão suspensas, pois a loteria já começou.
-              Aguarde o administrador iniciar uma nova loteria para poder comprar.
+              Novas compras estão suspensas pois há um bilhete premiado.
+              Aguarde o administrador iniciar uma nova loteria.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -78,7 +78,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({ onAddTicket,
     }
     onAddTicket([...currentPicks].sort((a,b) => a-b)); // Ensure sorted before adding
     setCurrentPicks([]);
-    toast({ title: "Bilhete Adicionado!", description: "Boa sorte!", className: "bg-primary text-primary-foreground", duration: 3000 });
+    toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu bilhete já está ativo.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
 
   return (

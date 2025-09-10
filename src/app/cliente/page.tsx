@@ -30,6 +30,7 @@ const menuItems: { id: ClienteSection; label: string; Icon: React.ElementType }[
 
 export default function ClientePage() {
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { currentUser, logout, isAuthenticated } = useAuth();
@@ -48,6 +49,12 @@ export default function ClientePage() {
 
     const clientTicketsRaw = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
     const allClientTickets: Ticket[] = clientTicketsRaw ? JSON.parse(clientTicketsRaw) : [];
+    
+    const vendedorTicketsRaw = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
+    const allVendedorTickets: Ticket[] = vendedorTicketsRaw ? JSON.parse(vendedorTicketsRaw) : [];
+
+    const combinedTickets = [...allClientTickets, ...allVendedorTickets];
+    setAllTickets(combinedTickets);
     
     // Process all tickets first to determine their status
     const processedTickets = updateTicketStatusesBasedOnDraws(allClientTickets, localDraws);
@@ -69,7 +76,7 @@ export default function ClientePage() {
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'awaiting_payment', // New tickets now start as awaiting payment
+      status: 'active', // New tickets are now active immediately
       createdAt: new Date().toISOString(),
       buyerName: currentUser.username,
     };
@@ -89,9 +96,10 @@ export default function ClientePage() {
     }
   };
 
-  const isLotteryActive = useMemo(() => {
-    return draws.length > 0;
-  }, [draws]);
+  const isLotteryPaused = useMemo(() => {
+    // Sales are paused if there are winning tickets
+    return allTickets.some(ticket => ticket.status === 'winning');
+  }, [allTickets]);
 
   if (!isClient) {
     return (
@@ -107,7 +115,7 @@ export default function ClientePage() {
         return (
           <section aria-labelledby="ticket-selection-heading" id="selecionar-bilhete" className="scroll-mt-20">
             <h2 id="ticket-selection-heading" className="sr-only">Seleção de Bilhetes</h2>
-            <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryActive={isLotteryActive} />
+            <TicketSelectionForm onAddTicket={handleAddTicket} isLotteryPaused={isLotteryPaused} />
           </section>
         );
       case 'meus-bilhetes':
