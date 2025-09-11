@@ -123,10 +123,10 @@ export default function VendedorPage() {
   }, [vendedorManagedTickets, isClient]);
 
 
-  const handleAddSellerTicket = useCallback((numbers: number[], buyerName: string, buyerPhone: string) => {
+  const handleAddSellerTicket = useCallback((numbers: number[], buyerName: string, buyerPhone: string): Ticket | undefined => {
     if (!currentUser) {
       toast({ title: "Erro", description: "Vendedor não autenticado.", variant: "destructive" });
-      return;
+      return undefined;
     }
     const ticketCost = lotteryConfig.ticketPrice;
     if ((currentUser.credits || 0) < ticketCost) {
@@ -135,7 +135,7 @@ export default function VendedorPage() {
         description: `Você não tem créditos para registrar esta venda. Saldo: R$ ${(currentUser.credits || 0).toFixed(2).replace('.', ',')}`,
         variant: "destructive",
       });
-      return;
+      return undefined;
     }
     
     const newTicket: Ticket = {
@@ -150,7 +150,8 @@ export default function VendedorPage() {
     
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
     updateCurrentUserCredits((currentUser.credits || 0) - ticketCost);
-    toast({ title: "Venda Registrada!", description: "O bilhete foi ativado com sucesso.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    return newTicket;
   }, [currentUser, toast, lotteryConfig.ticketPrice, updateCurrentUserCredits]);
 
   
@@ -168,7 +169,6 @@ export default function VendedorPage() {
 
 
   const isLotteryPaused = useMemo(() => {
-    // Sales are paused if there are winning tickets
     return draws.length > 0;
   }, [draws]);
 
@@ -195,7 +195,11 @@ export default function VendedorPage() {
             <h2 id="seller-ticket-creation-heading-title" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
               <PlusCircle className="mr-3 h-8 w-8 text-primary" /> Nova Venda
             </h2>
-            <SellerTicketCreationForm onAddTicket={handleAddSellerTicket} isLotteryPaused={isLotteryPaused} />
+            <SellerTicketCreationForm 
+              onAddTicket={handleAddSellerTicket} 
+              isLotteryPaused={isLotteryPaused}
+              lotteryConfig={lotteryConfig} 
+            />
           </section>
         );
       case 'meus-bilhetes':

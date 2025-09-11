@@ -12,6 +12,8 @@ import { X, Sparkles, Trash2, TicketPlus, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import type { Ticket, User, LotteryConfig } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
+
 
 interface TicketSelectionFormProps {
   onAddTicket: (ticket: Ticket) => void;
@@ -33,6 +35,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
 }) => {
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const { toast } = useToast();
+  const [receiptTicket, setReceiptTicket] = useState<Ticket | null>(null);
 
   const numberCounts = countOccurrences(currentPicks);
 
@@ -115,72 +118,87 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     updateCurrentUserCredits((currentUser.credits || 0) - ticketCost);
     
     setCurrentPicks([]);
-    toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu bilhete já está ativo.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    setReceiptTicket(newTicket); // Set ticket to show receipt
+    
+    toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu comprovante foi gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center font-bold text-primary">Monte Seu Bilhete</CardTitle>
-        <CardDescription className="text-center text-muted-foreground">
-          Escolha 10 números de 1 a 25. Você pode repetir um número até 4 vezes.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Números Selecionados ({currentPicks.length}/{MAX_PICKS}):</h3>
-          <div className="flex flex-wrap gap-2 p-3 border border-border rounded-lg min-h-[52px] bg-background/50 items-center justify-center">
-            {currentPicks.length === 0 && <span className="text-sm text-muted-foreground">Nenhum número selecionado</span>}
-            {currentPicks.map((num, index) => (
-              <Badge key={index} variant="secondary" className="text-base relative pr-7 shadow-sm">
-                {num}
-                <button
-                  onClick={() => handleRemoveNumber(index)}
-                  className="absolute top-1/2 right-1 transform -translate-y-1/2 p-0.5 rounded-full hover:bg-secondary-foreground/20"
-                  aria-label={`Remover número ${num}`}
-                >
-                  <X size={14} />
-                </button>
-              </Badge>
-            ))}
+    <>
+      <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center font-bold text-primary">Monte Seu Bilhete</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Escolha 10 números de 1 a 25. Você pode repetir um número até 4 vezes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Números Selecionados ({currentPicks.length}/{MAX_PICKS}):</h3>
+            <div className="flex flex-wrap gap-2 p-3 border border-border rounded-lg min-h-[52px] bg-background/50 items-center justify-center">
+              {currentPicks.length === 0 && <span className="text-sm text-muted-foreground">Nenhum número selecionado</span>}
+              {currentPicks.map((num, index) => (
+                <Badge key={index} variant="secondary" className="text-base relative pr-7 shadow-sm">
+                  {num}
+                  <button
+                    onClick={() => handleRemoveNumber(index)}
+                    className="absolute top-1/2 right-1 transform -translate-y-1/2 p-0.5 rounded-full hover:bg-secondary-foreground/20"
+                    aria-label={`Remover número ${num}`}
+                  >
+                    <X size={14} />
+                  </button>
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2 text-center">Escolha os Números (1-25):</h3>
-          <div className="grid grid-cols-5 sm:grid-cols-7 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
-            {animalMapping.map(animal => (
-              <NumberButton
-                key={animal.number}
-                number={animal.number}
-                onClick={handleNumberClick}
-                disabled={(numberCounts[animal.number] || 0) >= MAX_REPETITION || currentPicks.length >= MAX_PICKS}
-                isSelected={currentPicks.includes(animal.number)}
-                countInSelection={numberCounts[animal.number] || 0}
-              />
-            ))}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 text-center">Escolha os Números (1-25):</h3>
+            <div className="grid grid-cols-5 sm:grid-cols-7 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
+              {animalMapping.map(animal => (
+                <NumberButton
+                  key={animal.number}
+                  number={animal.number}
+                  onClick={handleNumberClick}
+                  disabled={(numberCounts[animal.number] || 0) >= MAX_REPETITION || currentPicks.length >= MAX_PICKS}
+                  isSelected={currentPicks.includes(animal.number)}
+                  countInSelection={numberCounts[animal.number] || 0}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={handleAutoFill} className="flex-1 sm:flex-none shadow-md hover:shadow-lg">
-            <Sparkles className="mr-2 h-4 w-4" /> Auto-Preencher
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleAutoFill} className="flex-1 sm:flex-none shadow-md hover:shadow-lg">
+              <Sparkles className="mr-2 h-4 w-4" /> Auto-Preencher
+            </Button>
+            <Button variant="destructive" onClick={handleClearSelection} className="flex-1 sm:flex-none shadow-md hover:shadow-lg">
+              <Trash2 className="mr-2 h-4 w-4" /> Limpar
+            </Button>
+          </div>
+          <Button 
+            onClick={handleSubmitTicket} 
+            disabled={currentPicks.length !== MAX_PICKS}
+            className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl text-base py-3 px-6"
+          >
+            <TicketPlus className="mr-2 h-5 w-5" /> Adicionar Bilhete
           </Button>
-          <Button variant="destructive" onClick={handleClearSelection} className="flex-1 sm:flex-none shadow-md hover:shadow-lg">
-            <Trash2 className="mr-2 h-4 w-4" /> Limpar
-          </Button>
-        </div>
-        <Button 
-          onClick={handleSubmitTicket} 
-          disabled={currentPicks.length !== MAX_PICKS}
-          className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl text-base py-3 px-6"
-        >
-          <TicketPlus className="mr-2 h-5 w-5" /> Adicionar Bilhete
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+
+      {receiptTicket && (
+        <TicketReceiptDialog
+          isOpen={!!receiptTicket}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setReceiptTicket(null);
+            }
+          }}
+          ticket={receiptTicket}
+          lotteryConfig={lotteryConfig}
+        />
+      )}
+    </>
   );
 };
-
-    
