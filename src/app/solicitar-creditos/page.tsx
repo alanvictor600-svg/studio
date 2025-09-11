@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import type { CreditRequestConfig } from '@/types';
+import Link from 'next/link';
 
 const CREDIT_REQUEST_CONFIG_STORAGE_KEY = 'bolaoPotiguarCreditRequestConfig';
 
@@ -42,6 +43,10 @@ export default function SolicitarCreditosPage() {
       className: "bg-primary text-primary-foreground",
     });
   };
+  
+  const sanitizedWhatsAppNumber = config?.whatsappNumber.replace(/\D/g, '') || '';
+  const whatsappUrl = `https://wa.me/${sanitizedWhatsAppNumber}`;
+
 
   if (!isClient) {
     return (
@@ -80,17 +85,25 @@ export default function SolicitarCreditosPage() {
                 A forma mais rápida de nos contatar. Envie uma mensagem e retornaremos em breve.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row items-center gap-4">
-              <p className="font-mono text-lg p-3 rounded-md bg-muted flex-grow text-center sm:text-left">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+               <p className="font-mono text-lg p-3 rounded-md bg-muted flex-grow text-center sm:text-left">
                 {config?.whatsappNumber || 'Não configurado'}
               </p>
-              <Button 
-                onClick={() => handleCopy(config?.whatsappNumber || '', 'Número de WhatsApp')}
-                disabled={!config?.whatsappNumber}
-                className="w-full sm:w-auto"
-              >
-                <Copy className="mr-2 h-4 w-4" /> Copiar Número
-              </Button>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button 
+                  onClick={() => handleCopy(config?.whatsappNumber || '', 'Número de WhatsApp')}
+                  disabled={!config?.whatsappNumber}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Copy className="mr-2 h-4 w-4" /> Copiar
+                </Button>
+                <Button asChild disabled={!config?.whatsappNumber} className="flex-1">
+                    <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                       <ExternalLink className="mr-2 h-4 w-4" /> Abrir no App
+                    </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
