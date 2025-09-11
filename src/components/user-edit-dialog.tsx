@@ -59,11 +59,15 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
       return;
     }
     
+    // In our simplified system, passwordHash stores the plain text password.
+    // If a new password is provided, use it. Otherwise, keep the existing one.
+    const newPasswordHash = password.trim() ? password.trim() : user.passwordHash;
+
     const updatedUser: User = {
       ...user,
       username: username.trim(),
       role: role,
-      passwordHash: password.trim() ? password.trim() : user.passwordHash,
+      passwordHash: newPasswordHash, // Update the password hash field
     };
     onSave(updatedUser);
   };
@@ -150,3 +154,5 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
     </Dialog>
   );
 };
+
+    

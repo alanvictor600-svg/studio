@@ -362,6 +362,7 @@ export default function AdminPage() {
         if (loggedInUserRaw) {
             const loggedInUser = JSON.parse(loggedInUserRaw);
             if (loggedInUser.username === oldUsername) {
+                // If the currently logged in user is the one being edited, update their session data
                 const newCurrentUser = updatedUsers.find(u => u.id === loggedInUser.id);
                 if (newCurrentUser) {
                     localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(newCurrentUser));
@@ -974,3 +975,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
