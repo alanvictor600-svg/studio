@@ -40,7 +40,7 @@ export const InsufficientCreditsDialog: FC<InsufficientCreditsDialogProps> = ({ 
         </AlertDialogHeader>
         <AlertDialogFooter className="pt-4 flex-col-reverse sm:flex-row gap-2">
           <AlertDialogCancel className="w-full sm:w-auto">Fechar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleRedirect} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+          <AlertDialogAction onClick={handleRedirect} className="w-full sm:w-auto bg-green-500 text-white hover:bg-green-600">
             <Coins className="mr-2 h-4 w-4" /> Adquirir Saldo
           </AlertDialogAction>
         </AlertDialogFooter>
