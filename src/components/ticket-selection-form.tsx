@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, User, LotteryConfig } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
+import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 
 
 interface TicketSelectionFormProps {
@@ -36,6 +37,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const { toast } = useToast();
   const [receiptTicket, setReceiptTicket] = useState<Ticket | null>(null);
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
 
   const numberCounts = countOccurrences(currentPicks);
 
@@ -98,11 +100,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
 
     const ticketCost = lotteryConfig.ticketPrice;
     if ((currentUser.credits || 0) < ticketCost) {
-      toast({
-        title: "Crédito Insuficiente",
-        description: `Você não tem créditos suficientes. Saldo: R$ ${(currentUser.credits || 0).toFixed(2).replace('.', ',')}`,
-        variant: "destructive",
-      });
+      setIsCreditsDialogOpen(true);
       return;
     }
 
@@ -199,6 +197,11 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           lotteryConfig={lotteryConfig}
         />
       )}
+      
+      <InsufficientCreditsDialog
+        isOpen={isCreditsDialogOpen}
+        onOpenChange={setIsCreditsDialogOpen}
+      />
     </>
   );
 };

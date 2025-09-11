@@ -130,11 +130,7 @@ export default function VendedorPage() {
     }
     const ticketCost = lotteryConfig.ticketPrice;
     if ((currentUser.credits || 0) < ticketCost) {
-      toast({
-        title: "Crédito Insuficiente",
-        description: `Você não tem créditos para registrar esta venda. Saldo: R$ ${(currentUser.credits || 0).toFixed(2).replace('.', ',')}`,
-        variant: "destructive",
-      });
+      // This case is now handled inside the form to show a dialog
       return undefined;
     }
     

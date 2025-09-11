@@ -14,6 +14,7 @@ import { X, Sparkles, Trash2, TicketPlus, User, Phone, PauseCircle } from 'lucid
 import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
+import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 
 interface SellerTicketCreationFormProps {
   onAddTicket: (numbers: number[], buyerName: string, buyerPhone: string) => Ticket | undefined;
@@ -34,6 +35,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
   const [buyerPhone, setBuyerPhone] = useState('');
   const { toast } = useToast();
   const [receiptTicket, setReceiptTicket] = useState<Ticket | null>(null);
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
 
   const numberCounts = countOccurrences(currentPicks);
 
@@ -95,6 +97,12 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     
     const createdTicket = onAddTicket([...currentPicks].sort((a,b) => a-b), buyerName, buyerPhone);
     
+    if (createdTicket === undefined) {
+        // This means credit was insufficient.
+        setIsCreditsDialogOpen(true);
+        return;
+    }
+
     if (createdTicket) {
       setCurrentPicks([]);
       setBuyerName('');
@@ -207,6 +215,11 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
           lotteryConfig={lotteryConfig}
         />
       )}
+
+      <InsufficientCreditsDialog
+        isOpen={isCreditsDialogOpen}
+        onOpenChange={setIsCreditsDialogOpen}
+      />
     </>
   );
 };
