@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -64,29 +65,29 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
-      <div className="fixed top-6 right-6 z-50">
-        <ThemeToggleButton />
-      </div>
-      <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50">
+       <div className="absolute top-6 left-6 z-50">
         <Link href="/" passHref>
-          <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start">
+          <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start shadow-md">
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline-block sm:ml-2">Voltar para Home</span>
+            <span className="hidden sm:inline-block sm:ml-2">Voltar</span>
           </Button>
         </Link>
       </div>
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggleButton />
+      </div>
 
-      <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm border-border/50">
         <CardHeader className="text-center">
-          <LogIn className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary">Login</CardTitle>
+          <Image src="/logo.png" alt="Logo Bolão Potiguar" width={80} height={80} className="mx-auto mb-4" />
+          <CardTitle className="text-3xl font-bold text-primary">Bem-vindo de Volta!</CardTitle>
           <CardDescription className="text-muted-foreground">
             Acesse sua conta para continuar.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full" onClick={loginWithGoogle} disabled={authLoading}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={loginWithGoogle} disabled={authLoading}>
               <GoogleIcon />
               <span className="ml-2">Entrar com Google</span>
             </Button>
@@ -107,7 +108,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-background/70"
+                  className="bg-background/70 h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -119,10 +120,11 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-background/70"
+                  className="bg-background/70 h-11"
                 />
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-3" disabled={authLoading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={authLoading}>
+                <LogIn className="mr-2 h-5 w-5" />
                 {authLoading ? 'Entrando...' : 'Entrar com E-mail'}
               </Button>
             </form>
@@ -131,7 +133,7 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col items-center space-y-2 pt-6">
           <p className="text-sm text-muted-foreground">Não tem uma conta?</p>
           <Link href="/cadastrar" passHref>
-            <Button variant="link" className="text-primary">
+            <Button variant="link" className="text-primary h-auto py-1 px-2">
               <UserPlus className="mr-2 h-4 w-4" /> Cadastre-se aqui
             </Button>
           </Link>

@@ -14,6 +14,7 @@ import { UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -37,10 +38,13 @@ export default function CadastroPage() {
 
   useEffect(() => {
     setIsClient(true);
-    if (!authLoading && currentUser) {
+  }, []);
+  
+  useEffect(() => {
+    if (isClient && !authLoading && currentUser) {
       router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor');
     }
-  }, [currentUser, authLoading, router]);
+  }, [currentUser, authLoading, router, isClient]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +61,10 @@ export default function CadastroPage() {
        toast({ title: "Erro de Cadastro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
       return;
     }
+    if (password.length < 6) {
+        toast({ title: "Erro de Cadastro", description: "A senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+        return;
+    }
     await register(username.trim(), password, role);
   };
   
@@ -70,29 +78,29 @@ export default function CadastroPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
-      <div className="fixed top-6 right-6 z-50">
-        <ThemeToggleButton />
-      </div>
-       <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-50">
+      <div className="absolute top-6 left-6 z-50">
         <Link href="/" passHref>
-          <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start">
+          <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start shadow-md">
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline-block sm:ml-2">Voltar para Home</span>
+            <span className="hidden sm:inline-block sm:ml-2">Voltar</span>
           </Button>
         </Link>
       </div>
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggleButton />
+      </div>
 
-      <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm border-border/50">
         <CardHeader className="text-center">
-          <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary">Criar Conta</CardTitle>
+            <Image src="/logo.png" alt="Logo Bolão Potiguar" width={80} height={80} className="mx-auto mb-4" />
+          <CardTitle className="text-3xl font-bold text-primary">Crie sua Conta</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Preencha os campos para se registrar ou use o Google.
+            Rápido e fácil. Escolha seu método preferido abaixo.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full" onClick={loginWithGoogle}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={loginWithGoogle}>
               <GoogleIcon />
               <span className="ml-2">Continuar com Google</span>
             </Button>
@@ -113,7 +121,7 @@ export default function CadastroPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-background/70"
+                  className="bg-background/70 h-11"
                 />
                 <p className="text-xs text-muted-foreground">Apenas letras, números e os caracteres . - _</p>
               </div>
@@ -126,7 +134,7 @@ export default function CadastroPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-background/70"
+                  className="bg-background/70 h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -138,27 +146,28 @@ export default function CadastroPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="bg-background/70"
+                  className="bg-background/70 h-11"
                 />
               </div>
-              <div className="space-y-3">
-                <Label>Qual seu perfil?</Label>
+              <div className="space-y-3 pt-2">
+                <Label>Qual seu perfil de usuário?</Label>
                 <RadioGroup
                   defaultValue="cliente"
                   onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')}
-                  className="flex space-x-4"
+                  className="flex space-x-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="cliente" id="role-cliente" />
-                    <Label htmlFor="role-cliente" className="font-normal">Cliente</Label>
+                    <Label htmlFor="role-cliente" className="font-normal text-base cursor-pointer">Cliente</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="vendedor" id="role-vendedor" />
-                    <Label htmlFor="role-vendedor" className="font-normal">Vendedor</Label>
+                    <Label htmlFor="role-vendedor" className="font-normal text-base cursor-pointer">Vendedor</Label>
                   </div>
                 </RadioGroup>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-3" disabled={authLoading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={authLoading}>
+                 <UserPlus className="mr-2 h-5 w-5" />
                 {authLoading ? 'Registrando...' : 'Registrar com E-mail'}
               </Button>
             </form>
@@ -167,7 +176,7 @@ export default function CadastroPage() {
         <CardFooter className="flex flex-col items-center space-y-2 pt-6">
           <p className="text-sm text-muted-foreground">Já tem uma conta?</p>
           <Link href="/login" passHref>
-            <Button variant="link" className="text-primary">
+            <Button variant="link" className="text-primary h-auto py-1 px-2">
               <LogIn className="mr-2 h-4 w-4" /> Faça login aqui
             </Button>
           </Link>
