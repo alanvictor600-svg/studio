@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -11,6 +12,7 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     signOut,
+    updateProfile,
     type User as FirebaseUser 
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase'; // Assuming you have this firebase config file
@@ -51,12 +53,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
             // This case can happen if user exists in Firebase Auth but not in our local user list.
             // For now, we create a temporary user object. This will be solved with Firestore.
-             const username = user.email?.split('@')[0] || 'unknown';
+             const username = user.displayName || user.email?.split('@')[0] || 'unknown';
              const temporaryUser: AppUser = {
                 id: user.uid,
                 username: username,
                 role: 'cliente', // default role
-                credits: 0,
+                saldo: 0,
                 passwordHash: '', // not needed on client
                 createdAt: user.metadata.creationTime || new Date().toISOString(),
              };
@@ -87,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const updateCurrentUserCredits = (newCredits: number) => {
     if (currentUser) {
-      const updatedUser = { ...currentUser, credits: newCredits };
+      const updatedUser = { ...currentUser, saldo: newCredits };
       setCurrentUser(updatedUser);
 
       // Persist this change to our temporary local storage
@@ -100,6 +102,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor'): Promise<boolean> => {
     setIsLoading(true);
+    
+    if (!username || username.trim() === '') {
+        toast({ title: "Erro de Login", description: "O nome de usuário não pode estar vazio.", variant: "destructive" });
+        setIsLoading(false);
+        return false;
+    }
+
     try {
       // Firebase Auth uses email, so we'll construct an email from the username.
       const email = `${username.toLowerCase()}@bolao.app`;
@@ -134,6 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let message = "Ocorreu um erro ao fazer login.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           message = "Usuário ou senha inválidos.";
+      } else if (error.code === 'auth/invalid-email') {
+          message = "O nome de usuário não pode conter espaços ou caracteres especiais.";
       }
       toast({ title: "Erro de Login", description: message, variant: "destructive" });
       return false;
@@ -144,6 +155,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
      setIsLoading(true);
+     
+     if (!username || !/^[a-zA-Z0-9_.-]+$/.test(username)) {
+         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras, números e . - _", variant: "destructive" });
+         setIsLoading(false);
+         return false;
+     }
+
      // For Firebase Auth, username must be a valid email format. We'll create a fake one.
      const email = `${username.toLowerCase()}@bolao.app`;
 
@@ -151,14 +169,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Step 1: Create user in Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, passwordRaw);
         const firebaseUser = userCredential.user;
+        
+        // Step 1.5: Set the displayName on the firebase user profile
+        await updateProfile(firebaseUser, { displayName: username });
 
-        // Step 2: Store our app-specific user data (role, credits) in localStorage for now.
+        // Step 2: Store our app-specific user data (role, saldo) in localStorage for now.
         // This part will be replaced by Firestore later.
         const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
         const users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
         
         if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-            // This is unlikely if Firebase registration succeeded, but a good safeguard.
             toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
             return false;
         }
@@ -186,6 +206,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             message = "Este nome de usuário já está em uso.";
         } else if (error.code === 'auth/weak-password') {
             message = "A senha é muito fraca. Tente uma senha com pelo menos 6 caracteres.";
+        } else if (error.code === 'auth/invalid-email') {
+            message = "O nome de usuário não pode conter espaços ou caracteres especiais.";
         }
         toast({ title: "Erro de Cadastro", description: message, variant: "destructive" });
         return false;
@@ -216,3 +238,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    

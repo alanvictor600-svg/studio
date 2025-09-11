@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -45,7 +46,7 @@ export default function CadastroPage() {
        toast({ title: "Erro de Cadastro", description: "Todos os campos são obrigatórios.", variant: "destructive" });
       return;
     }
-    await register(username, password, role);
+    await register(username.trim(), password, role);
   };
   
   if (authLoading && isClient) {
@@ -102,13 +103,14 @@ export default function CadastroPage() {
                 required
                 className="bg-background/70"
               />
+               <p className="text-xs text-muted-foreground">Apenas letras, números e os caracteres . - _</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Crie uma senha"
+                placeholder="Crie uma senha (mínimo 6 caracteres)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -165,3 +167,5 @@ export default function CadastroPage() {
     </div>
   );
 }
+
+    
