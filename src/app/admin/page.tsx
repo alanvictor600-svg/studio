@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Eye } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Eye, Ticket as TicketIcon } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -444,6 +444,16 @@ export default function AdminPage() {
     }
   };
   
+  const getUserActiveTicketsCount = useCallback((user: User) => {
+    if (user.role === 'cliente') {
+      return clientTickets.filter(t => t.status === 'active' && t.buyerName === user.username).length;
+    }
+    if (user.role === 'vendedor') {
+      return vendedorTickets.filter(t => t.status === 'active' && t.sellerUsername === user.username).length;
+    }
+    return 0;
+  }, [clientTickets, vendedorTickets]);
+
   const filteredUsers = useMemo(() => {
     if (!userSearchTerm) {
       return allUsers;
@@ -599,13 +609,17 @@ export default function AdminPage() {
                         </Avatar>
                         <div className="flex-grow">
                             <p className="font-semibold text-foreground">{user.username}</p>
-                            <div className="flex items-center gap-x-4">
+                            <div className="flex items-center gap-x-2 flex-wrap">
                                 <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
                                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                                 </Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
                                     <Coins className="h-3 w-3" />
                                     Créditos: R$ {(user.credits || 0).toFixed(2).replace('.', ',')}
+                                </Badge>
+                                <Badge variant="outline" className="flex items-center gap-1 border-primary/50 text-primary">
+                                    <TicketIcon className="h-3 w-3" />
+                                    Ativos: {getUserActiveTicketsCount(user)}
                                 </Badge>
                             </div>
                         </div>
@@ -979,6 +993,7 @@ export default function AdminPage() {
               isOpen={isUserViewDialogOpen}
               onOpenChange={setIsUserViewDialogOpen}
               user={userToView}
+              allTickets={allSystemTickets}
               onDelete={() => {
                 if (userToView) {
                   handleConfirmDeleteUser(userToView);
@@ -1023,3 +1038,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
