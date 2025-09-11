@@ -32,14 +32,23 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+  const [registrationHref, setRegistrationHref] = useState('/cadastrar');
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
+    const redirectPath = searchParams.get('redirect');
+    if (redirectPath?.includes('cliente')) {
+      setRegistrationHref('/cadastrar?role=cliente');
+    } else if (redirectPath?.includes('vendedor')) {
+      setRegistrationHref('/cadastrar?role=vendedor');
+    } else {
+      setRegistrationHref('/cadastrar');
+    }
+
     if (isClient && !authLoading && currentUser) {
-      const redirectPath = searchParams.get('redirect');
       router.push(redirectPath || (currentUser.role === 'cliente' ? '/cliente' : '/vendedor'));
     }
   }, [currentUser, authLoading, router, searchParams, isClient]);
@@ -132,7 +141,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-2 pt-6">
           <p className="text-sm text-muted-foreground">Não tem uma conta?</p>
-          <Link href="/cadastrar" passHref>
+          <Link href={registrationHref} passHref>
             <Button variant="link" className="text-primary h-auto py-1 px-2">
               <UserPlus className="mr-2 h-4 w-4" /> Cadastre-se aqui
             </Button>

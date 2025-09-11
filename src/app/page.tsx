@@ -49,9 +49,10 @@ export default function LandingPage() {
     if (currentUser && currentUser.role === 'cliente') {
       router.push('/cliente');
     } else if (currentUser && currentUser.role !== 'cliente') {
+      // If logged in as a seller, force re-login for client page
       router.push('/login?redirect=/cliente');
-    }
-     else {
+    } else {
+      // Not logged in, go to login with redirect
       router.push('/login?redirect=/cliente');
     }
   };
@@ -60,9 +61,10 @@ export default function LandingPage() {
      if (currentUser && currentUser.role === 'vendedor') {
       router.push('/vendedor');
     } else if (currentUser && currentUser.role !== 'vendedor') {
+      // If logged in as a client, force re-login for seller page
       router.push('/login?redirect=/vendedor');
-    }
-     else {
+    } else {
+      // Not logged in, go to login with redirect
       router.push('/login?redirect=/vendedor');
     }
   };

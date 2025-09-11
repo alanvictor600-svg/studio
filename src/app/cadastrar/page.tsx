@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,12 +33,17 @@ export default function CadastroPage() {
   const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
   const { register, loginWithGoogle, currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    const roleFromQuery = searchParams.get('role');
+    if (roleFromQuery === 'cliente' || roleFromQuery === 'vendedor') {
+      setRole(roleFromQuery);
+    }
+  }, [searchParams]);
   
   useEffect(() => {
     if (isClient && !authLoading && currentUser) {
@@ -152,7 +157,7 @@ export default function CadastroPage() {
               <div className="space-y-3 pt-2">
                 <Label>Qual seu perfil de usuário?</Label>
                 <RadioGroup
-                  defaultValue="cliente"
+                  value={role}
                   onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')}
                   className="flex space-x-6"
                 >
