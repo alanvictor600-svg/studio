@@ -156,14 +156,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
      setIsLoading(true);
      
-     if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+     if (!/^[a-zA-Z0-9_.-]+$/.test(username.trim())) {
          toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras, números e os caracteres: . - _", variant: "destructive" });
          setIsLoading(false);
          return false;
      }
 
      // For Firebase Auth, username must be a valid email format. We'll create a fake one.
-     const email = `${username.toLowerCase()}@bolao.app`;
+     const email = `${username.trim().toLowerCase()}@bolao.app`;
 
      try {
         // Step 1: Create user in Firebase Authentication
