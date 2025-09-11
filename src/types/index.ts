@@ -35,7 +35,6 @@ export interface LotteryConfig {
 export interface CreditRequestConfig {
   whatsappNumber: string;
   pixKey: string;
-  pixQrCodeUrl: string;
 }
 
 export interface SellerHistoryEntry {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -110,7 +111,7 @@ export default function SolicitarSaldoPage() {
                     <CardHeader className="text-center pb-4">
                         <Smartphone className="h-10 w-10 text-primary mx-auto mb-2" />
                         <CardTitle>Pagamento via Pix</CardTitle>
-                        <CardDescription>Use a chave ou o QR Code.</CardDescription>
+                        <CardDescription>Use a chave Pix.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="p-3 rounded-md bg-muted text-center">
@@ -127,23 +128,6 @@ export default function SolicitarSaldoPage() {
                         >
                             <Copy className="mr-2 h-4 w-4" /> Copiar Chave
                         </Button>
-                         <div className="flex justify-center pt-2">
-                            {config?.pixQrCodeUrl ? (
-                                <Image
-                                    src={config.pixQrCodeUrl}
-                                    alt="QR Code para pagamento Pix"
-                                    width={150}
-                                    height={150}
-                                    className="rounded-md shadow-md"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                />
-                            ) : (
-                                <div className="h-[150px] w-[150px] flex flex-col items-center justify-center bg-muted rounded-md text-center p-2">
-                                    <AlertCircle className="h-6 w-6 text-muted-foreground mb-1"/>
-                                    <span className="text-xs text-muted-foreground">QR Code não disponível.</span>
-                                </div>
-                            )}
-                        </div>
                     </CardContent>
                 </Card>
 

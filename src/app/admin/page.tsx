@@ -48,7 +48,6 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
 const DEFAULT_CREDIT_CONFIG: CreditRequestConfig = {
     whatsappNumber: '',
     pixKey: '',
-    pixQrCodeUrl: ''
 };
 
 type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios';
@@ -80,7 +79,6 @@ export default function AdminPage() {
 
   const [whatsappInput, setWhatsappInput] = useState('');
   const [pixKeyInput, setPixKeyInput] = useState('');
-  const [pixQrCodeUrlInput, setPixQrCodeUrlInput] = useState('');
 
   const [activeSection, setActiveSection] = useState<AdminSection>('configuracoes');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -126,7 +124,6 @@ export default function AdminPage() {
         setCreditRequestConfig(initialCreditConfig);
         setWhatsappInput(initialCreditConfig.whatsappNumber);
         setPixKeyInput(initialCreditConfig.pixKey);
-        setPixQrCodeUrlInput(initialCreditConfig.pixQrCodeUrl);
 
         const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
         setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
@@ -357,7 +354,6 @@ export default function AdminPage() {
     setCreditRequestConfig({
       whatsappNumber: whatsappInput.trim(),
       pixKey: pixKeyInput.trim(),
-      pixQrCodeUrl: pixQrCodeUrlInput.trim()
     });
     toast({ title: "Configurações Salvas!", description: "Informações de contato para solicitação de saldo atualizadas.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
@@ -674,17 +670,6 @@ export default function AdminPage() {
                               value={pixKeyInput}
                               onChange={(e) => setPixKeyInput(e.target.value)}
                               placeholder="Ex: seu-email@provedor.com"
-                              className="bg-background/70"
-                          />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="pixQrCodeUrl">URL da Imagem do QR Code Pix</Label>
-                          <Input 
-                              id="pixQrCodeUrl" 
-                              type="text" 
-                              value={pixQrCodeUrlInput}
-                              onChange={(e) => setPixQrCodeUrlInput(e.target.value)}
-                              placeholder="Ex: https://meusite.com/qrcode.png"
                               className="bg-background/70"
                           />
                       </div>
