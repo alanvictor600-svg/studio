@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { DollarSign } from 'lucide-react';
 
 interface UserEditDialogProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
+  const [creditsToAdd, setCreditsToAdd] = useState<number | ''>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
       setUsername(user.username);
       setRole(user.role);
       setPassword(''); // Reset password field on open
+      setCreditsToAdd(''); // Reset credits field
     }
   }, [isOpen, user]);
 
@@ -55,13 +58,19 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
       toast({ title: 'Erro de Validação', description: 'O nome de usuário não pode estar vazio.', variant: 'destructive' });
       return;
     }
+    
+    const creditsChange = Number(creditsToAdd);
+    if(isNaN(creditsChange)) {
+      toast({ title: 'Erro de Validação', description: 'O valor dos créditos é inválido.', variant: 'destructive' });
+      return;
+    }
 
     const updatedUser: User = {
       ...user,
       username: username.trim(),
       role: role,
-      // Only update password if a new one is entered
       passwordHash: password.trim() ? password.trim() : user.passwordHash,
+      credits: (user.credits || 0) + creditsChange,
     };
     onSave(updatedUser);
   };
@@ -123,6 +132,23 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
                 <Label htmlFor="role-vendedor">Vendedor</Label>
               </div>
             </RadioGroup>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="credits" className="text-right flex flex-col items-end">
+                <span>Créditos</span>
+                <span className="text-xs text-muted-foreground">(+/-)</span>
+            </Label>
+            <div className="relative col-span-3">
+              <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="credits"
+                type="number"
+                value={creditsToAdd}
+                onChange={(e) => setCreditsToAdd(e.target.value === '' ? '' : Number(e.target.value))}
+                className="pl-9"
+                placeholder="Ex: 50 para adicionar, -10 para remover"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

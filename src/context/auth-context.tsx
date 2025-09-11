@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<boolean>;
   isLoading: boolean;
   isAuthenticated: boolean;
+  updateCurrentUserCredits: (newCredits: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +57,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
     }
   }, [users, isLoading]);
+  
+  const updateCurrentUserCredits = (newCredits: number) => {
+    if (currentUser) {
+      const updatedUser = { ...currentUser, credits: newCredits };
+      setCurrentUser(updatedUser);
+      setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+      localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser));
+    }
+  };
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor'): Promise<boolean> => {
     const userToLogin = users.find(u => u.username === username);
@@ -107,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       passwordHash: passwordRaw, // Storing plain text for prototype simplicity
       role,
       createdAt: new Date().toISOString(),
+      credits: 0, // Start with 0 credits
     };
     
     setUsers(prevUsers => [...prevUsers, newUser]);
@@ -129,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !isLoading && !!currentUser;
   
-  const value = { currentUser, login, logout, register, isLoading, isAuthenticated };
+  const value = { currentUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 
   // This prevents rendering children until the auth state is determined,
   // avoiding flashes of incorrect content.

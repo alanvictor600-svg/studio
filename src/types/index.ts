@@ -22,6 +22,7 @@ export interface User {
   passwordHash: string; // Storing a hash is better, but for simplicity, this might store plain if not careful.
   role: 'cliente' | 'vendedor';
   createdAt: string; // ISO string for date
+  credits: number; // User's credit balance
 }
 
 export interface LotteryConfig {

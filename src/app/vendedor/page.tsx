@@ -11,7 +11,7 @@ import { TicketList } from '@/components/ticket-list';
 import { SellerTicketCreationForm } from '@/components/seller-ticket-creation-form';
 import type { Draw, Ticket, LotteryConfig, SellerHistoryEntry } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import { ClipboardList, Ticket as TicketIconLucide, PieChart, PlusCircle, ListChecks, History, DollarSign, Percent, TrendingUp, Menu, X, LogOut, LogIn, Palette } from 'lucide-react';
+import { ClipboardList, Ticket as TicketIconLucide, PieChart, PlusCircle, ListChecks, History, DollarSign, Percent, TrendingUp, Menu, X, LogOut, LogIn, Palette, Coins } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/auth-context';
@@ -54,7 +54,7 @@ export default function VendedorPage() {
   const [sellerHistory, setSellerHistory] = useState<SellerHistoryEntry[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, updateCurrentUserCredits } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<VendedorSection>('nova-venda');
 
@@ -128,6 +128,16 @@ export default function VendedorPage() {
       toast({ title: "Erro", description: "Vendedor não autenticado.", variant: "destructive" });
       return;
     }
+    const ticketCost = lotteryConfig.ticketPrice;
+    if ((currentUser.credits || 0) < ticketCost) {
+      toast({
+        title: "Crédito Insuficiente",
+        description: `Você não tem créditos para registrar esta venda. Saldo: R$ ${(currentUser.credits || 0).toFixed(2).replace('.', ',')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: numbers.sort((a, b) => a - b),
@@ -139,8 +149,9 @@ export default function VendedorPage() {
     };
     
     setVendedorManagedTickets(prevTickets => [newTicket, ...prevTickets]);
+    updateCurrentUserCredits((currentUser.credits || 0) - ticketCost);
     toast({ title: "Venda Registrada!", description: "O bilhete foi ativado com sucesso.", className: "bg-primary text-primary-foreground", duration: 3000 });
-  }, [currentUser, toast]);
+  }, [currentUser, toast, lotteryConfig.ticketPrice, updateCurrentUserCredits]);
 
   
   const { activeSellerTicketsCount, totalRevenueFromActiveTickets, commissionEarned } = useMemo(() => {
@@ -387,6 +398,14 @@ export default function VendedorPage() {
             </div>
           )}
           <nav className="space-y-2 flex-grow md:flex-grow-0">
+             {currentUser && (
+                <div className="p-3 mb-2 rounded-lg bg-primary/10 text-center">
+                    <p className="text-sm font-semibold text-primary">Seu Saldo</p>
+                    <p className="text-2xl font-bold text-primary">
+                        R$ {(currentUser.credits || 0).toFixed(2).replace('.', ',')}
+                    </p>
+                </div>
+            )}
             {menuItems.map(item => (
               <Button
                 key={item.id}

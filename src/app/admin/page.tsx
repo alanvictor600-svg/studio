@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search } from 'lucide-react';
+import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -351,7 +351,7 @@ export default function AdminPage() {
         if (loggedInUserRaw) {
             const loggedInUser = JSON.parse(loggedInUserRaw);
             if (loggedInUser.username === oldUsername) {
-                localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify({ ...loggedInUser, username: newUsername }));
+                localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify({ ...loggedInUser, username: newUsername, credits: updatedUser.credits }));
             }
         }
     }
@@ -531,19 +531,25 @@ export default function AdminPage() {
               <TabsContent value="contas" className="mt-6">
                  <div className="space-y-4">
                   {allUsers.length > 0 ? allUsers.map(user => (
-                    <Card key={user.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-card/80 backdrop-blur-sm shadow-md">
+                    <Card key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-card/80 backdrop-blur-sm shadow-md">
                       <div className="flex items-center gap-4 mb-4 sm:mb-0">
                         <Avatar>
                             <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                             <p className="font-semibold text-foreground">{user.username}</p>
-                            <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
-                                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                            </Badge>
+                            <div className="flex items-center gap-x-4">
+                                <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
+                                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                </Badge>
+                                <Badge variant="outline" className="flex items-center gap-1 border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
+                                    <Coins className="h-3 w-3" />
+                                    Créditos: R$ {(user.credits || 0).toFixed(2).replace('.', ',')}
+                                </Badge>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 self-end sm:self-center">
                             <Button variant="outline" size="sm" onClick={() => handleOpenEditUser(user)}>
                                 <Edit className="mr-2 h-4 w-4"/> Editar
                             </Button>

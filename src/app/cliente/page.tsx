@@ -4,21 +4,30 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
-import type { Ticket, Draw } from '@/types';
+import type { Ticket, Draw, LotteryConfig } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn, Palette, History } from 'lucide-react';
+import { Menu, X, Ticket as TicketIconLucide, ListChecks, LogOut, LogIn, Palette, History, Coins } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AdminDrawList } from '@/components/admin-draw-list';
+import { useToast } from "@/hooks/use-toast";
 
 const CLIENTE_TICKETS_STORAGE_KEY = 'bolaoPotiguarClienteTickets';
 const VENDEDOR_TICKETS_STORAGE_KEY = 'bolaoPotiguarVendedorTickets';
 const DRAWS_STORAGE_KEY = 'bolaoPotiguarDraws';
+const LOTTERY_CONFIG_STORAGE_KEY = 'bolaoPotiguarLotteryConfig';
+
+const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
+  ticketPrice: 2,
+  sellerCommissionPercentage: 10,
+  ownerCommissionPercentage: 5,
+  clientSalesCommissionToOwnerPercentage: 10,
+};
 
 type ClienteSection = 'selecionar-bilhete' | 'meus-bilhetes' | 'resultados';
 
@@ -32,10 +41,12 @@ export default function ClientePage() {
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [draws, setDraws] = useState<Draw[]>([]);
+  const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [isClient, setIsClient] = useState(false);
-  const { currentUser, logout, isAuthenticated } = useAuth();
+  const { currentUser, logout, isAuthenticated, updateCurrentUserCredits } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<ClienteSection>('selecionar-bilhete');
+  const { toast } = useToast();
 
   // Load data and update statuses
   useEffect(() => {
@@ -65,6 +76,9 @@ export default function ClientePage() {
     );
     setMyTickets(userTickets);
 
+    const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
+    setLotteryConfig(storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG);
+
     // Also, re-save all tickets to ensure statuses are up-to-date in storage
     localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
 
@@ -72,11 +86,21 @@ export default function ClientePage() {
 
   const handleAddTicket = useCallback((newNumbers: number[]) => {
     if (!currentUser) return;
+    
+    const ticketCost = lotteryConfig.ticketPrice;
+    if ((currentUser.credits || 0) < ticketCost) {
+      toast({
+        title: "Crédito Insuficiente",
+        description: `Você não tem créditos suficientes para comprar este bilhete. Saldo: R$ ${(currentUser.credits || 0).toFixed(2).replace('.', ',')}`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     const newTicket: Ticket = {
       id: uuidv4(),
       numbers: newNumbers.sort((a, b) => a - b),
-      status: 'active', // New tickets are now active immediately
+      status: 'active',
       createdAt: new Date().toISOString(),
       buyerName: currentUser.username,
     };
@@ -87,7 +111,8 @@ export default function ClientePage() {
     localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(updatedAllTickets));
     
     setMyTickets(prevTickets => [newTicket, ...prevTickets]);
-  }, [currentUser]);
+    updateCurrentUserCredits((currentUser.credits || 0) - ticketCost);
+  }, [currentUser, lotteryConfig.ticketPrice, toast, updateCurrentUserCredits]);
 
   const handleSectionChange = (sectionId: ClienteSection) => {
     setActiveSection(sectionId);
@@ -196,6 +221,14 @@ export default function ClientePage() {
             </div>
           )}
           <nav className="space-y-2 flex-grow md:flex-grow-0">
+             {currentUser && (
+                <div className="p-3 mb-2 rounded-lg bg-primary/10 text-center">
+                    <p className="text-sm font-semibold text-primary">Seu Saldo</p>
+                    <p className="text-2xl font-bold text-primary">
+                        R$ {(currentUser.credits || 0).toFixed(2).replace('.', ',')}
+                    </p>
+                </div>
+            )}
             {menuItems.map(item => (
               <Button
                 key={item.id}
