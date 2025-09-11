@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Coins } from 'lucide-react';
+import { Coins, Sparkles } from 'lucide-react';
 
 interface InsufficientCreditsDialogProps {
   isOpen: boolean;
@@ -31,17 +31,17 @@ export const InsufficientCreditsDialog: FC<InsufficientCreditsDialogProps> = ({ 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Saldo Insuficiente!</AlertDialogTitle>
-          <AlertDialogDescription>
-            Você não possui créditos suficientes para realizar esta aposta. 
-            Por favor, adquira mais créditos para continuar.
+        <AlertDialogHeader className="text-center">
+           <Sparkles className="mx-auto h-12 w-12 text-yellow-500 mb-2" />
+          <AlertDialogTitle className="text-2xl">Quase lá! Adicione créditos para continuar</AlertDialogTitle>
+          <AlertDialogDescription className="text-base text-muted-foreground pt-2">
+            Sua sorte está a um passo! Adicione mais créditos agora para não perder a chance de ganhar.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Fechar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleRedirect} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Coins className="mr-2 h-4 w-4" /> Solicitar Créditos
+        <AlertDialogFooter className="pt-4 flex-col-reverse sm:flex-row gap-2">
+          <AlertDialogCancel className="w-full sm:w-auto">Fechar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleRedirect} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Coins className="mr-2 h-4 w-4" /> Adquirir Créditos
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
