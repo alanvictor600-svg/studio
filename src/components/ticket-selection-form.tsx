@@ -99,7 +99,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     }
 
     const ticketCost = lotteryConfig.ticketPrice;
-    if ((currentUser.credits || 0) < ticketCost) {
+    if ((currentUser.saldo || 0) < ticketCost) {
       setIsCreditsDialogOpen(true);
       return;
     }
@@ -113,7 +113,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     };
     
     onAddTicket(newTicket);
-    updateCurrentUserCredits((currentUser.credits || 0) - ticketCost);
+    updateCurrentUserCredits((currentUser.saldo || 0) - ticketCost);
     
     setCurrentPicks([]);
     setReceiptTicket(newTicket); // Set ticket to show receipt

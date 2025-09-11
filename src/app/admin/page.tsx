@@ -369,7 +369,7 @@ export default function AdminPage() {
   };
   
   const handleCreditChange = (user: User, amount: number) => {
-    const updatedUser = { ...user, credits: (user.credits || 0) + amount };
+    const updatedUser = { ...user, saldo: (user.saldo || 0) + amount };
     const updatedUsers = allUsers.map(u => u.id === user.id ? updatedUser : u);
     setAllUsers(updatedUsers);
 
@@ -385,7 +385,7 @@ export default function AdminPage() {
 
     toast({
         title: "Saldo Atualizado!",
-        description: `O saldo de ${user.username} agora é R$ ${updatedUser.credits.toFixed(2).replace('.', ',')}.`,
+        description: `O saldo de ${user.username} agora é R$ ${updatedUser.saldo.toFixed(2).replace('.', ',')}.`,
         className: "bg-primary text-primary-foreground",
         duration: 3000
     });
@@ -613,7 +613,7 @@ export default function AdminPage() {
                                 </Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
                                     <Coins className="h-3 w-3" />
-                                    Saldo: R$ {(user.credits || 0).toFixed(2).replace('.', ',')}
+                                    Saldo: R$ {(user.saldo || 0).toFixed(2).replace('.', ',')}
                                 </Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 border-primary/50 text-primary">
                                     <TicketIcon className="h-3 w-3" />
@@ -1031,3 +1031,4 @@ export default function AdminPage() {
     
 
     
+

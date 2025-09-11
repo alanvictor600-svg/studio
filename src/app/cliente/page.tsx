@@ -209,7 +209,7 @@ export default function ClientePage() {
                 <div className="p-3 mb-2 rounded-lg bg-primary/10 text-center">
                     <p className="text-sm font-semibold text-primary">Seu Saldo</p>
                     <p className="text-2xl font-bold text-primary">
-                        R$ {(currentUser.credits || 0).toFixed(2).replace('.', ',')}
+                        R$ {(currentUser.saldo || 0).toFixed(2).replace('.', ',')}
                     </p>
                 </div>
             )}

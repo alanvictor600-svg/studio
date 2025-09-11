@@ -88,7 +88,7 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
                     <p className="text-sm font-semibold text-primary">Saldo Atual</p>
                     <p className="text-3xl font-bold text-primary flex items-center justify-center gap-2">
                         <Coins className="h-7 w-7"/>
-                        <span>R$ {(user.credits || 0).toFixed(2).replace('.', ',')}</span>
+                        <span>R$ {(user.saldo || 0).toFixed(2).replace('.', ',')}</span>
                     </p>
                 </div>
             </div>

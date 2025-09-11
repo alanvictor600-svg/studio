@@ -2,16 +2,24 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import type { User } from '@/types';
+import type { User as AppUser } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from 'uuid';
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut,
+    type User as FirebaseUser 
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase'; // Assuming you have this firebase config file
 
-const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
-const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
+const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers'; // We still need this for roles and credits temporarily
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: AppUser | null;
+  firebaseUser: FirebaseUser | null;
   login: (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor') => Promise<boolean>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<boolean>;
@@ -23,174 +31,180 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    setTimeout(() => {
-      toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
-    }, 0);
-    router.push('/');
-  }, [router, toast]);
 
-  // Effect for initial data load from localStorage
   useEffect(() => {
-    let isMounted = true;
-    const loadInitialData = () => {
-        try {
-            const storedUsersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
-            const localUsers: User[] = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
-            if (isMounted) setUsers(localUsers);
-
-            const storedCurrentUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
-            if (storedCurrentUserRaw) {
-                const storedCurrentUser = JSON.parse(storedCurrentUserRaw);
-                const foundUser = localUsers.find((u: User) => u.id === storedCurrentUser.id) || localUsers.find((u: User) => u.username === storedCurrentUser.username);
-                
-                if (foundUser) {
-                    if (isMounted) setCurrentUser(foundUser);
-                } else {
-                    localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
-                }
-            }
-        } catch (error) {
-            console.error("Failed to load auth data from localStorage", error);
-        } finally {
-            if (isMounted) setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        // User is signed in with Firebase, now get our app-specific user data (role, credits)
+        const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
+        const users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
+        const appUser = users.find(u => u.username.toLowerCase() === (user.displayName || '').toLowerCase());
+        
+        if (appUser) {
+          setCurrentUser(appUser);
+        } else {
+            // This case can happen if user exists in Firebase Auth but not in our local user list.
+            // For now, we create a temporary user object. This will be solved with Firestore.
+             const username = user.email?.split('@')[0] || 'unknown';
+             const temporaryUser: AppUser = {
+                id: user.uid,
+                username: username,
+                role: 'cliente', // default role
+                credits: 0,
+                passwordHash: '', // not needed on client
+                createdAt: user.metadata.creationTime || new Date().toISOString(),
+             };
+             setCurrentUser(temporaryUser);
         }
-    };
-    
-    loadInitialData();
 
-    return () => {
-      isMounted = false;
-    };
+      } else {
+        // User is signed out
+        setCurrentUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Effect for handling storage events from other tabs
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === AUTH_USERS_STORAGE_KEY && event.newValue) {
-            const newUsers: User[] = JSON.parse(event.newValue);
-            setUsers(newUsers);
-            
-            if (currentUser) {
-                const updatedCurrentUser = newUsers.find(u => u.id === currentUser.id);
-                if (updatedCurrentUser) {
-                    setCurrentUser(updatedCurrentUser);
-                    localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedCurrentUser));
-                } else {
-                    logout();
-                }
-            }
-        } else if (event.key === AUTH_CURRENT_USER_STORAGE_KEY) {
-            if (event.newValue) {
-              const newCurrentUser = JSON.parse(event.newValue);
-              setCurrentUser(newCurrentUser);
-            } else {
-              setCurrentUser(null);
-            }
-        }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [currentUser, logout]);
-
-
-  // Effect to persist 'users' state back to localStorage
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      // `onAuthStateChanged` will handle setting users to null.
+      toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({ title: "Erro", description: "Não foi possível fazer logout.", variant: "destructive" });
     }
-  }, [users, isLoading]);
+  }, [router, toast]);
   
   const updateCurrentUserCredits = (newCredits: number) => {
     if (currentUser) {
       const updatedUser = { ...currentUser, credits: newCredits };
-      const newUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u)
-      setUsers(newUsers); // This will trigger the useEffect above to save all users
       setCurrentUser(updatedUser);
-      localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser));
+
+      // Persist this change to our temporary local storage
+      const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
+      let users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
+      users = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+      localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(users));
     }
   };
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor'): Promise<boolean> => {
-    const userToLogin = users.find(u => u.username === username);
-    
-    if (!userToLogin) {
-      setTimeout(() => {
-        toast({ title: "Erro de Login", description: "Usuário não encontrado.", variant: "destructive" });
-      }, 0);
-      return false;
-    }
-    
-    if (expectedRole && userToLogin.role !== expectedRole) {
-       setTimeout(() => {
-        toast({ title: "Acesso Negado", description: `Esta conta é de ${userToLogin.role}. Use o portal correto.`, variant: "destructive" });
-      }, 0);
-      return false;
-    }
-
-    // NOTE: This is plain text comparison. In a real app, use a hashing library like bcrypt.
-    if (userToLogin.passwordHash === passwordAttempt) { 
-      setCurrentUser(userToLogin);
-      localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(userToLogin));
-      setTimeout(() => {
-        toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground", duration: 3000 });
-      }, 0);
+    setIsLoading(true);
+    try {
+      // Firebase Auth uses email, so we'll construct an email from the username.
+      const email = `${username.toLowerCase()}@bolao.app`;
+      const userCredential = await signInWithEmailAndPassword(auth, email, passwordAttempt);
       
-      const redirectPath = userToLogin.role === 'cliente' ? '/cliente' : '/vendedor';
+      // After firebase login, check role from our local storage data
+      const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
+      const users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
+      const appUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+
+      if (!appUser) {
+          await signOut(auth);
+          toast({ title: "Erro de Login", description: "Dados do usuário não encontrados.", variant: "destructive" });
+          return false;
+      }
+      
+      if (expectedRole && appUser.role !== expectedRole) {
+         await signOut(auth);
+         toast({ title: "Acesso Negado", description: `Esta conta é de ${appUser.role}. Use o portal correto.`, variant: "destructive" });
+         return false;
+      }
+
+      // onAuthStateChanged will set the user state.
+      toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${username}!`, className: "bg-primary text-primary-foreground", duration: 3000 });
+      
+      const redirectPath = appUser.role === 'cliente' ? '/cliente' : '/vendedor';
       router.push(redirectPath);
       return true;
-    } else {
-      setTimeout(() => {
-        toast({ title: "Erro de Login", description: "Senha incorreta.", variant: "destructive" });
-      }, 0);
+
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      let message = "Ocorreu um erro ao fazer login.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+          message = "Usuário ou senha inválidos.";
+      }
+      toast({ title: "Erro de Login", description: message, variant: "destructive" });
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [users, router, toast]);
+  }, [router, toast]);
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
-    if (users.some(u => u.username === username)) {
-      setTimeout(() => {
-        toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
-      }, 0);
-      return false;
-    }
+     setIsLoading(true);
+     // For Firebase Auth, username must be a valid email format. We'll create a fake one.
+     const email = `${username.toLowerCase()}@bolao.app`;
 
-    const newUser: User = {
-      id: uuidv4(),
-      username,
-      passwordHash: passwordRaw, // Storing plain text for prototype simplicity
-      role,
-      createdAt: new Date().toISOString(),
-      credits: 0, // Start with 0 credits
-    };
-    
-    setUsers(prevUsers => [...prevUsers, newUser]);
-    
-    setTimeout(() => {
-      toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-    }, 0);
-    router.push('/login');
-    return true;
-  }, [users, router, toast]);
+     try {
+        // Step 1: Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, passwordRaw);
+        const firebaseUser = userCredential.user;
 
-  const isAuthenticated = !isLoading && !!currentUser;
+        // Step 2: Store our app-specific user data (role, credits) in localStorage for now.
+        // This part will be replaced by Firestore later.
+        const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
+        const users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
+        
+        if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+            // This is unlikely if Firebase registration succeeded, but a good safeguard.
+            toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
+            return false;
+        }
+
+        const newUser: AppUser = {
+          id: firebaseUser.uid, // Use Firebase UID as the user ID
+          username,
+          passwordHash: '', // Don't store password hash locally anymore
+          role,
+          createdAt: new Date().toISOString(),
+          saldo: 0, 
+        };
+        
+        const newUsers = [...users, newUser];
+        localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(newUsers));
+
+        toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
+        router.push('/login');
+        return true;
+
+     } catch (error: any) {
+        console.error("Firebase registration error: ", error);
+        let message = "Ocorreu um erro durante o cadastro.";
+        if (error.code === 'auth/email-already-in-use') {
+            message = "Este nome de usuário já está em uso.";
+        } else if (error.code === 'auth/weak-password') {
+            message = "A senha é muito fraca. Tente uma senha com pelo menos 6 caracteres.";
+        }
+        toast({ title: "Erro de Cadastro", description: message, variant: "destructive" });
+        return false;
+     } finally {
+        setIsLoading(false);
+     }
+  }, [router, toast]);
+
+  const isAuthenticated = !isLoading && !!firebaseUser;
   
-  const value = { currentUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
+  const value = { currentUser, firebaseUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading && children}
+      {!isLoading ? children : (
+        <div className="flex justify-center items-center min-h-screen bg-background">
+          <p className="text-foreground text-xl">Carregando Aplicação...</p>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };
@@ -202,6 +216,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
-    
