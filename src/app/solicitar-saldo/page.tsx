@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle, ExternalLink, Send, QrCode, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import type { CreditRequestConfig } from '@/types';
@@ -59,108 +59,124 @@ export default function SolicitarSaldoPage() {
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center">
       <div className="w-full max-w-2xl">
-        <header className="mb-8 w-full">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.back()}>
+        <header className="mb-8 w-full text-center">
+          <div className="flex items-center justify-center relative mb-4">
+             <Button variant="outline" size="icon" onClick={() => router.back()} className="absolute left-0 top-1/2 -translate-y-1/2">
               <ArrowLeft className="h-4 w-4" />
               <span className="sr-only">Voltar</span>
             </Button>
             <h1 className="text-3xl md:text-4xl font-bold text-primary">
-              Solicitar Saldo
+              A Sorte te Espera!
             </h1>
           </div>
-          <p className="text-muted-foreground mt-2">
-            Entre em contato conosco para adicionar saldo à sua conta.
+          <p className="text-muted-foreground text-lg mt-2 max-w-xl mx-auto">
+            Recarregue seu saldo para não perder a chance de ganhar. É rápido e fácil!
           </p>
         </header>
 
-        <main className="space-y-6">
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <MessageSquare className="h-6 w-6 text-green-500" />
-                Opção 1: WhatsApp
-              </CardTitle>
-              <CardDescription>
-                A forma mais rápida de nos contatar. Envie uma mensagem e retornaremos em breve.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-               <p className="font-mono text-lg p-3 rounded-md bg-muted flex-grow text-center sm:text-left">
-                {config?.whatsappNumber || 'Não configurado'}
-              </p>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button 
-                  onClick={() => handleCopy(config?.whatsappNumber || '', 'Número de WhatsApp')}
-                  disabled={!config?.whatsappNumber}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Copy className="mr-2 h-4 w-4" /> Copiar
-                </Button>
-                <Button asChild disabled={!config?.whatsappNumber} className="flex-1">
-                    <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                       <ExternalLink className="mr-2 h-4 w-4" /> Abrir no App
-                    </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Smartphone className="h-6 w-6 text-blue-500" />
-                Opção 2: Pagamento via Pix
-              </CardTitle>
-              <CardDescription>
-                Faça um Pix e envie o comprovante para o nosso WhatsApp para agilizar a liberação.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-center gap-4 p-3 rounded-md bg-muted">
-                 <p className="font-mono text-sm sm:text-base flex-grow text-center sm:text-left break-all">
-                    {config?.pixKey || 'Não configurado'}
-                </p>
-                <Button 
-                    onClick={() => handleCopy(config?.pixKey || '', 'Chave Pix')}
-                    disabled={!config?.pixKey}
-                    className="w-full sm:w-auto flex-shrink-0"
-                >
-                    <Copy className="mr-2 h-4 w-4" /> Copiar Chave
-                </Button>
-              </div>
-              <div className="text-center p-4 border border-dashed rounded-lg">
-                <p className="text-sm text-muted-foreground mb-2">Ou escaneie o QR Code</p>
-                <div className="flex justify-center">
-                    {config?.pixQrCodeUrl ? (
-                        <Image
-                            src={config.pixQrCodeUrl}
-                            alt="QR Code para pagamento Pix"
-                            width={200}
-                            height={200}
-                            className="rounded-md shadow-md"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                    ) : (
-                        <div className="h-[200px] w-[200px] flex flex-col items-center justify-center bg-muted rounded-md">
-                            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2"/>
-                            <span className="text-sm text-muted-foreground">QR Code não disponível.</span>
+        <main className="space-y-8">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                <CardTitle className="text-2xl font-bold text-center text-primary">Passo a Passo para Recarregar</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl shadow-md">1</div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-foreground">Escolha um Método de Pagamento</h3>
+                            <p className="text-muted-foreground">Você pode pagar via Pix (Copia e Cola ou QR Code) ou entrar em contato direto pelo WhatsApp.</p>
                         </div>
-                    )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    </div>
+                    <div className="flex items-start gap-4">
+                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl shadow-md">2</div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-foreground">Envie o Comprovante</h3>
+                            <p className="text-muted-foreground">Após o pagamento, envie o comprovante para nosso WhatsApp. Isso agiliza a liberação do seu saldo.</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-4">
+                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl shadow-md">3</div>
+                        <div>
+                            <h3 className="font-semibold text-lg text-foreground">Aguarde a Confirmação</h3>
+                            <p className="text-muted-foreground">Seu saldo será atualizado em instantes após a confirmação. E pronto, é só voltar a apostar!</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="shadow-lg hover:shadow-xl transition-shadow">
+                    <CardHeader className="text-center pb-4">
+                        <Smartphone className="h-10 w-10 text-primary mx-auto mb-2" />
+                        <CardTitle>Pagamento via Pix</CardTitle>
+                        <CardDescription>Use a chave ou o QR Code.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-3 rounded-md bg-muted text-center">
+                            <Label className="text-xs text-muted-foreground">Chave Pix</Label>
+                            <p className="font-mono text-sm sm:text-base flex-grow text-center break-all">
+                                {config?.pixKey || 'Não configurado'}
+                            </p>
+                        </div>
+                        <Button 
+                            onClick={() => handleCopy(config?.pixKey || '', 'Chave Pix')}
+                            disabled={!config?.pixKey}
+                            variant="outline"
+                            className="w-full"
+                        >
+                            <Copy className="mr-2 h-4 w-4" /> Copiar Chave
+                        </Button>
+                         <div className="flex justify-center pt-2">
+                            {config?.pixQrCodeUrl ? (
+                                <Image
+                                    src={config.pixQrCodeUrl}
+                                    alt="QR Code para pagamento Pix"
+                                    width={150}
+                                    height={150}
+                                    className="rounded-md shadow-md"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                            ) : (
+                                <div className="h-[150px] w-[150px] flex flex-col items-center justify-center bg-muted rounded-md text-center p-2">
+                                    <AlertCircle className="h-6 w-6 text-muted-foreground mb-1"/>
+                                    <span className="text-xs text-muted-foreground">QR Code não disponível.</span>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-lg hover:shadow-xl transition-shadow">
+                    <CardHeader className="text-center pb-4">
+                        <MessageSquare className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                        <CardTitle>Contato Direto</CardTitle>
+                        <CardDescription>Fale conosco no WhatsApp.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col justify-center h-full gap-4 pt-4">
+                        <div className="p-3 rounded-md bg-muted text-center">
+                            <Label className="text-xs text-muted-foreground">Nosso Número</Label>
+                            <p className="font-mono text-lg text-center">
+                                {config?.whatsappNumber || 'Não configurado'}
+                            </p>
+                        </div>
+                        <Button asChild disabled={!config?.whatsappNumber} className="w-full bg-green-500 hover:bg-green-600 text-white">
+                            <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                            <Send className="mr-2 h-4 w-4" /> Enviar Comprovante
+                            </Link>
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center pt-2">Clique no botão para abrir a conversa e enviar seu comprovante de pagamento.</p>
+                    </CardContent>
+                </Card>
+            </div>
           
-          <div className="text-center mt-8 p-4 bg-primary/10 text-primary rounded-lg">
-            <p className="font-semibold">Importante!</p>
-            <p className="text-sm">Após realizar o pagamento por qualquer um dos métodos, por favor, envie o comprovante para o nosso WhatsApp para que o saldo seja liberado o mais rápido possível.</p>
-          </div>
+            <div className="text-center mt-8 p-4 bg-primary/10 text-primary rounded-lg shadow-inner">
+                <p className="font-bold text-lg">Não deixe a sorte escapar.</p>
+                <p>Recarregue agora e boa sorte! 🍀</p>
+            </div>
         </main>
       </div>
     </div>
   );
 }
 
-    
