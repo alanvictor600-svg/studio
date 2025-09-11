@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
 import type { Ticket, Draw, LotteryConfig } from '@/types';
@@ -41,15 +42,21 @@ export default function ClientePage() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [isClient, setIsClient] = useState(false);
-  const { currentUser, logout, isAuthenticated, updateCurrentUserCredits } = useAuth();
+  const { currentUser, logout, isAuthenticated, updateCurrentUserCredits, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<ClienteSection>('selecionar-bilhete');
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsClient(true);
+    if (!isLoading && (!isAuthenticated || currentUser?.role !== 'cliente')) {
+      router.push('/login?redirect=/cliente');
+    }
+  }, [isLoading, isAuthenticated, currentUser, router]);
 
   // Load data and update statuses
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    setIsClient(true);
+    if (!isAuthenticated || !currentUser || currentUser.role !== 'cliente') return;
     
     const storedDrawsRaw = localStorage.getItem(DRAWS_STORAGE_KEY);
     const localDraws = storedDrawsRaw ? JSON.parse(storedDrawsRaw) : [];
@@ -79,7 +86,7 @@ export default function ClientePage() {
     // Also, re-save all tickets to ensure statuses are up-to-date in storage
     localStorage.setItem(CLIENTE_TICKETS_STORAGE_KEY, JSON.stringify(processedTickets));
 
-  }, [isAuthenticated, currentUser?.username]);
+  }, [isAuthenticated, currentUser]);
 
   const handleAddTicket = useCallback((newTicket: Ticket) => {
     // This function will now simply add the pre-validated ticket to the state
@@ -104,7 +111,7 @@ export default function ClientePage() {
     return draws.length > 0;
   }, [draws]);
 
-  if (!isClient) {
+  if (!isClient || isLoading || !currentUser || currentUser.role !== 'cliente') {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando área do cliente...</p>
@@ -275,6 +282,3 @@ export default function ClientePage() {
     </div>
   );
 }
-
-    
-    

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -54,13 +55,21 @@ export default function VendedorPage() {
   const [sellerHistory, setSellerHistory] = useState<SellerHistoryEntry[]>([]);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const { currentUser, logout, updateCurrentUserCredits } = useAuth();
+  const { currentUser, logout, updateCurrentUserCredits, isLoading, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<VendedorSection>('nova-venda');
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
-    
+    if (!isLoading && (!isAuthenticated || currentUser?.role !== 'vendedor')) {
+      router.push('/login?redirect=/vendedor');
+    }
+  }, [isLoading, isAuthenticated, currentUser, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser || currentUser.role !== 'vendedor') return;
+
     // Load initial data from localStorage once
     const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
     const localDraws = storedDraws ? JSON.parse(storedDraws) : [];
@@ -113,7 +122,7 @@ export default function VendedorPage() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [isAuthenticated, currentUser]);
 
   // Effect to save tickets to localStorage when they change
   useEffect(() => {
@@ -152,7 +161,8 @@ export default function VendedorPage() {
 
   
   const { activeSellerTicketsCount, totalRevenueFromActiveTickets, commissionEarned } = useMemo(() => {
-    const activeTickets = vendedorManagedTickets.filter(ticket => ticket.status === 'active' && ticket.sellerUsername === currentUser?.username);
+    if (!currentUser || currentUser.role !== 'vendedor') return { activeSellerTicketsCount: 0, totalRevenueFromActiveTickets: 0, commissionEarned: 0 };
+    const activeTickets = vendedorManagedTickets.filter(ticket => ticket.status === 'active' && ticket.sellerUsername === currentUser.username);
     const count = activeTickets.length;
     const revenue = count * lotteryConfig.ticketPrice;
     const commission = revenue * (lotteryConfig.sellerCommissionPercentage / 100);
@@ -161,7 +171,7 @@ export default function VendedorPage() {
       totalRevenueFromActiveTickets: revenue,
       commissionEarned: commission,
     };
-  }, [vendedorManagedTickets, lotteryConfig, currentUser?.username]);
+  }, [vendedorManagedTickets, lotteryConfig, currentUser]);
 
 
   const isLotteryPaused = useMemo(() => {
@@ -175,7 +185,7 @@ export default function VendedorPage() {
     }
   };
 
-  if (!isClient) {
+  if (!isClient || isLoading || !currentUser || currentUser.role !== 'vendedor') {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Área do Vendedor...</p>
@@ -465,8 +475,3 @@ export default function VendedorPage() {
       </footer>
     </div>
   );
-
-    
-
-
-    
