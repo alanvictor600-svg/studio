@@ -101,8 +101,8 @@ export default function ClientePage() {
 
   const isLotteryPaused = useMemo(() => {
     // Sales are paused if there are winning tickets
-    return allTickets.some(ticket => ticket.status === 'winning');
-  }, [allTickets]);
+    return draws.length > 0;
+  }, [draws]);
 
   if (!isClient) {
     return (
@@ -213,6 +213,11 @@ export default function ClientePage() {
                     </p>
                 </div>
             )}
+             <Link href="/solicitar-creditos" passHref>
+                <Button variant="outline" className="w-full justify-center text-sm py-3 px-4 h-auto mb-2 border-green-500/50 text-green-600 dark:text-green-400 hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400">
+                    <Coins className="mr-2 h-5 w-5" /> Solicitar Créditos
+                </Button>
+            </Link>
             {menuItems.map(item => (
               <Button
                 key={item.id}
