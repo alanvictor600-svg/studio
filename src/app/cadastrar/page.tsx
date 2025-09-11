@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useAuth } from '@/context/auth-context';
 import { UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +46,8 @@ export default function CadastroPage() {
   
   useEffect(() => {
     if (isClient && !authLoading && currentUser) {
-      router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor');
+      const redirectPath = currentUser.role === 'cliente' ? '/cliente' : '/vendedor';
+      router.push(redirectPath);
     }
   }, [currentUser, authLoading, router, isClient]);
 
@@ -98,7 +98,7 @@ export default function CadastroPage() {
       <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm border-border/50">
         <CardHeader className="text-center">
             <Image src="/logo.png" alt="Logo Bolão Potiguar" width={80} height={80} className="mx-auto mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary">Crie sua Conta</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Crie sua Conta de {role === 'cliente' ? 'Cliente' : 'Vendedor'}</CardTitle>
           <CardDescription className="text-muted-foreground">
             Rápido e fácil. Escolha seu método preferido abaixo.
           </CardDescription>
@@ -153,23 +153,6 @@ export default function CadastroPage() {
                   required
                   className="bg-background/70 h-11"
                 />
-              </div>
-              <div className="space-y-3 pt-2">
-                <Label>Qual seu perfil de usuário?</Label>
-                <RadioGroup
-                  value={role}
-                  onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')}
-                  className="flex space-x-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="cliente" id="role-cliente" />
-                    <Label htmlFor="role-cliente" className="font-normal text-base cursor-pointer">Cliente</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="vendedor" id="role-vendedor" />
-                    <Label htmlFor="role-vendedor" className="font-normal text-base cursor-pointer">Vendedor</Label>
-                  </div>
-                </RadioGroup>
               </div>
               <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={authLoading}>
                  <UserPlus className="mr-2 h-5 w-5" />
