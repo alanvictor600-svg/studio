@@ -19,7 +19,7 @@ export default function CadastroPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente'); // Changed 'comprador' to 'cliente'
+  const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
   const { register, currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -31,13 +31,17 @@ export default function CadastroPage() {
 
   useEffect(() => {
     if (isClient && !authLoading && currentUser) {
-      router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor'); // Changed 'comprador' to 'cliente' and path
+      router.push(currentUser.role === 'cliente' ? '/cliente' : '/vendedor');
     }
   }, [currentUser, authLoading, router, isClient]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras, números e os caracteres: . - _", variant: "destructive" });
+         return;
+    }
     if (password !== confirmPassword) {
       toast({ title: "Erro de Cadastro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -132,8 +136,8 @@ export default function CadastroPage() {
             <div className="space-y-3">
               <Label>Qual seu perfil?</Label>
               <RadioGroup 
-                defaultValue="cliente" // Changed 'comprador' to 'cliente'
-                onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')} // Changed 'comprador' to 'cliente'
+                defaultValue="cliente"
+                onValueChange={(value) => setRole(value as 'cliente' | 'vendedor')}
                 className="flex space-x-4"
               >
                 <div className="flex items-center space-x-2">
@@ -167,5 +171,3 @@ export default function CadastroPage() {
     </div>
   );
 }
-
-    

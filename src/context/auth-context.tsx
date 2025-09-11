@@ -111,13 +111,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Firebase Auth uses email, so we'll construct an email from the username.
-      const email = `${username.toLowerCase()}@bolao.app`;
+      const email = `${username.trim().toLowerCase()}@bolao.app`;
       const userCredential = await signInWithEmailAndPassword(auth, email, passwordAttempt);
       
       // After firebase login, check role from our local storage data
       const usersRaw = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
       const users: AppUser[] = usersRaw ? JSON.parse(usersRaw) : [];
-      const appUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+      const appUser = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
 
       if (!appUser) {
           await signOut(auth);
@@ -144,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
           message = "Usuário ou senha inválidos.";
       } else if (error.code === 'auth/invalid-email') {
-          message = "O nome de usuário não pode conter espaços ou caracteres especiais.";
+          message = "Nome de usuário inválido. Verifique se não há espaços ou caracteres especiais.";
       }
       toast({ title: "Erro de Login", description: message, variant: "destructive" });
       return false;
@@ -156,8 +156,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
      setIsLoading(true);
      
-     if (!username || !/^[a-zA-Z0-9_.-]+$/.test(username)) {
-         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras, números e . - _", variant: "destructive" });
+     if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras, números e os caracteres: . - _", variant: "destructive" });
          setIsLoading(false);
          return false;
      }
@@ -207,7 +207,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (error.code === 'auth/weak-password') {
             message = "A senha é muito fraca. Tente uma senha com pelo menos 6 caracteres.";
         } else if (error.code === 'auth/invalid-email') {
-            message = "O nome de usuário não pode conter espaços ou caracteres especiais.";
+            message = "Nome de usuário inválido. Use apenas letras, números e os caracteres: . - _";
         }
         toast({ title: "Erro de Cadastro", description: message, variant: "destructive" });
         return false;
@@ -238,5 +238,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
