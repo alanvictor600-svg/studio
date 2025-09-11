@@ -1,11 +1,11 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle, ExternalLink, Send, QrCode, CheckCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, MessageSquare, Smartphone, Copy, AlertCircle, Send, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import type { CreditRequestConfig } from '@/types';
@@ -179,4 +179,3 @@ export default function SolicitarSaldoPage() {
     </div>
   );
 }
-
