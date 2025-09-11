@@ -48,8 +48,8 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
 
   const handleSave = () => {
     const creditsChange = Number(creditsToAdd);
-    if(isNaN(creditsChange)) {
-      toast({ title: 'Erro de Validação', description: 'O valor dos créditos é inválido.', variant: 'destructive' });
+    if(isNaN(creditsChange) || creditsToAdd === '') {
+      toast({ title: 'Erro de Validação', description: 'O valor dos créditos é inválido ou está vazio.', variant: 'destructive' });
       return;
     }
     
@@ -62,6 +62,16 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
     }
     onOpenChange(open);
   }
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || value === '-') {
+      setCreditsToAdd(value);
+    } else {
+      setCreditsToAdd(Number(value));
+    }
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
@@ -93,7 +103,7 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
                     id="credits"
                     type="number"
                     value={creditsToAdd}
-                    onChange={(e) => setCreditsToAdd(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={handleInputChange}
                     className="pl-9"
                     placeholder="Ex: 50 para adicionar, -10 para remover"
                 />
@@ -114,5 +124,3 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
     </Dialog>
   );
 };
-
-    
