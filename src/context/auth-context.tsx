@@ -75,6 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      setCurrentUser(null);
+      setFirebaseUser(null);
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
     } catch (error) {
@@ -133,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Firebase login error:", error);
       let message = "Ocorreu um erro ao fazer login.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
           message = "Usuário ou senha inválidos.";
       } else if (error.code === 'auth/invalid-email') {
           message = "Nome de usuário inválido. Verifique se não há espaços ou caracteres especiais.";
@@ -165,9 +167,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     return false;
                 }
                 
+                const sanitizedUsername = gUser.displayName.replace(/[^a-zA-Z0-9_.-]/g, '');
+                if (users.some(u => u.username.toLowerCase() === sanitizedUsername.toLowerCase())) {
+                    // Handle rare case where sanitized username already exists
+                    toast({ title: "Erro de Cadastro", description: "Um usuário com um nome similar já existe. Tente o login com e-mail/senha.", variant: "destructive" });
+                    await signOut(auth);
+                    return false;
+                }
+
                 appUser = {
                     id: gUser.uid,
-                    username: gUser.displayName,
+                    username: sanitizedUsername,
                     passwordHash: '',
                     role: 'cliente', 
                     createdAt: new Date().toISOString(),
@@ -247,6 +257,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(newUsers));
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
+        await signOut(auth); // Sign out user after registration to force them to log in
         router.push('/login');
         return true;
 
@@ -259,8 +270,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             message = "A senha é muito fraca. Tente uma senha com pelo menos 6 caracteres.";
         } else if (error.code === 'auth/invalid-email') {
             message = "Nome de usuário inválido. Use apenas letras, números e os caracteres: . - _";
-        } else if (error.code === 'auth/configuration-not-found') {
-            message = "Erro de configuração do Firebase. O serviço de autenticação pode não estar ativado.";
         }
         toast({ title: "Erro de Cadastro", description: message, variant: "destructive" });
         return false;
@@ -275,11 +284,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoading ? children : (
-        <div className="flex justify-center items-center min-h-screen bg-background">
-          <p className="text-foreground text-xl">Carregando Aplicação...</p>
-        </div>
-      )}
+        {children}
     </AuthContext.Provider>
   );
 };

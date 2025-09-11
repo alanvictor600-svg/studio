@@ -86,7 +86,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full" onClick={loginWithGoogle}>
+            <Button variant="outline" className="w-full" onClick={loginWithGoogle} disabled={authLoading}>
               <GoogleIcon />
               <span className="ml-2">Entrar com Google</span>
             </Button>
