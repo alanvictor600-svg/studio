@@ -11,14 +11,11 @@ import {
     signInWithEmailAndPassword, 
     signOut,
     updateProfile,
-    getAuth,
     GoogleAuthProvider,
     signInWithPopup,
     type User as FirebaseUser 
 } from 'firebase/auth';
-import { app } from '@/lib/firebase';
-
-const auth = getAuth(app);
+import { auth } from '@/lib/firebase';
 
 const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
 
