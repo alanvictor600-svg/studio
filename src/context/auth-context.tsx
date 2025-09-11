@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   
   const saveUserToLocalStorage = (user: AppUser | null) => {
+    if (typeof window === 'undefined') return;
     if (user) {
       localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(user));
     } else {
@@ -227,11 +228,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         } catch (error: any) {
             console.error("Google sign-in error:", error);
-            let message = "Não foi possível fazer login com o Google.";
             if (error.code === 'auth/popup-closed-by-user') {
-                message = "A janela de login foi fechada. Tente novamente.";
+                toast({ title: "Login cancelado", description: "Você fechou a janela de login do Google.", variant: "default" });
+            } else {
+                 toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google.", variant: "destructive" });
             }
-            toast({ title: "Erro de Login", description: message, variant: "destructive" });
             return false;
         } finally {
             setIsLoading(false);
@@ -274,7 +275,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const newUser: AppUser = {
           id: firebaseUser.uid,
           username: username.trim(),
-          passwordHash: '**********',
+          passwordHash: '**********', // Placeholder
           role,
           createdAt: new Date().toISOString(),
           saldo: 0, 
@@ -311,7 +312,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-        {children}
+        {!isLoading && children}
     </AuthContext.Provider>
   );
 };
@@ -323,3 +324,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    
