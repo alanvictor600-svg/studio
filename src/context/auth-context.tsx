@@ -214,6 +214,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
          return false;
      }
 
+     if (passwordRaw.length < 6) {
+        toast({ title: "Erro de Cadastro", description: "A senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+        setIsLoading(false);
+        return false;
+     }
+
      const email = `${username.trim().toLowerCase()}@bolao.app`;
 
      try {
