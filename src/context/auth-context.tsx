@@ -39,10 +39,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedCurrentUserRaw = localStorage.getItem(AUTH_CURRENT_USER_STORAGE_KEY);
         if (storedCurrentUserRaw) {
           const storedCurrentUser = JSON.parse(storedCurrentUserRaw);
-          const foundUser = localUsers.find((u: User) => u.username === storedCurrentUser.username);
-          setCurrentUser(foundUser || null);
-          if (!foundUser) {
-              localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
+          // Find user by ID for better reliability, but fallback to username
+          const foundUser = localUsers.find((u: User) => u.id === storedCurrentUser.id) || localUsers.find((u: User) => u.username === storedCurrentUser.username);
+          
+          if(foundUser){
+            setCurrentUser(foundUser);
+            // Refresh localStorage with the most up-to-date user data
+            localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(foundUser));
+          } else {
+            // User from storage not found in user list, clear it
+            localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
+            setCurrentUser(null);
           }
         }
       } catch (error) {
@@ -64,10 +71,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     setCurrentUser(updatedCurrentUser);
                     localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedCurrentUser));
                 } else {
-                    // Current user was deleted
+                    // Current user was deleted, so log out
                     logout();
                 }
             }
+        }
+         if (event.key === AUTH_CURRENT_USER_STORAGE_KEY && !event.newValue) {
+            // This case handles logout from another tab
+            setCurrentUser(null);
         }
     };
     
@@ -77,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.removeEventListener('storage', handleStorageChange);
     };
 
-  }, [currentUser?.id]); // Depend on currentUser.id to re-sync if the user changes
+  }, []); // Run only once on mount
 
   useEffect(() => {
     // Persist users to localStorage whenever the list changes, but not on initial load.
@@ -172,15 +183,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = { currentUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 
-  // This prevents rendering children until the auth state is determined,
-  // avoiding flashes of incorrect content.
-  if (isLoading) {
-    return null;
-  }
-
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {/* Avoids rendering children until auth state is resolved to prevent UI flashes */}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 };

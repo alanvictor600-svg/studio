@@ -100,39 +100,48 @@ export default function AdminPage() {
   useEffect(() => {
     setIsClient(true);
     
-    const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
-    const initialDraws = storedDraws ? JSON.parse(storedDraws) : [];
-    setDraws(initialDraws);
+    try {
+        const storedDraws = localStorage.getItem(DRAWS_STORAGE_KEY);
+        const initialDraws = storedDraws ? JSON.parse(storedDraws) : [];
+        setDraws(initialDraws);
 
-    const storedClientTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
-    const initialClientTickets = storedClientTickets ? JSON.parse(storedClientTickets) : [];
-    setClientTickets(updateTicketStatusesBasedOnDraws(initialClientTickets, initialDraws));
+        const storedClientTickets = localStorage.getItem(CLIENTE_TICKETS_STORAGE_KEY);
+        const initialClientTickets = storedClientTickets ? JSON.parse(storedClientTickets) : [];
+        setClientTickets(updateTicketStatusesBasedOnDraws(initialClientTickets, initialDraws));
 
-    const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
-    const initialVendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
-    setVendedorTickets(updateTicketStatusesBasedOnDraws(initialVendedorTickets, initialDraws));
+        const storedVendedorTickets = localStorage.getItem(VENDEDOR_TICKETS_STORAGE_KEY);
+        const initialVendedorTickets = storedVendedorTickets ? JSON.parse(storedVendedorTickets) : [];
+        setVendedorTickets(updateTicketStatusesBasedOnDraws(initialVendedorTickets, initialDraws));
 
-    const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
-    const initialConfig = storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG;
-    setLotteryConfig(initialConfig);
-    setTicketPriceInput(initialConfig.ticketPrice.toString());
-    setCommissionInput(initialConfig.sellerCommissionPercentage.toString());
-    setOwnerCommissionInput((initialConfig.ownerCommissionPercentage || 0).toString());
-    setClientSalesCommissionInput((initialConfig.clientSalesCommissionToOwnerPercentage || 0).toString());
+        const storedConfig = localStorage.getItem(LOTTERY_CONFIG_STORAGE_KEY);
+        const initialConfig = storedConfig ? JSON.parse(storedConfig) : DEFAULT_LOTTERY_CONFIG;
+        setLotteryConfig(initialConfig);
+        setTicketPriceInput(initialConfig.ticketPrice.toString());
+        setCommissionInput(initialConfig.sellerCommissionPercentage.toString());
+        setOwnerCommissionInput((initialConfig.ownerCommissionPercentage || 0).toString());
+        setClientSalesCommissionInput((initialConfig.clientSalesCommissionToOwnerPercentage || 0).toString());
 
-    const storedCreditConfig = localStorage.getItem(CREDIT_REQUEST_CONFIG_STORAGE_KEY);
-    const initialCreditConfig = storedCreditConfig ? JSON.parse(storedCreditConfig) : DEFAULT_CREDIT_CONFIG;
-    setCreditRequestConfig(initialCreditConfig);
-    setWhatsappInput(initialCreditConfig.whatsappNumber);
-    setPixKeyInput(initialCreditConfig.pixKey);
-    setPixQrCodeUrlInput(initialCreditConfig.pixQrCodeUrl);
+        const storedCreditConfig = localStorage.getItem(CREDIT_REQUEST_CONFIG_STORAGE_KEY);
+        const initialCreditConfig = storedCreditConfig ? JSON.parse(storedCreditConfig) : DEFAULT_CREDIT_CONFIG;
+        setCreditRequestConfig(initialCreditConfig);
+        setWhatsappInput(initialCreditConfig.whatsappNumber);
+        setPixKeyInput(initialCreditConfig.pixKey);
+        setPixQrCodeUrlInput(initialCreditConfig.pixQrCodeUrl);
 
-    const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
-    setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
-    
-    const storedAdminHistory = localStorage.getItem(ADMIN_HISTORY_STORAGE_KEY);
-    setAdminHistory(storedAdminHistory ? JSON.parse(storedAdminHistory) : []);
-  }, []);
+        const storedUsers = localStorage.getItem(AUTH_USERS_STORAGE_KEY);
+        setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
+        
+        const storedAdminHistory = localStorage.getItem(ADMIN_HISTORY_STORAGE_KEY);
+        setAdminHistory(storedAdminHistory ? JSON.parse(storedAdminHistory) : []);
+    } catch (error) {
+        console.error("Failed to load data from localStorage on admin page:", error);
+        toast({
+            title: "Erro ao Carregar Dados",
+            description: "Não foi possível carregar os dados do sistema. Tente limpar o cache do navegador.",
+            variant: "destructive"
+        });
+    }
+  }, [toast]);
 
   // Save draws to localStorage whenever they change
   useEffect(() => {
@@ -269,7 +278,7 @@ export default function AdminPage() {
 
     localStorage.setItem(SELLER_HISTORY_STORAGE_KEY, JSON.stringify(existingHistory));
     toast({ title: "Histórico de Vendedores Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo para cada vendedor.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
-  }, [allUsers]);
+  }, [allUsers, toast]);
   
   const captureAndSaveAdminHistory = useCallback(() => {
       const currentReport = financialReport;
@@ -285,7 +294,7 @@ export default function AdminPage() {
       };
       setAdminHistory(prevHistory => [...prevHistory, newHistoryEntry]);
       toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
-  }, [financialReport]);
+  }, [financialReport, toast]);
 
   const handleStartNewLottery = () => {
     const CONTROL_PASSWORD = "Al@n2099";
