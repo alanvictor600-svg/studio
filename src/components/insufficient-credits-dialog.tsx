@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Coins } from 'lucide-react';
+import { Coins, DollarSign } from 'lucide-react';
 
 interface InsufficientCreditsDialogProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export const InsufficientCreditsDialog: FC<InsufficientCreditsDialogProps> = ({ 
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader className="text-center">
-           <Coins className="mx-auto h-12 w-12 text-green-500 mb-2" />
+           <DollarSign className="mx-auto h-12 w-12 text-green-500 mb-2" />
           <AlertDialogTitle className="text-2xl">Quase lá! Adicione saldo para continuar</AlertDialogTitle>
           <AlertDialogDescription className="text-base text-muted-foreground pt-2">
             Sua sorte está a um passo! Adicione mais saldo agora para não perder a chance de ganhar.
@@ -50,4 +50,5 @@ export const InsufficientCreditsDialog: FC<InsufficientCreditsDialogProps> = ({ 
 };
 
     
+
 
