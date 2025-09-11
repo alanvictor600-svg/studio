@@ -16,9 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Printer, Share2, Copy } from 'lucide-react';
+import { Share2, Copy } from 'lucide-react';
 import Image from 'next/image';
-import { useReactToPrint } from 'react-to-print';
 import { Separator } from '@/components/ui/separator';
 
 interface TicketReceiptDialogProps {
@@ -79,18 +78,50 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
-    documentTitle: `Comprovante-BolaoPotiguar-${ticket?.id.substring(0, 8)}`,
-    onAfterPrint: () => toast({ title: 'Impressão concluída!' }),
-    onPrintError: () => toast({ title: 'Ocorreu um erro ao imprimir', variant: 'destructive' }),
-  });
-
-
   if (!ticket) {
     return null;
   }
+
+  const generateReceiptText = () => {
+    if (!ticket) return '';
+    const date = format(parseISO(ticket.createdAt), "dd/MM/yy HH:mm", { locale: ptBR });
+    const numbers = ticket.numbers.join(', ');
+    const price = `R$ ${lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}`;
+
+    return `🍀 Comprovante de Aposta - Bolão Potiguar 🍀\n\n` +
+           `👤 Comprador: ${ticket.buyerName}\n` +
+           (ticket.sellerUsername ? `💼 Vendedor: ${ticket.sellerUsername}\n` : '') +
+           `🆔 Bilhete ID: #${ticket.id.substring(0, 8)}\n` +
+           `🗓️ Data: ${date}\n\n` +
+           `🔢 Seus Números: ${numbers}\n\n` +
+           `💰 Valor: ${price}\n\n` +
+           `Boa Sorte!`;
+  };
   
+  const handleShare = async () => {
+    const receiptText = generateReceiptText();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Comprovante de Aposta - Bolão Potiguar',
+          text: receiptText,
+        });
+        toast({ title: 'Comprovante compartilhado!' });
+      } catch (error) {
+         if (error instanceof Error && error.name === 'AbortError') {
+            toast({ title: "Compartilhamento cancelado", variant: "default" });
+         } else {
+            console.error('Erro ao compartilhar:', error);
+            toast({ title: 'Ocorreu um erro ao compartilhar', variant: 'destructive' });
+         }
+      }
+    } else {
+      // Fallback for browsers that do not support Web Share API
+      navigator.clipboard.writeText(receiptText);
+      toast({ title: 'Comprovante copiado!', description: 'O texto do comprovante foi copiado para a área de transferência.' });
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card">
@@ -105,8 +136,9 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
         </div>
 
         <DialogFooter className="sm:flex-col gap-3">
-          <Button type="button" onClick={handlePrint} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            <Printer className="mr-2 h-4 w-4" /> Imprimir ou Salvar PDF
+          <Button type="button" onClick={handleShare} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            {navigator.share ? <Share2 className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+            {navigator.share ? 'Compartilhar' : 'Copiar Texto do Comprovante'}
           </Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary" className="w-full">
