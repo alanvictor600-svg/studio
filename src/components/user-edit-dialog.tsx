@@ -17,12 +17,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { Trash2 } from 'lucide-react';
 
 interface UserEditDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   user: User | null;
   onSave: (updatedUser: User) => void;
+  onDelete: () => void;
   onClose: () => void;
 }
 
@@ -31,6 +33,7 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
   onOpenChange,
   user,
   onSave,
+  onDelete,
   onClose,
 }) => {
   const [username, setUsername] = useState('');
@@ -70,6 +73,10 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
       onClose();
     }
     onOpenChange(open);
+  }
+
+  const handleDeleteClick = () => {
+    onDelete();
   }
 
   return (
@@ -124,19 +131,22 @@ export const UserEditDialog: FC<UserEditDialogProps> = ({
             </RadioGroup>
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">
-              Cancelar
+        <DialogFooter className="justify-between sm:justify-between">
+            <Button type="button" variant="destructive" onClick={handleDeleteClick} className="mr-auto">
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
             </Button>
-          </DialogClose>
-          <Button type="button" onClick={handleSave}>
-            Salvar Alterações
-          </Button>
+          <div className="flex gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSave}>
+              Salvar Alterações
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-    

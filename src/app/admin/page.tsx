@@ -427,6 +427,12 @@ export default function AdminPage() {
 
     // Remove the user
     setAllUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete.id));
+    
+    // Close the edit dialog if the deleted user was being edited
+    if (userToEdit && userToEdit.id === userToDelete.id) {
+        setIsUserEditDialogOpen(false);
+        setUserToEdit(null);
+    }
 
     toast({ title: "Usuário Excluído", description: `O usuário ${userToDelete.username} e todos os seus bilhetes foram removidos.`, className: "bg-destructive text-destructive-foreground", duration: 3000 });
     
@@ -610,9 +616,6 @@ export default function AdminPage() {
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => handleOpenEditUser(user)}>
                                 <Edit className="mr-2 h-4 w-4"/> Editar
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleConfirmDeleteUser(user)}>
-                                <Trash2 className="mr-2 h-4 w-4"/> Excluir
                             </Button>
                       </div>
                     </Card>
@@ -927,6 +930,11 @@ export default function AdminPage() {
               onOpenChange={setIsUserEditDialogOpen}
               user={userToEdit}
               onSave={handleSaveUser}
+              onDelete={() => {
+                if (userToEdit) {
+                  handleConfirmDeleteUser(userToEdit);
+                }
+              }}
               onClose={() => setUserToEdit(null)}
           />
       )}
@@ -966,5 +974,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
