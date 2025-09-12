@@ -10,11 +10,10 @@ import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib
 import { NumberButton } from '@/components/number-button';
 import { X, Sparkles, Trash2, TicketPlus, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 import type { Ticket, User, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 interface TicketSelectionFormProps {
   isLotteryPaused?: boolean;
@@ -51,7 +50,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Compras Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              Novas compras estão suspensas pois há um bilhete premiado.
+              Novas compras estão suspensas pois a loteria já começou ou há um bilhete premiado.
               Aguarde o administrador iniciar uma nova loteria.
             </AlertDescription>
           </Alert>
@@ -86,7 +85,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     toast({ title: "Seleção Limpa", description: "Todos os números foram removidos.", duration: 3000 });
   };
 
-  const handleSubmitTicket = async () => {
+  const handleSubmitTicket = () => {
     if (!currentUser) {
         toast({ title: "Erro", description: "Você precisa estar logado para comprar.", variant: "destructive" });
         return;
@@ -105,7 +104,8 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
 
     setIsSubmitting(true);
 
-    const newTicketData: Omit<Ticket, 'id'> = {
+    const newTicket: Ticket = {
+      id: uuidv4(),
       numbers: [...currentPicks].sort((a,b) => a-b),
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -113,24 +113,19 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
       sellerUsername: null, // Explicitly null for client tickets
     };
     
-    try {
-        const docRef = await addDoc(collection(db, "tickets"), newTicketData);
-        const createdTicket = { id: docRef.id, ...newTicketData };
-        
-        const newBalance = (currentUser.saldo || 0) - ticketCost;
-        updateCurrentUserCredits(newBalance);
+    const allTickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    localStorage.setItem('tickets', JSON.stringify([...allTickets, newTicket]));
 
-        setCurrentPicks([]);
-        setReceiptTicket(createdTicket); // Set ticket to show receipt
-        
-        toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu comprovante foi gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    // Deduct credits
+    updateCurrentUserCredits((currentUser.saldo || 0) - ticketCost);
 
-    } catch (error) {
-        console.error("Error creating ticket:", error);
-        toast({ title: "Erro", description: "Não foi possível registrar seu bilhete. Tente novamente.", variant: "destructive" });
-    } finally {
-        setIsSubmitting(false);
-    }
+    setCurrentPicks([]);
+    setReceiptTicket(newTicket); // Set ticket to show receipt
+    
+    toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu comprovante foi gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    
+    // Simulate server processing time
+    setTimeout(() => setIsSubmitting(false), 500);
   };
 
   return (

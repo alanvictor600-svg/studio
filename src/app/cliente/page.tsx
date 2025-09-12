@@ -15,8 +15,6 @@ import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AdminDrawList } from '@/components/admin-draw-list';
-import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -44,6 +42,7 @@ export default function ClientePage() {
   const [activeSection, setActiveSection] = useState<ClienteSection>('selecionar-bilhete');
   const router = useRouter();
 
+  // Auth check
   useEffect(() => {
     setIsClient(true);
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'cliente')) {
@@ -51,38 +50,26 @@ export default function ClientePage() {
     }
   }, [isLoading, isAuthenticated, currentUser, router]);
 
-  // Set up Firestore listeners
+  // Load data from localStorage on mount and when currentUser changes
   useEffect(() => {
-    if (!isAuthenticated || !currentUser || currentUser.role !== 'cliente') return;
-
-    const unsubscribes: (() => void)[] = [];
-
-    // Listener for user's tickets
-    const ticketsQuery = query(collection(db, 'tickets'), where('buyerName', '==', currentUser.username), where('sellerUsername', '==', null));
-    unsubscribes.push(onSnapshot(ticketsQuery, (snapshot) => {
-        const userTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+    if (isClient && currentUser) {
+      const allTicketsData = localStorage.getItem('tickets');
+      if (allTicketsData) {
+        const allTickets: Ticket[] = JSON.parse(allTicketsData);
+        // Filter tickets for the current user, only client tickets (no sellerUsername)
+        const userTickets = allTickets.filter(
+          ticket => ticket.buyerName === currentUser.username && !ticket.sellerUsername
+        );
         setMyTickets(userTickets);
-    }));
+      }
+      
+      const drawsData = localStorage.getItem('draws');
+      if (drawsData) setDraws(JSON.parse(drawsData));
 
-    // Listener for draws
-    const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-    unsubscribes.push(onSnapshot(drawsQuery, (snapshot) => {
-        const drawsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
-        setDraws(drawsData);
-    }));
-    
-    // Listener for lottery config
-    unsubscribes.push(onSnapshot(doc(db, 'config', 'lottery'), (docSnap) => {
-        if (docSnap.exists()) {
-            setLotteryConfig(docSnap.data() as LotteryConfig);
-        } else {
-            setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
-        }
-    }));
-
-    return () => unsubscribes.forEach(unsub => unsub());
-
-  }, [isAuthenticated, currentUser]);
+      const configData = localStorage.getItem('lotteryConfig');
+      if (configData) setLotteryConfig(JSON.parse(configData));
+    }
+  }, [isClient, currentUser]);
 
   const processedTickets = useMemo(() => updateTicketStatusesBasedOnDraws(myTickets, draws), [myTickets, draws]);
 
@@ -94,11 +81,15 @@ export default function ClientePage() {
   };
 
   const isLotteryPaused = useMemo(() => {
-    // Sales are paused if there are any draws, indicating the lottery has started
-    return draws.length > 0;
+    // Sales are paused if there are any winning tickets in the system.
+    const allTicketsData = localStorage.getItem('tickets');
+    if (!allTicketsData) return false;
+    const allTickets: Ticket[] = JSON.parse(allTicketsData);
+    const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
+    return processedAllTickets.some(ticket => ticket.status === 'winning');
   }, [draws]);
 
-  if (!isClient || isLoading || !currentUser || currentUser.role !== 'cliente') {
+  if (!isClient || isLoading || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando área do cliente...</p>

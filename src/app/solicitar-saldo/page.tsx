@@ -10,9 +10,6 @@ import { ArrowLeft, MessageSquare, Smartphone, Copy, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { CreditRequestConfig } from '@/types';
 import Link from 'next/link';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
-
 
 export default function SolicitarSaldoPage() {
   const router = useRouter();
@@ -22,12 +19,12 @@ export default function SolicitarSaldoPage() {
 
   useEffect(() => {
     setIsClient(true);
-    const unsub = onSnapshot(doc(db, 'config', 'creditRequest'), (docSnap) => {
-        if (docSnap.exists()) {
-            setConfig(docSnap.data() as CreditRequestConfig);
+    if (typeof window !== 'undefined') {
+        const storedConfig = localStorage.getItem('creditRequestConfig');
+        if (storedConfig) {
+            setConfig(JSON.parse(storedConfig));
         }
-    });
-    return () => unsub();
+    }
   }, []);
 
   const handleCopy = (text: string, label: string) => {

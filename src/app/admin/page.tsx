@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Eye, Ticket as TicketIcon } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Ticket as TicketIcon } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -27,9 +27,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { db } from '@/lib/firebase';
-import { collection, doc, getDocs, getDoc, writeBatch, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc, query, orderBy } from 'firebase/firestore';
 import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -69,6 +68,7 @@ export default function AdminPage() {
   const [ownerCommissionInput, setOwnerCommissionInput] = useState('');
   const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState('');
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [whatsappInput, setWhatsappInput] = useState('');
   const [pixKeyInput, setPixKeyInput] = useState('');
@@ -86,78 +86,74 @@ export default function AdminPage() {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
-  const { currentUser } = useAuth(); // Assuming admin is a logged-in user
+  const { currentUser, isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
 
-  // Set up Firestore listeners
+  // Load all data from localStorage on mount
   useEffect(() => {
     setIsClient(true);
+    if (typeof window !== 'undefined') {
+        const storedDraws = localStorage.getItem('draws');
+        const storedTickets = localStorage.getItem('tickets');
+        const storedConfig = localStorage.getItem('lotteryConfig');
+        const storedCreditConfig = localStorage.getItem('creditRequestConfig');
+        const storedUsers = localStorage.getItem('bolaoPotiguarAuthUsers');
+        const storedAdminHistory = localStorage.getItem('adminHistory');
 
-    const unsubscribes: (() => void)[] = [];
-
-    // Listener for draws
-    const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-    unsubscribes.push(onSnapshot(drawsQuery, (querySnapshot) => {
-        const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
-        setDraws(drawsData);
-    }));
-
-    // Listener for tickets
-    unsubscribes.push(onSnapshot(collection(db, 'tickets'), (querySnapshot) => {
-        const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-        setAllTickets(ticketsData);
-    }));
-
-    // Listener for users
-    unsubscribes.push(onSnapshot(collection(db, 'users'), (querySnapshot) => {
-        const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        setAllUsers(usersData);
-    }));
-
-    // Listener for admin history
-    const adminHistoryQuery = query(collection(db, 'adminHistory'), orderBy('endDate', 'desc'));
-    unsubscribes.push(onSnapshot(adminHistoryQuery, (querySnapshot) => {
-        const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminHistoryEntry));
-        setAdminHistory(historyData);
-    }));
-
-    // Listener for configs
-    unsubscribes.push(onSnapshot(doc(db, 'config', 'lottery'), (docSnap) => {
-        if (docSnap.exists()) {
-            const configData = docSnap.data() as LotteryConfig;
-            setLotteryConfig(configData);
-            setTicketPriceInput(configData.ticketPrice.toString());
-            setCommissionInput(configData.sellerCommissionPercentage.toString());
-            setOwnerCommissionInput((configData.ownerCommissionPercentage || 0).toString());
-            setClientSalesCommissionInput((configData.clientSalesCommissionToOwnerPercentage || 0).toString());
+        if (storedDraws) setDraws(JSON.parse(storedDraws));
+        if (storedTickets) setAllTickets(JSON.parse(storedTickets));
+        if (storedUsers) setAllUsers(JSON.parse(storedUsers));
+        if (storedAdminHistory) setAdminHistory(JSON.parse(storedAdminHistory));
+        
+        if (storedConfig) {
+            const config = JSON.parse(storedConfig);
+            setLotteryConfig(config);
+            setTicketPriceInput(config.ticketPrice.toString());
+            setCommissionInput(config.sellerCommissionPercentage.toString());
+            setOwnerCommissionInput((config.ownerCommissionPercentage || 0).toString());
+            setClientSalesCommissionInput((config.clientSalesCommissionToOwnerPercentage || 0).toString());
         } else {
              setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
         }
-    }));
-    unsubscribes.push(onSnapshot(doc(db, 'config', 'creditRequest'), (docSnap) => {
-        if (docSnap.exists()) {
-            const creditConfigData = docSnap.data() as CreditRequestConfig;
-            setCreditRequestConfig(creditConfigData);
-            setWhatsappInput(creditConfigData.whatsappNumber);
-            setPixKeyInput(creditConfigData.pixKey);
+
+        if (storedCreditConfig) {
+            const creditConfig = JSON.parse(storedCreditConfig);
+            setCreditRequestConfig(creditConfig);
+            setWhatsappInput(creditConfig.whatsappNumber);
+            setPixKeyInput(creditConfig.pixKey);
         } else {
             setCreditRequestConfig(DEFAULT_CREDIT_CONFIG);
         }
-    }));
-
-    return () => unsubscribes.forEach(unsub => unsub());
+    }
   }, []);
 
-  // Update ticket statuses whenever tickets or draws change
+  // Auth check
   useEffect(() => {
-    if (allTickets.length > 0 && isClient) {
-        const updatedTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
-        
-        // This is a tricky part. We only want to write back to Firestore if a status actually changed.
-        // A simple comparison can be expensive. A better approach is to do this update in a batch
-        // when a draw is added or a lottery is reset.
-        // For now, we'll just use the derived state.
+    if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
+      router.push('/login?redirect=/admin');
     }
-  }, [allTickets, draws, isClient]);
+  }, [isLoading, isAuthenticated, currentUser, router]);
+
+
+  const saveDraws = (newDraws: Draw[]) => {
+    setDraws(newDraws);
+    localStorage.setItem('draws', JSON.stringify(newDraws));
+  }
+
+  const saveTickets = (newTickets: Ticket[]) => {
+    setAllTickets(newTickets);
+    localStorage.setItem('tickets', JSON.stringify(newTickets));
+  }
+  
+  const saveUsers = (newUsers: User[]) => {
+      setAllUsers(newUsers);
+      localStorage.setItem('bolaoPotiguarAuthUsers', JSON.stringify(newUsers));
+  }
+  
+  const saveAdminHistory = (newHistory: AdminHistoryEntry[]) => {
+      setAdminHistory(newHistory);
+      localStorage.setItem('adminHistory', JSON.stringify(newHistory));
+  }
 
   const processedTickets = useMemo(() => updateTicketStatusesBasedOnDraws(allTickets, draws), [allTickets, draws]);
   const winningTickets = processedTickets.filter(ticket => ticket.status === 'winning');
@@ -202,7 +198,7 @@ export default function AdminPage() {
   }, [clientTickets, vendedorTickets, lotteryConfig]);
 
 
-  const handleAddDraw = async (newNumbers: number[], name?: string) => {
+  const handleAddDraw = (newNumbers: number[], name?: string) => {
     if (winningTickets.length > 0) {
       toast({ title: "Ação Bloqueada", description: "Não é possível cadastrar sorteios enquanto houver bilhetes premiados. Inicie uma nova loteria.", variant: "destructive" });
       return;
@@ -212,36 +208,25 @@ export default function AdminPage() {
       return;
     }
 
-    const newDrawData: Omit<Draw, 'id'> = {
+    const newDraw: Draw = {
+      id: uuidv4(),
       numbers: newNumbers,
       createdAt: new Date().toISOString(),
       name: name || undefined,
     };
+    const updatedDraws = [newDraw, ...draws];
+    saveDraws(updatedDraws);
 
-    try {
-        const docRef = await addDoc(collection(db, "draws"), newDrawData);
-        const newDraw = { id: docRef.id, ...newDrawData };
-        const updatedDraws = [newDraw, ...draws];
-        
-        // Batch update ticket statuses
-        const batch = writeBatch(db);
-        const updatedTickets = updateTicketStatusesBasedOnDraws(allTickets, updatedDraws);
-        updatedTickets.forEach(ticket => {
-            const ticketRef = doc(db, "tickets", ticket.id);
-            batch.update(ticketRef, { status: ticket.status });
-        });
-        await batch.commit();
+    const updatedTickets = updateTicketStatusesBasedOnDraws(allTickets, updatedDraws);
+    saveTickets(updatedTickets);
 
-        toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes atualizados.", className: "bg-primary text-primary-foreground", duration: 3000 });
-    } catch (error) {
-        console.error("Error adding draw:", error);
-        toast({ title: "Erro", description: "Não foi possível cadastrar o sorteio.", variant: "destructive"});
-    }
+    toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes atualizados.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
   
-  const captureAndSaveSellerHistory = useCallback(async () => {
+  const captureAndSaveSellerHistory = useCallback(() => {
     const sellers = allUsers.filter(u => u.role === 'vendedor');
-    const batch = writeBatch(db);
+    const existingHistory = localStorage.getItem('sellerHistory') ? JSON.parse(localStorage.getItem('sellerHistory')!) : [];
+    let newEntries: SellerHistoryEntry[] = [];
     
     sellers.forEach(seller => {
         const activeTickets = vendedorTickets.filter(ticket => ticket.status === 'active' && ticket.sellerUsername === seller.username);
@@ -250,25 +235,27 @@ export default function AdminPage() {
         const commissionEarned = totalRevenueFromActiveTickets * (lotteryConfig.sellerCommissionPercentage / 100);
 
         if (activeSellerTicketsCount > 0) {
-            const newHistoryEntry: Omit<SellerHistoryEntry, 'id'> = {
+            newEntries.push({
+              id: uuidv4(),
               sellerUsername: seller.username,
               endDate: new Date().toISOString(),
               activeTicketsCount: activeSellerTicketsCount,
               totalRevenue: totalRevenueFromActiveTickets,
               totalCommission: commissionEarned,
-            };
-            const historyRef = doc(collection(db, 'sellerHistory'));
-            batch.set(historyRef, newHistoryEntry);
+            });
         }
     });
 
-    await batch.commit();
-    toast({ title: "Histórico de Vendedores Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo para cada vendedor.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
+    if (newEntries.length > 0) {
+        localStorage.setItem('sellerHistory', JSON.stringify([...newEntries, ...existingHistory]));
+        toast({ title: "Histórico de Vendedores Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo para cada vendedor.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
+    }
   }, [allUsers, vendedorTickets, lotteryConfig, toast]);
   
-  const captureAndSaveAdminHistory = useCallback(async () => {
+  const captureAndSaveAdminHistory = useCallback(() => {
       const currentReport = financialReport;
-      const newHistoryEntry: Omit<AdminHistoryEntry, 'id'> = {
+      const newHistoryEntry: AdminHistoryEntry = {
+        id: uuidv4(),
         endDate: new Date().toISOString(),
         totalRevenue: currentReport.totalRevenue,
         totalSellerCommission: currentReport.sellerCommission,
@@ -277,55 +264,45 @@ export default function AdminPage() {
         clientTicketCount: currentReport.clientTicketCount,
         sellerTicketCount: currentReport.sellerTicketCount,
       };
-      await addDoc(collection(db, "adminHistory"), newHistoryEntry);
+      
+      const updatedHistory = [newHistoryEntry, ...adminHistory];
+      saveAdminHistory(updatedHistory);
       toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
-  }, [financialReport, toast]);
+  }, [financialReport, adminHistory, toast]);
 
-  const handleStartNewLottery = async () => {
+  const handleStartNewLottery = () => {
     const CONTROL_PASSWORD = "Al@n2099";
     if (startLotteryPassword !== CONTROL_PASSWORD) {
       toast({ title: "Ação Bloqueada", description: "Senha de controle incorreta.", variant: "destructive" });
       return;
     }
     
-    try {
-        await captureAndSaveSellerHistory();
-        await captureAndSaveAdminHistory();
-      
-        const batch = writeBatch(db);
+    captureAndSaveSellerHistory();
+    captureAndSaveAdminHistory();
+  
+    // Expire active/winning tickets
+    const updatedTickets = allTickets.map(ticket => {
+        if (ticket.status === 'active' || ticket.status === 'winning' || ticket.status === 'unpaid') {
+            return { ...ticket, status: 'expired' as const };
+        }
+        return ticket;
+    });
+    saveTickets(updatedTickets);
 
-        // Delete all draws
-        draws.forEach(draw => {
-            const drawRef = doc(db, "draws", draw.id);
-            batch.delete(drawRef);
-        });
-        
-        // Expire relevant tickets
-        const expireStatuses: Ticket['status'][] = ['active', 'winning', 'unpaid'];
-        allTickets.forEach(ticket => {
-            if (expireStatuses.includes(ticket.status)) {
-                const ticketRef = doc(db, "tickets", ticket.id);
-                batch.update(ticketRef, { status: 'expired' });
-            }
-        });
-        
-        await batch.commit();
+    // Clear draws
+    saveDraws([]);
 
-        toast({
-          title: "Nova Loteria Iniciada!",
-          description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
-          className: "bg-primary text-primary-foreground",
-          duration: 3000,
-        });
-        setStartLotteryPassword('');
-        setIsConfirmDialogOpen(false); 
-    } catch (error) {
-        console.error("Error starting new lottery:", error);
-        toast({ title: "Erro", description: "Não foi possível iniciar a nova loteria.", variant: "destructive" });
-    }
+    toast({
+      title: "Nova Loteria Iniciada!",
+      description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
+      className: "bg-primary text-primary-foreground",
+      duration: 3000,
+    });
+    setStartLotteryPassword('');
+    setIsConfirmDialogOpen(false); 
   };
 
-  const handleSaveLotteryConfig = async () => {
+  const handleSaveLotteryConfig = () => {
     const price = parseFloat(ticketPriceInput);
     const commission = parseInt(commissionInput, 10);
     const ownerCommission = parseInt(ownerCommissionInput, 10);
@@ -355,27 +332,19 @@ export default function AdminPage() {
       clientSalesCommissionToOwnerPercentage: clientSalesCommission
     };
 
-    try {
-        await setDoc(doc(db, "config", "lottery"), newConfig);
-        toast({ title: "Configurações Salvas!", description: "Configurações da loteria atualizadas.", className: "bg-primary text-primary-foreground", duration: 3000 });
-    } catch(error) {
-        console.error("Error saving lottery config:", error);
-        toast({ title: "Erro", description: "Não foi possível salvar as configurações da loteria.", variant: "destructive" });
-    }
+    setLotteryConfig(newConfig);
+    localStorage.setItem('lotteryConfig', JSON.stringify(newConfig));
+    toast({ title: "Configurações Salvas!", description: "Configurações da loteria atualizadas.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
   
-  const handleSaveCreditRequestConfig = async () => {
+  const handleSaveCreditRequestConfig = () => {
     const newConfig: CreditRequestConfig = {
       whatsappNumber: whatsappInput.trim(),
       pixKey: pixKeyInput.trim(),
     };
-    try {
-        await setDoc(doc(db, "config", "creditRequest"), newConfig);
-        toast({ title: "Configurações Salvas!", description: "Informações de contato atualizadas.", className: "bg-primary text-primary-foreground", duration: 3000 });
-    } catch(error) {
-        console.error("Error saving credit config:", error);
-        toast({ title: "Erro", description: "Não foi possível salvar as informações de contato.", variant: "destructive" });
-    }
+    setCreditRequestConfig(newConfig);
+    localStorage.setItem('creditRequestConfig', JSON.stringify(newConfig));
+    toast({ title: "Configurações Salvas!", description: "Informações de contato atualizadas.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
 
   const handleOpenViewUser = (user: User) => {
@@ -388,23 +357,21 @@ export default function AdminPage() {
     setIsCreditDialogOpen(true);
   };
   
-  const handleCreditChange = async (user: User, amount: number) => {
+  const handleCreditChange = (user: User, amount: number) => {
+    const updatedUsers = allUsers.map(u => 
+        u.id === user.id ? { ...u, saldo: (u.saldo || 0) + amount } : u
+    );
+    saveUsers(updatedUsers);
+    
     const newBalance = (user.saldo || 0) + amount;
-    const userRef = doc(db, "users", user.id);
-    try {
-        await updateDoc(userRef, { saldo: newBalance });
-        toast({
-            title: "Saldo Atualizado!",
-            description: `O saldo de ${user.username} agora é R$ ${newBalance.toFixed(2).replace('.', ',')}.`,
-            className: "bg-primary text-primary-foreground",
-            duration: 3000
-        });
-        setIsCreditDialogOpen(false);
-        setUserToManageCredits(null);
-    } catch (error) {
-        console.error("Error updating user credits:", error);
-        toast({ title: "Erro", description: `Não foi possível atualizar o saldo de ${user.username}.`, variant: "destructive" });
-    }
+    toast({
+        title: "Saldo Atualizado!",
+        description: `O saldo de ${user.username} agora é R$ ${newBalance.toFixed(2).replace('.', ',')}.`,
+        className: "bg-primary text-primary-foreground",
+        duration: 3000
+    });
+    setIsCreditDialogOpen(false);
+    setUserToManageCredits(null);
   };
 
   const handleConfirmDeleteUser = (user: User) => {
@@ -412,7 +379,7 @@ export default function AdminPage() {
     setIsDeleteConfirmOpen(true);
   };
 
-  const handleDeleteUser = async () => {
+  const handleDeleteUser = () => {
     if (!userToDelete) return;
 
     if (currentUser && currentUser.id === userToDelete.id) {
@@ -422,36 +389,24 @@ export default function AdminPage() {
       return;
     }
     
-    try {
-        const batch = writeBatch(db);
+    // Delete user's tickets
+    const remainingTickets = allTickets.filter(ticket => ticket.buyerName !== userToDelete.username && ticket.sellerUsername !== userToDelete.username);
+    saveTickets(remainingTickets);
 
-        // Delete user's tickets
-        const userTickets = allTickets.filter(ticket => ticket.buyerName === userToDelete.username || ticket.sellerUsername === userToDelete.username);
-        userTickets.forEach(ticket => {
-            const ticketRef = doc(db, "tickets", ticket.id);
-            batch.delete(ticketRef);
-        });
-
-        // Delete the user document
-        const userRef = doc(db, "users", userToDelete.id);
-        batch.delete(userRef);
-
-        await batch.commit();
-        
-        // Close the details dialog if the deleted user was being viewed
-        if (userToView && userToView.id === userToDelete.id) {
-            setIsUserViewDialogOpen(false);
-            setUserToView(null);
-        }
-
-        toast({ title: "Usuário Excluído", description: `O usuário ${userToDelete.username} e todos os seus bilhetes foram removidos.`, className: "bg-destructive text-destructive-foreground", duration: 3000 });
-        
-        setIsDeleteConfirmOpen(false);
-        setUserToDelete(null);
-    } catch (error) {
-        console.error("Error deleting user and tickets:", error);
-        toast({ title: "Erro", description: "Não foi possível excluir o usuário.", variant: "destructive"});
+    // Delete the user
+    const remainingUsers = allUsers.filter(u => u.id !== userToDelete.id);
+    saveUsers(remainingUsers);
+    
+    // Close the details dialog if the deleted user was being viewed
+    if (userToView && userToView.id === userToDelete.id) {
+        setIsUserViewDialogOpen(false);
+        setUserToView(null);
     }
+
+    toast({ title: "Usuário Excluído", description: `O usuário ${userToDelete.username} e todos os seus bilhetes foram removidos.`, className: "bg-destructive text-destructive-foreground", duration: 3000 });
+    
+    setIsDeleteConfirmOpen(false);
+    setUserToDelete(null);
   };
 
   const handleSectionChange = (sectionId: AdminSection) => {
@@ -476,7 +431,7 @@ export default function AdminPage() {
     );
   }, [allUsers, userSearchTerm]);
 
-  if (!isClient) {
+  if (!isClient || isLoading || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Admin...</p>
@@ -623,7 +578,7 @@ export default function AdminPage() {
                         <div className="flex-grow">
                             <p className="font-semibold text-foreground">{user.username}</p>
                             <div className="flex items-center gap-x-2 flex-wrap">
-                                <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
+                                <Badge variant={user.role === 'vendedor' ? 'secondary' : (user.role === 'admin' ? 'destructive' : 'outline')}>
                                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                                 </Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
@@ -752,12 +707,21 @@ export default function AdminPage() {
                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                             id="control-password"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="Senha de Controle"
                             value={startLotteryPassword}
                             onChange={(e) => setStartLotteryPassword(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 pr-10"
                             />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
                         </div>
                     </div>
                     <AlertDialogFooter>

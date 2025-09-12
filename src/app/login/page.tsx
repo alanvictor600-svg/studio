@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { LogIn, UserPlus, ArrowLeft } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
@@ -28,6 +28,7 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loginWithGoogle, currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,19 +40,22 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    const redirectPath = searchParams.get('redirect');
-    if (redirectPath?.includes('cliente')) {
-      setRegistrationHref('/cadastrar?role=cliente');
-    } else if (redirectPath?.includes('vendedor')) {
-      setRegistrationHref('/cadastrar?role=vendedor');
-    } else {
-      setRegistrationHref('/cadastrar');
-    }
-
     if (isClient && !authLoading && currentUser) {
+      const redirectPath = searchParams.get('redirect');
       router.push(redirectPath || (currentUser.role === 'cliente' ? '/cliente' : '/vendedor'));
     }
   }, [currentUser, authLoading, router, searchParams, isClient]);
+
+  useEffect(() => {
+      const redirectPath = searchParams.get('redirect');
+      if (redirectPath?.includes('cliente')) {
+        setRegistrationHref('/cadastrar?role=cliente');
+      } else if (redirectPath?.includes('vendedor')) {
+        setRegistrationHref('/cadastrar?role=vendedor');
+      } else {
+        setRegistrationHref('/cadastrar');
+      }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,15 +126,26 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-background/70 h-11"
-                />
+                 <div className="relative">
+                    <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Sua senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="bg-background/70 h-11 pr-10"
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </Button>
+                </div>
               </div>
               <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={authLoading}>
                 <LogIn className="mr-2 h-5 w-5" />

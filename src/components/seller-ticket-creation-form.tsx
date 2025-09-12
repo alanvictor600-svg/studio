@@ -12,16 +12,16 @@ import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib
 import { NumberButton } from '@/components/number-button';
 import { X, Sparkles, Trash2, TicketPlus, User, Phone, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 import type { Ticket, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 interface SellerTicketCreationFormProps {
   isLotteryPaused?: boolean;
   lotteryConfig: LotteryConfig;
+  onTicketCreated: (ticket: Ticket) => void;
 }
 
 const MAX_PICKS = 10;
@@ -29,7 +29,8 @@ const MAX_REPETITION = 4;
 
 export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({ 
   isLotteryPaused = false,
-  lotteryConfig
+  lotteryConfig,
+  onTicketCreated,
 }) => {
   const [currentPicks, setCurrentPicks] = useState<number[]>([]);
   const [buyerName, setBuyerName] = useState('');
@@ -53,7 +54,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Vendas Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              O registro de novas vendas está suspenso pois há um bilhete premiado.
+              O registro de novas vendas está suspenso pois a loteria já começou ou há um bilhete premiado.
               Aguarde o administrador iniciar uma nova loteria para continuar.
             </AlertDescription>
           </Alert>
@@ -88,7 +89,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     toast({ title: "Seleção Limpa", description: "Todos os números foram removidos.", duration: 3000 });
   };
 
-  const handleSubmitTicket = async () => {
+  const handleSubmitTicket = () => {
     if (!currentUser) {
       toast({ title: "Erro", description: "Vendedor não autenticado.", variant: "destructive" });
       return;
@@ -110,7 +111,8 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
 
     setIsSubmitting(true);
     
-    const newTicketData: Omit<Ticket, 'id'> = {
+    const newTicket: Ticket = {
+      id: uuidv4(),
       numbers: [...currentPicks].sort((a,b) => a-b),
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -119,26 +121,22 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
       sellerUsername: currentUser.username,
     };
 
-    try {
-        const docRef = await addDoc(collection(db, "tickets"), newTicketData);
-        const createdTicket = { id: docRef.id, ...newTicketData };
-        
-        const newBalance = (currentUser.saldo || 0) - ticketCost;
-        updateCurrentUserCredits(newBalance);
+    const allTickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    localStorage.setItem('tickets', JSON.stringify([...allTickets, newTicket]));
 
-        setCurrentPicks([]);
-        setBuyerName('');
-        setBuyerPhone('');
-        setReceiptTicket(createdTicket);
+    // Deduct credits
+    updateCurrentUserCredits((currentUser.saldo || 0) - ticketCost);
 
-        toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+    onTicketCreated(newTicket);
+    setCurrentPicks([]);
+    setBuyerName('');
+    setBuyerPhone('');
+    setReceiptTicket(newTicket);
 
-    } catch (error) {
-        console.error("Error creating seller ticket:", error);
-        toast({ title: "Erro", description: "Não foi possível registrar a venda. Tente novamente.", variant: "destructive" });
-    } finally {
-        setIsSubmitting(false);
-    }
+    toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+
+    // Simulate server processing time
+    setTimeout(() => setIsSubmitting(false), 500);
   };
 
   return (

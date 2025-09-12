@@ -21,9 +21,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCap
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
-
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -53,6 +50,7 @@ export default function VendedorPage() {
   const [activeSection, setActiveSection] = useState<VendedorSection>('nova-venda');
   const router = useRouter();
 
+  // Auth check
   useEffect(() => {
     setIsClient(true);
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'vendedor')) {
@@ -60,41 +58,31 @@ export default function VendedorPage() {
     }
   }, [isLoading, isAuthenticated, currentUser, router]);
 
-  // Set up Firestore listeners
+  // Load data from localStorage on mount and when currentUser changes
   useEffect(() => {
-    if (!isAuthenticated || !currentUser || currentUser.role !== 'vendedor') return;
+    if (isClient && currentUser) {
+      const allTicketsData = localStorage.getItem('tickets');
+      if (allTicketsData) {
+        const allTickets: Ticket[] = JSON.parse(allTicketsData);
+        // Filter tickets managed by the current seller
+        const sellerTickets = allTickets.filter(ticket => ticket.sellerUsername === currentUser.username);
+        setVendedorManagedTickets(sellerTickets);
+      }
+      
+      const drawsData = localStorage.getItem('draws');
+      if (drawsData) setDraws(JSON.parse(drawsData));
 
-    const unsubscribes: (() => void)[] = [];
+      const configData = localStorage.getItem('lotteryConfig');
+      if (configData) setLotteryConfig(JSON.parse(configData));
 
-    // Listener for draws
-    const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-    unsubscribes.push(onSnapshot(drawsQuery, (snapshot) => {
-        setDraws(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw)));
-    }));
+      const historyData = localStorage.getItem('sellerHistory');
+      if(historyData) {
+          const allHistory: SellerHistoryEntry[] = JSON.parse(historyData);
+          setSellerHistory(allHistory.filter(h => h.sellerUsername === currentUser.username));
+      }
+    }
+  }, [isClient, currentUser]);
 
-    // Listener for seller's managed tickets
-    const ticketsQuery = query(collection(db, 'tickets'), where('sellerUsername', '==', currentUser.username));
-    unsubscribes.push(onSnapshot(ticketsQuery, (snapshot) => {
-        setVendedorManagedTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)));
-    }));
-
-    // Listener for lottery config
-    unsubscribes.push(onSnapshot(doc(db, 'config', 'lottery'), (docSnap) => {
-        if (docSnap.exists()) {
-            setLotteryConfig(docSnap.data() as LotteryConfig);
-        } else {
-            setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
-        }
-    }));
-    
-    // Listener for seller's history
-    const historyQuery = query(collection(db, 'sellerHistory'), where('sellerUsername', '==', currentUser.username), orderBy('endDate', 'desc'));
-    unsubscribes.push(onSnapshot(historyQuery, (snapshot) => {
-        setSellerHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SellerHistoryEntry)));
-    }));
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [isAuthenticated, currentUser]);
 
   const processedVendedorTickets = useMemo(() => updateTicketStatusesBasedOnDraws(vendedorManagedTickets, draws), [vendedorManagedTickets, draws]);
 
@@ -113,7 +101,12 @@ export default function VendedorPage() {
 
 
   const isLotteryPaused = useMemo(() => {
-    return draws.length > 0;
+    // Sales are paused if there are any winning tickets in the system.
+    const allTicketsData = localStorage.getItem('tickets');
+    if (!allTicketsData) return false;
+    const allTickets: Ticket[] = JSON.parse(allTicketsData);
+    const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
+    return processedAllTickets.some(ticket => ticket.status === 'winning');
   }, [draws]);
 
   const handleSectionChange = (sectionId: VendedorSection) => {
@@ -123,7 +116,7 @@ export default function VendedorPage() {
     }
   };
 
-  if (!isClient || isLoading || !currentUser || currentUser.role !== 'vendedor') {
+  if (!isClient || isLoading || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Carregando Área do Vendedor...</p>
@@ -142,6 +135,9 @@ export default function VendedorPage() {
             <SellerTicketCreationForm 
               isLotteryPaused={isLotteryPaused}
               lotteryConfig={lotteryConfig} 
+              onTicketCreated={(newTicket) => {
+                setVendedorManagedTickets(prev => [...prev, newTicket]);
+              }}
             />
           </section>
         );

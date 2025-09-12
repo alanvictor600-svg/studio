@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award } from 'lucide-react';
+import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award, Eye, EyeOff } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -15,42 +15,35 @@ import type { Draw, Ticket } from '@/types';
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { TopTickets } from '@/components/TopTickets';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
-  const { currentUser, logout, isLoading: authLoading } = useAuth();
+  const { currentUser, logout, login, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
-
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
-    const unsubDraws = onSnapshot(query(collection(db, 'draws'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setDraws(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw)));
-    });
+    const storedDraws = localStorage.getItem('draws');
+    if (storedDraws) setDraws(JSON.parse(storedDraws));
 
-    const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
-      setAllTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)));
-    });
-
-    return () => {
-      unsubDraws();
-      unsubTickets();
-    };
+    const storedTickets = localStorage.getItem('tickets');
+    if (storedTickets) setAllTickets(JSON.parse(storedTickets));
   }, []);
 
   const handleClienteClick = () => {
     if (currentUser && currentUser.role === 'cliente') {
       router.push('/cliente');
-    } else if (currentUser && currentUser.role !== 'cliente') {
-      // If logged in as a seller, force re-login for client page
-      router.push('/login?redirect=/cliente');
     } else {
-      // Not logged in, go to login with redirect
       router.push('/login?redirect=/cliente');
     }
   };
@@ -58,13 +51,25 @@ export default function LandingPage() {
   const handleVendedorClick = () => {
      if (currentUser && currentUser.role === 'vendedor') {
       router.push('/vendedor');
-    } else if (currentUser && currentUser.role !== 'vendedor') {
-      // If logged in as a client, force re-login for seller page
-      router.push('/login?redirect=/vendedor');
     } else {
-      // Not logged in, go to login with redirect
       router.push('/login?redirect=/vendedor');
     }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const success = await login(adminUsername, adminPassword, 'admin');
+      if (success) {
+          setIsPopoverOpen(false);
+          setAdminUsername('');
+          setAdminPassword('');
+      } else {
+          toast({
+              title: "Falha no Login de Admin",
+              description: "Usuário ou senha incorretos.",
+              variant: "destructive"
+          });
+      }
   };
 
 
@@ -198,18 +203,60 @@ export default function LandingPage() {
       </main>
 
       <div className="fixed bottom-6 left-6 z-50">
-        <Popover>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Opções de Administrador" className="shadow-lg rounded-full">
               <Settings className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-2">
-            <Link href="/admin" passHref legacyBehavior>
-              <Button variant="destructive" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                <ShieldCheck className="mr-2 h-4 w-4" /> Acessar Admin
-              </Button>
-            </Link>
+          <PopoverContent className="w-80">
+            <form onSubmit={handleAdminLogin}>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Acesso Restrito</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Insira as credenciais de administrador.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <Label htmlFor="admin-username">Usuário</Label>
+                      <Input
+                        id="admin-username"
+                        value={adminUsername}
+                        onChange={(e) => setAdminUsername(e.target.value)}
+                        className="col-span-2 h-8"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <Label htmlFor="admin-password">Senha</Label>
+                      <div className="col-span-2 h-8 relative">
+                          <Input
+                            id="admin-password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={adminPassword}
+                            onChange={(e) => setAdminPassword(e.target.value)}
+                            className="h-8 pr-10"
+                            required
+                          />
+                          <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground"
+                              onClick={() => setShowPassword(!showPassword)}
+                          >
+                              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <Button type="submit" variant="destructive" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={authLoading}>
+                    <ShieldCheck className="mr-2 h-4 w-4" /> {authLoading ? "Verificando..." : "Entrar"}
+                  </Button>
+                </div>
+            </form>
           </PopoverContent>
         </Popover>
       </div>
