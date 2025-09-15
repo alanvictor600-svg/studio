@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -47,7 +47,10 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const ticketsQuery = query(collection(db, 'tickets'));
+    const ticketsQuery = query(
+        collection(db, 'tickets'),
+        where('status', 'in', ['active', 'winning'])
+    );
     const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
         setAllTickets(ticketsData);
@@ -68,7 +71,6 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
     }
     
     const relevantTicketsWithMatches = allTickets
-      .filter(ticket => ticket.status === 'active' || ticket.status === 'winning')
       .map(ticket => ({
         ...ticket,
         matches: calculateTicketMatches(ticket, draws),
