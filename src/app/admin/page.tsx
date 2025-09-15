@@ -31,6 +31,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs, setDoc, where, orderBy } from 'firebase/firestore';
+import { FinancialChart } from '@/components/financial-chart';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -911,48 +912,22 @@ export default function AdminPage() {
             </Card>
 
             <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl text-center font-bold text-primary flex items-center justify-center">
-                  <BookText className="mr-3 h-6 w-6" />
-                  Histórico de Ciclos Anteriores (Admin)
-                </CardTitle>
-                <CardDescription className="text-center text-muted-foreground">
-                  Resumo financeiro de cada ciclo de loteria encerrado.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {adminHistory.length > 0 ? (
-                  <ScrollArea className="h-80 w-full rounded-md border">
-                      <Table>
-                        <TableCaption>Um registro financeiro de cada ciclo de loteria.</TableCaption>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-center">Data Fim</TableHead>
-                            <TableHead className="text-center">Receita Total</TableHead>
-                            <TableHead className="text-center">Comissão Vendedores</TableHead>
-                            <TableHead className="text-center">Comissão Bolão</TableHead>
-                            <TableHead className="text-right">Prêmio Total</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {adminHistory.map((entry) => (
-                            <TableRow key={entry.id}>
-                              <TableCell className="text-center font-medium text-xs whitespace-nowrap">
-                                {format(parseISO(entry.endDate), "dd/MM/yy HH:mm", { locale: ptBR })}
-                              </TableCell>
-                              <TableCell className="text-center font-semibold text-green-500">R$ {entry.totalRevenue.toFixed(2).replace('.', ',')}</TableCell>
-                              <TableCell className="text-center">R$ {entry.totalSellerCommission.toFixed(2).replace('.', ',')}</TableCell>
-                              <TableCell className="text-center">R$ {entry.totalOwnerCommission.toFixed(2).replace('.', ',')}</TableCell>
-                              <TableCell className="text-right font-bold text-accent">R$ {entry.totalPrizePool.toFixed(2).replace('.', ',')}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                  </ScrollArea>
-                ) : (
-                  <p className="text-center text-muted-foreground py-10">Nenhum histórico de ciclo anterior encontrado.</p>
-                )}
-              </CardContent>
+                <CardHeader>
+                    <CardTitle className="text-2xl text-center font-bold text-primary flex items-center justify-center">
+                    <BookText className="mr-3 h-6 w-6" />
+                    Histórico de Ciclos Anteriores (Admin)
+                    </CardTitle>
+                    <CardDescription className="text-center text-muted-foreground">
+                    Resumo financeiro de cada ciclo de loteria encerrado.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {adminHistory.length > 0 ? (
+                    <FinancialChart data={adminHistory} />
+                    ) : (
+                    <p className="text-center text-muted-foreground py-10">Nenhum histórico de ciclo anterior encontrado para exibir o gráfico.</p>
+                    )}
+                </CardContent>
             </Card>
           </section>
         );
@@ -1112,3 +1087,6 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
+    
