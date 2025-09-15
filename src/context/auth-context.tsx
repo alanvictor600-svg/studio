@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  const isLoading = authLoading || isFirestoreLoading;
   const isAuthenticated = !authLoading && !!firebaseUser;
+  const isLoading = authLoading || isFirestoreLoading;
   
   useEffect(() => {
     if (firebaseUser) {
@@ -140,6 +140,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => {
     const sanitizedUsername = sanitizeUsernameForEmail(username);
+    if (!sanitizedUsername) {
+        toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido.", variant: "destructive" });
+        return;
+    }
     const fakeEmail = `${sanitizedUsername}@bolao.potiguar`;
 
     try {
