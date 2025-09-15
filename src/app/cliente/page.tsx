@@ -41,6 +41,7 @@ export default function ClientePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<ClienteSection>('selecionar-bilhete');
   const router = useRouter();
+  const [isLotteryPaused, setIsLotteryPaused] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -48,11 +49,7 @@ export default function ClientePage() {
 
   // Auth check
   useEffect(() => {
-    // Wait until loading is finished
-    if (isLoading) {
-      return;
-    }
-    // If not authenticated or not a client, redirect
+    if (isLoading) return;
     if (!isAuthenticated || currentUser?.role !== 'cliente') {
       router.push('/login?redirect=/cliente');
     }
@@ -72,7 +69,22 @@ export default function ClientePage() {
       }
       
       const drawsData = localStorage.getItem('draws');
-      if (drawsData) setDraws(JSON.parse(drawsData));
+      if (drawsData) {
+          const storedDraws = JSON.parse(drawsData);
+          setDraws(storedDraws);
+
+          // Check for winning tickets to pause lottery
+          const allTicketsData = localStorage.getItem('tickets');
+          if (allTicketsData) {
+              const allTickets: Ticket[] = JSON.parse(allTicketsData);
+              const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, storedDraws);
+              setIsLotteryPaused(processedAllTickets.some(ticket => ticket.status === 'winning'));
+          } else {
+              setIsLotteryPaused(false);
+          }
+      } else {
+          setIsLotteryPaused(false);
+      }
 
       const configData = localStorage.getItem('lotteryConfig');
       if (configData) setLotteryConfig(JSON.parse(configData));
@@ -88,14 +100,6 @@ export default function ClientePage() {
     }
   };
 
-  const isLotteryPaused = useMemo(() => {
-    // Sales are paused if there are any winning tickets in the system.
-    const allTicketsData = localStorage.getItem('tickets');
-    if (!allTicketsData) return false;
-    const allTickets: Ticket[] = JSON.parse(allTicketsData);
-    const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
-    return processedAllTickets.some(ticket => ticket.status === 'winning');
-  }, [draws]);
 
   if (!isClient || isLoading) {
     return (

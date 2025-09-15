@@ -49,6 +49,7 @@ export default function VendedorPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<VendedorSection>('nova-venda');
   const router = useRouter();
+  const [isLotteryPaused, setIsLotteryPaused] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -56,11 +57,7 @@ export default function VendedorPage() {
 
   // Auth check
   useEffect(() => {
-    // Wait until loading is finished
-    if (isLoading) {
-      return;
-    }
-    // If not authenticated or not a seller, redirect
+    if (isLoading) return;
     if (!isAuthenticated || currentUser?.role !== 'vendedor') {
       router.push('/login?redirect=/vendedor');
     }
@@ -78,7 +75,21 @@ export default function VendedorPage() {
       }
       
       const drawsData = localStorage.getItem('draws');
-      if (drawsData) setDraws(JSON.parse(drawsData));
+      if (drawsData) {
+        const storedDraws = JSON.parse(drawsData);
+        setDraws(storedDraws);
+
+        const allTicketsData = localStorage.getItem('tickets');
+        if (allTicketsData) {
+            const allTickets: Ticket[] = JSON.parse(allTicketsData);
+            const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, storedDraws);
+            setIsLotteryPaused(processedAllTickets.some(ticket => ticket.status === 'winning'));
+        } else {
+            setIsLotteryPaused(false);
+        }
+      } else {
+          setIsLotteryPaused(false);
+      }
 
       const configData = localStorage.getItem('lotteryConfig');
       if (configData) setLotteryConfig(JSON.parse(configData));
@@ -106,16 +117,6 @@ export default function VendedorPage() {
       commissionEarned: commission,
     };
   }, [processedVendedorTickets, lotteryConfig, currentUser]);
-
-
-  const isLotteryPaused = useMemo(() => {
-    // Sales are paused if there are any winning tickets in the system.
-    const allTicketsData = localStorage.getItem('tickets');
-    if (!allTicketsData) return false;
-    const allTickets: Ticket[] = JSON.parse(allTicketsData);
-    const processedAllTickets = updateTicketStatusesBasedOnDraws(allTickets, draws);
-    return processedAllTickets.some(ticket => ticket.status === 'winning');
-  }, [draws]);
 
   const handleSectionChange = (sectionId: VendedorSection) => {
     setActiveSection(sectionId);
