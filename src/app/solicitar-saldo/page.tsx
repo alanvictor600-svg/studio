@@ -10,6 +10,8 @@ import { ArrowLeft, MessageSquare, Smartphone, Copy, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { CreditRequestConfig } from '@/types';
 import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export default function SolicitarSaldoPage() {
   const router = useRouter();
@@ -19,13 +21,22 @@ export default function SolicitarSaldoPage() {
 
   useEffect(() => {
     setIsClient(true);
-    if (typeof window !== 'undefined') {
-        const storedConfig = localStorage.getItem('creditRequestConfig');
-        if (storedConfig) {
-            setConfig(JSON.parse(storedConfig));
+    const configDocRef = doc(db, 'configs', 'global');
+
+    const unsubscribe = onSnapshot(configDocRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            if (data.creditRequestConfig) {
+                setConfig(data.creditRequestConfig);
+            }
         }
-    }
-  }, []);
+    }, (error) => {
+        console.error("Error fetching credit config: ", error);
+        toast({ title: "Erro de Carregamento", description: "Não foi possível carregar as informações de contato.", variant: "destructive" });
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
   const handleCopy = (text: string, label: string) => {
     if (!text) {

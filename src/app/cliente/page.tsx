@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AdminDrawList } from '@/components/admin-draw-list';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -61,21 +61,7 @@ export default function ClientePage() {
 
   // Load data from localStorage and listen for realtime data from Firestore
   useEffect(() => {
-    if (isClient && currentUser) {
-      // Listen for tickets owned by the current user
-      const ticketsQuery = query(
-        collection(db, 'tickets'),
-        where('buyerId', '==', currentUser.id)
-      );
-
-      const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-        const userTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-        setMyTickets(userTickets);
-      }, (error) => {
-          console.error("Error fetching user tickets: ", error);
-          toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar seus bilhetes.", variant: "destructive" });
-      });
-
+    if (isClient) {
       // Listen for all draws
       const drawsQuery = query(collection(db, 'draws'));
       const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
@@ -86,14 +72,40 @@ export default function ClientePage() {
           toast({ title: "Erro ao Carregar Sorteios", description: "Não foi possível carregar os resultados.", variant: "destructive" });
       });
 
-      // Load static config from localStorage
-      const configData = localStorage.getItem('lotteryConfig');
-      if (configData) setLotteryConfig(JSON.parse(configData));
+      // Listen for config
+      const configDocRef = doc(db, 'configs', 'global');
+      const unsubscribeConfig = onSnapshot(configDocRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          if (data.lotteryConfig) {
+            setLotteryConfig(data.lotteryConfig);
+          }
+        }
+      });
+      
+      // Listen for user-specific tickets if user is logged in
+      let unsubscribeTickets = () => {};
+      if (currentUser) {
+          const ticketsQuery = query(
+            collection(db, 'tickets'),
+            where('buyerId', '==', currentUser.id)
+          );
+
+          unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+            const userTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+            setMyTickets(userTickets);
+          }, (error) => {
+              console.error("Error fetching user tickets: ", error);
+              toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar seus bilhetes.", variant: "destructive" });
+          });
+      }
+
 
       // Cleanup subscriptions on unmount
       return () => {
         unsubscribeTickets();
         unsubscribeDraws();
+        unsubscribeConfig();
       };
     }
   }, [isClient, currentUser, toast]);

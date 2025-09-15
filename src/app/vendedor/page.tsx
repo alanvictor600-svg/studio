@@ -22,7 +22,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -69,20 +69,7 @@ export default function VendedorPage() {
 
   // Load data from localStorage and listen for realtime data from Firestore
   useEffect(() => {
-    if (isClient && currentUser) {
-      // Listen for tickets sold by the current seller
-      const ticketsQuery = query(
-        collection(db, 'tickets'),
-        where('sellerId', '==', currentUser.id)
-      );
-      const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-        const sellerTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-        setVendedorManagedTickets(sellerTickets);
-      }, (error) => {
-        console.error("Error fetching seller tickets: ", error);
-        toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar os bilhetes que você vendeu.", variant: "destructive" });
-      });
-
+    if (isClient) {
       // Listen for all draws
       const drawsQuery = query(collection(db, 'draws'));
       const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
@@ -93,20 +80,45 @@ export default function VendedorPage() {
         toast({ title: "Erro ao Carregar Sorteios", description: "Não foi possível carregar os resultados.", variant: "destructive" });
       });
       
-      // Load static data from localStorage
-      const configData = localStorage.getItem('lotteryConfig');
-      if (configData) setLotteryConfig(JSON.parse(configData));
-
-      const historyData = localStorage.getItem('sellerHistory');
-      if(historyData) {
-          const allHistory: SellerHistoryEntry[] = JSON.parse(historyData);
-          setSellerHistory(allHistory.filter(h => h.sellerUsername === currentUser.username));
+      // Listen for config
+      const configDocRef = doc(db, 'configs', 'global');
+      const unsubscribeConfig = onSnapshot(configDocRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          if (data.lotteryConfig) {
+            setLotteryConfig(data.lotteryConfig);
+          }
+        }
+      });
+      
+      let unsubscribeTickets = () => {};
+      if (currentUser) {
+          // Listen for tickets sold by the current seller
+          const ticketsQuery = query(
+            collection(db, 'tickets'),
+            where('sellerId', '==', currentUser.id)
+          );
+          unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+            const sellerTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+            setVendedorManagedTickets(sellerTickets);
+          }, (error) => {
+            console.error("Error fetching seller tickets: ", error);
+            toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar os bilhetes que você vendeu.", variant: "destructive" });
+          });
+          
+          // Load static data from localStorage
+          const historyData = localStorage.getItem('sellerHistory');
+          if(historyData) {
+              const allHistory: SellerHistoryEntry[] = JSON.parse(historyData);
+              setSellerHistory(allHistory.filter(h => h.sellerUsername === currentUser.username));
+          }
       }
 
       // Cleanup subscriptions
       return () => {
           unsubscribeTickets();
           unsubscribeDraws();
+          unsubscribeConfig();
       };
     }
   }, [isClient, currentUser, toast]);
