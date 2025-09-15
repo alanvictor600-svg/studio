@@ -461,9 +461,7 @@ export default function AdminPage() {
     try {
         const userRef = doc(db, 'users', userToDelete.id);
         await deleteDoc(userRef);
-        // Note: Associated tickets are not deleted to preserve sales history.
-        // If hard deletion is required, a more complex process (e.g., Cloud Function) is needed
-        // to delete subcollections or related documents due to security rules.
+        // Associated tickets are not deleted to preserve sales history.
         
         if (userToView && userToView.id === userToDelete.id) {
             setIsUserViewDialogOpen(false);
@@ -488,10 +486,9 @@ export default function AdminPage() {
   };
   
   const getUserActiveTicketsCount = useCallback((user: User) => {
-    const ticketsToCheck = user.role === 'cliente' ? clientTickets : vendedorTickets;
     const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
-    return ticketsToCheck.filter(t => t.status === 'active' && t[idField] === user.id).length;
-  }, [clientTickets, vendedorTickets]);
+    return allTickets.filter(t => t.status === 'active' && t[idField] === user.id).length;
+  }, [allTickets]);
 
   const filteredUsers = useMemo(() => {
     if (!userSearchTerm) {
@@ -1094,7 +1091,9 @@ export default function AdminPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar Exclusão?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tem certeza que deseja excluir o usuário <span className="font-bold">{userToDelete?.username}</span>? Todos os seus bilhetes também serão removidos. Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir o usuário <span className="font-bold">{userToDelete?.username}</span>? Esta ação não pode ser desfeita. 
+                        <br/><br/>
+                        <span className="text-xs text-muted-foreground">Nota: A conta do usuário será removida, mas seus bilhetes permanecerão no sistema para preservar o histórico de vendas e relatórios.</span>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1113,5 +1112,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    

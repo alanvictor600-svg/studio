@@ -13,14 +13,10 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Trash2, KeyRound, Ticket as TicketIcon } from 'lucide-react';
+import { Trash2, Ticket as TicketIcon } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface UserDetailsDialogProps {
   isOpen: boolean;
@@ -40,13 +36,19 @@ export const UserDetailsDialog: FC<UserDetailsDialogProps> = ({
   onClose,
 }) => {
 
-  const userActiveTickets = useMemo(() => {
-    if (!user) return [];
-    return allTickets.filter(ticket => 
-        ticket.status === 'active' && 
-        (ticket.buyerName === user.username || ticket.sellerUsername === user.username)
-    );
+  const userTickets = useMemo(() => {
+    if (!user) return { active: [], winning: [], expired: [], unpaid: [] };
+    const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
+    
+    return {
+        active: allTickets.filter(t => t.status === 'active' && t[idField] === user.id),
+        winning: allTickets.filter(t => t.status === 'winning' && t[idField] === user.id),
+        expired: allTickets.filter(t => t.status === 'expired' && t[idField] === user.id),
+        unpaid: allTickets.filter(t => t.status === 'unpaid' && t[idField] === user.id),
+    };
   }, [user, allTickets]);
+  
+  const totalTickets = Object.values(userTickets).reduce((sum, arr) => sum + arr.length, 0);
 
   if (!user) {
     return null;
@@ -69,7 +71,7 @@ export const UserDetailsDialog: FC<UserDetailsDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Detalhes de {user.username}</DialogTitle>
           <DialogDescription>
-            Visualize informações, bilhetes ativos e gerencie a conta do usuário.
+            Visualize informações e o histórico de bilhetes do usuário.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
@@ -82,7 +84,7 @@ export const UserDetailsDialog: FC<UserDetailsDialogProps> = ({
                 <div className="space-y-1">
                     <Label htmlFor="role">Perfil</Label>
                     <div id="role">
-                        <Badge variant={user.role === 'vendedor' ? 'secondary' : 'outline'}>
+                        <Badge variant={user.role === 'vendedor' ? 'secondary' : (user.role === 'admin' ? 'destructive' : 'outline')}>
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                         </Badge>
                     </div>
@@ -91,30 +93,33 @@ export const UserDetailsDialog: FC<UserDetailsDialogProps> = ({
 
             <Separator />
 
-            <div className="space-y-2">
+            <div className="space-y-4">
                 <h3 className="font-semibold flex items-center">
                     <TicketIcon className="mr-2 h-5 w-5 text-primary"/>
-                    Bilhetes Ativos ({userActiveTickets.length})
+                    Resumo de Bilhetes ({totalTickets})
                 </h3>
-                {userActiveTickets.length > 0 ? (
-                    <div className="space-y-2 rounded-md border p-3 bg-background/50 max-h-48 overflow-y-auto">
-                        {userActiveTickets.map(ticket => (
-                            <div key={ticket.id} className="text-sm p-2 bg-muted rounded-md">
-                                <p className="font-mono text-xs text-muted-foreground">ID: #{ticket.id.substring(0, 6)}</p>
-                                <div className="flex flex-wrap gap-1.5 mt-1">
-                                    {ticket.numbers.map((num, index) => (
-                                        <Badge key={index} variant="secondary" className="text-xs">{num}</Badge>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1.5">
-                                    {format(parseISO(ticket.createdAt), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-                                </p>
-                            </div>
-                        ))}
+                {totalTickets > 0 ? (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Ativos:</span>
+                            <Badge variant="secondary">{userTickets.active.length}</Badge>
+                        </div>
+                         <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Premiados:</span>
+                            <Badge className="bg-accent text-accent-foreground">{userTickets.winning.length}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Não Pagos:</span>
+                            <Badge variant="destructive">{userTickets.unpaid.length}</Badge>
+                        </div>
+                         <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Expirados:</span>
+                            <Badge variant="outline">{userTickets.expired.length}</Badge>
+                        </div>
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground text-center p-4 bg-muted rounded-md">
-                        Nenhum bilhete ativo encontrado para este usuário.
+                        Nenhum bilhete associado a este usuário.
                     </p>
                 )}
             </div>
@@ -134,5 +139,3 @@ export const UserDetailsDialog: FC<UserDetailsDialogProps> = ({
     </Dialog>
   );
 };
-
-    
