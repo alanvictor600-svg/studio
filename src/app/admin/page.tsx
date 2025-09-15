@@ -32,6 +32,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs, setDoc, where, orderBy } from 'firebase/firestore';
 import { FinancialChart } from '@/components/financial-chart';
+import { generateFinancialReport } from '@/lib/reports';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -196,45 +197,12 @@ export default function AdminPage() {
 
   const processedTickets = useMemo(() => updateTicketStatusesBasedOnDraws(allTickets, draws), [allTickets, draws]);
   const winningTickets = processedTickets.filter(ticket => ticket.status === 'winning');
-  const clientTickets = processedTickets.filter(t => !t.sellerUsername);
   const vendedorTickets = processedTickets.filter(t => !!t.sellerUsername);
   
-  const financialReport = useMemo(() => {
-    const report = {
-        totalRevenue: 0,
-        sellerCommission: 0,
-        ownerCommission: 0,
-        prizePool: 0,
-        clientRevenue: 0,
-        sellerRevenue: 0,
-        clientTicketCount: 0,
-        sellerTicketCount: 0
-    };
-
-    const activeClientTickets = clientTickets.filter(t => t.status === 'active');
-    const activeVendedorTickets = vendedorTickets.filter(t => t.status === 'active');
-    
-    const price = lotteryConfig.ticketPrice || 0;
-    const sellerCommPercent = lotteryConfig.sellerCommissionPercentage || 0;
-    const ownerCommPercent = lotteryConfig.ownerCommissionPercentage || 0;
-    const clientSalesCommPercent = lotteryConfig.clientSalesCommissionToOwnerPercentage || 0;
-    
-    report.clientTicketCount = activeClientTickets.length;
-    report.sellerTicketCount = activeVendedorTickets.length;
-
-    report.clientRevenue = report.clientTicketCount * price;
-    report.sellerRevenue = report.sellerTicketCount * price;
-    report.totalRevenue = report.clientRevenue + report.sellerRevenue;
-
-    report.sellerCommission = report.sellerRevenue * (sellerCommPercent / 100);
-    const ownerBaseCommission = report.totalRevenue * (ownerCommPercent / 100);
-    const ownerExtraCommission = report.clientRevenue * (clientSalesCommPercent / 100);
-    report.ownerCommission = ownerBaseCommission + ownerExtraCommission;
-
-    report.prizePool = report.totalRevenue - report.sellerCommission - report.ownerCommission;
-    
-    return report;
-  }, [clientTickets, vendedorTickets, lotteryConfig]);
+  const financialReport = useMemo(() => 
+    generateFinancialReport(allTickets, lotteryConfig), 
+    [allTickets, lotteryConfig]
+  );
 
 
   const handleAddDraw = async (newNumbers: number[], name?: string) => {
