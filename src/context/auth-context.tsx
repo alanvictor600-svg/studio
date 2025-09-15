@@ -39,14 +39,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = authLoading || isFirestoreLoading;
 
   useEffect(() => {
+    if (authError) {
+      console.error("Firebase Auth Hook Error:", authError);
+      // Optional: Show a generic error toast if needed, but be careful not to annoy the user.
+    }
+  }, [authError]);
+
+  useEffect(() => {
+    // If Firebase hook has a user, listen to their document in Firestore.
     if (firebaseUser) {
+      setIsFirestoreLoading(true);
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const unsubscribe = onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) {
           setCurrentUser({ id: doc.id, ...doc.data() } as User);
         } else {
-          setCurrentUser(null);
+          // The user exists in Auth, but not in Firestore. This is an inconsistent state.
+          // Log them out to be safe.
+          console.error("User document not found for authenticated user:", firebaseUser.uid);
           signOut(auth);
+          setCurrentUser(null);
         }
         setIsFirestoreLoading(false);
       }, (error) => {
@@ -55,47 +67,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsFirestoreLoading(false);
       });
 
-      return () => unsubscribe();
+      return () => unsubscribe(); // Cleanup listener on unmount
     } else {
+      // If Firebase hook has no user, there's no current user.
       setCurrentUser(null);
       setIsFirestoreLoading(false);
     }
   }, [firebaseUser, toast]);
 
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || !currentUser) return;
-
-    const redirectPath = searchParams.get('redirect');
-    if (redirectPath) {
-        if ( (redirectPath.includes('admin') && currentUser.role !== 'admin') ||
-             (redirectPath.includes('cliente') && currentUser.role !== 'cliente') ||
-             (redirectPath.includes('vendedor') && currentUser.role !== 'vendedor') ) 
-        {
-          toast({ title: "Acesso Negado", description: `Você não tem permissão para acessar essa área.`, variant: "destructive" });
-          router.push('/'); 
-        } else {
-          router.push(redirectPath);
-        }
-    } else {
-        switch(currentUser.role) {
-            case 'admin':
-                router.push('/admin');
-                break;
-            case 'cliente':
-                router.push('/cliente');
-                break;
-            case 'vendedor':
-                router.push('/vendedor');
-                break;
-            default:
-                router.push('/');
-        }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isLoading, currentUser]);
-
-
-  const login = async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => {
+  const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
@@ -115,27 +95,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
           }
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
-           // O useEffect hook vai cuidar do redirecionamento
+           
+           // Redirection is now handled by the useEffect that watches `isAuthenticated`
+           const redirectPath = searchParams.get('redirect');
+           if (redirectPath) {
+             router.push(redirectPath);
+           } else {
+             router.push(userData.role === 'admin' ? '/admin' : userData.role === 'vendedor' ? '/vendedor' : '/cliente');
+           }
         } else {
+          // This case should be rare if registration is solid, but good to handle.
           await signOut(auth);
           toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
         }
      } catch (error: any) {
-        // Não relançar o erro, apenas mostrar o toast.
-        // Isso impede o erro "não tratado" no console.
         if (error.code === 'auth/invalid-credential') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
         } else {
-             console.error("Firebase login error:", error.code);
+             console.error("Firebase login error:", error.code, error.message);
              toast({ title: "Erro de Login", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
      }
-  };
+  }, [toast, router, searchParams]);
 
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null);
+      // currentUser will be set to null automatically by the useEffect listener
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
     } catch (error) {

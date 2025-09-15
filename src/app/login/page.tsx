@@ -31,10 +31,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, isLoading: authLoading, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
   const [registrationHref, setRegistrationHref] = useState('/cadastrar');
+  
+  useEffect(() => {
+      // Se o usuário já está autenticado, redireciona para a home ou painel
+      if (isAuthenticated) {
+          router.push('/');
+      }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
       const redirectPath = searchParams.get('redirect');
@@ -61,11 +69,13 @@ export default function LoginPage() {
     
     await login(username, password, expectedRole);
     
-    // O login function no auth-context vai mostrar toasts de sucesso ou falha e não vai lançar um erro.
-    // Apenas precisamos gerenciar o estado de loading.
+    // O auth-context agora lida com os toasts e o redirecionamento em caso de sucesso.
+    // O erro não é mais propagado, então não precisamos de try/catch aqui.
+    // Apenas resetamos o estado de submissão.
     setIsSubmitting(false);
   };
   
+  // Exibe o loading do AuthContext, que é o estado de carregamento inicial do app
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
