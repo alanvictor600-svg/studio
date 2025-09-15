@@ -52,7 +52,7 @@ export default function LoginPage() {
       return;
     }
     const redirectPath = searchParams.get('redirect');
-    const expectedRole = redirectPath?.includes('cliente') ? 'cliente' : redirectPath?.includes('vendedor') ? 'vendedor' : redirectPath?.includes('admin') ? 'admin' : undefined;
+    const expectedRole = redirectPath?.includes('admin') ? 'admin' : redirectPath?.includes('cliente') ? 'cliente' : redirectPath?.includes('vendedor') ? 'vendedor' : undefined;
 
     // The login function will now handle navigation on success.
     await login(username, password, expectedRole);

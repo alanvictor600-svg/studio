@@ -18,6 +18,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
@@ -33,11 +35,31 @@ export default function LandingPage() {
 
   useEffect(() => {
     setIsClient(true);
-    const storedDraws = localStorage.getItem('draws');
-    if (storedDraws) setDraws(JSON.parse(storedDraws));
+    
+    // Listen for all draws
+    const drawsQuery = query(collection(db, 'draws'));
+    const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
+        const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
+        setDraws(drawsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+        console.error("Error fetching draws: ", error);
+        toast({ title: "Erro ao Carregar Dados", description: "Não foi possível carregar os sorteios.", variant: "destructive" });
+    });
 
-    const storedTickets = localStorage.getItem('tickets');
-    if (storedTickets) setAllTickets(JSON.parse(storedTickets));
+    // Listen for all tickets
+    const ticketsQuery = query(collection(db, 'tickets'));
+    const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+        const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+        setAllTickets(ticketsData);
+    }, (error) => {
+        console.error("Error fetching tickets: ", error);
+        toast({ title: "Erro ao Carregar Dados", description: "Não foi possível carregar os bilhetes.", variant: "destructive" });
+    });
+
+    return () => {
+        unsubscribeDraws();
+        unsubscribeTickets();
+    };
   }, []);
 
   const handleClienteClick = () => {
@@ -58,18 +80,14 @@ export default function LandingPage() {
 
   const handleAdminLogin = async (e: React.FormEvent) => {
       e.preventDefault();
+      // Pass 'admin' as the expected role
       const success = await login(adminUsername, adminPassword, 'admin');
       if (success) {
           setIsPopoverOpen(false);
           setAdminUsername('');
           setAdminPassword('');
-      } else {
-          toast({
-              title: "Falha no Login de Admin",
-              description: "Usuário ou senha incorretos.",
-              variant: "destructive"
-          });
       }
+      // No need for an else here, as the login function already shows a toast on failure.
   };
 
 
