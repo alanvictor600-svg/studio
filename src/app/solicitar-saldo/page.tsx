@@ -14,29 +14,44 @@ import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULT_CREDIT_CONFIG: CreditRequestConfig = {
-    whatsappNumber: '',
-    pixKey: '',
+    whatsappNumber: 'Não configurado',
+    pixKey: 'Não configurado',
 };
 
 
 export default function SolicitarSaldoPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [config, setConfig] = useState<CreditRequestConfig | null>(null);
+  const [config, setConfig] = useState<CreditRequestConfig>(DEFAULT_CREDIT_CONFIG);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const storedConfig = localStorage.getItem('creditRequestConfig');
-    if(storedConfig){
-        setConfig(JSON.parse(storedConfig));
-    } else {
+    
+    // Listen for global lottery config in real-time
+    const configDocRef = doc(db, 'configs', 'global');
+    const unsubscribe = onSnapshot(configDocRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            setConfig({
+                whatsappNumber: data.whatsappNumber || DEFAULT_CREDIT_CONFIG.whatsappNumber,
+                pixKey: data.pixKey || DEFAULT_CREDIT_CONFIG.pixKey,
+            });
+        } else {
+            setConfig(DEFAULT_CREDIT_CONFIG);
+        }
+    }, (error) => {
+        console.error("Error fetching remote config: ", error);
+        toast({ title: "Erro de Configuração", description: "Não foi possível carregar as informações de contato.", variant: "destructive" });
         setConfig(DEFAULT_CREDIT_CONFIG);
-    }
-  }, []);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [toast]);
 
   const handleCopy = (text: string, label: string) => {
-    if (!text) {
+    if (!text || text === 'Não configurado') {
       toast({
         title: 'Informação não disponível',
         description: `O administrador ainda não configurou ${label}.`,
@@ -124,12 +139,12 @@ export default function SolicitarSaldoPage() {
                         <div className="p-3 rounded-md bg-muted text-center">
                             <Label className="text-xs text-muted-foreground">Chave Pix</Label>
                             <p className="font-mono text-sm sm:text-base flex-grow text-center break-all">
-                                {config?.pixKey || 'Não configurado'}
+                                {config?.pixKey}
                             </p>
                         </div>
                         <Button 
-                            onClick={() => handleCopy(config?.pixKey || '', 'Chave Pix')}
-                            disabled={!config?.pixKey}
+                            onClick={() => handleCopy(config?.pixKey, 'Chave Pix')}
+                            disabled={!config?.pixKey || config.pixKey === 'Não configurado'}
                             variant="outline"
                             className="w-full"
                         >
@@ -148,10 +163,10 @@ export default function SolicitarSaldoPage() {
                         <div className="p-3 rounded-md bg-muted text-center">
                             <Label className="text-xs text-muted-foreground">Nosso Número</Label>
                             <p className="font-mono text-lg text-center">
-                                {config?.whatsappNumber || 'Não configurado'}
+                                {config?.whatsappNumber}
                             </p>
                         </div>
-                        <Button asChild disabled={!config?.whatsappNumber} className="w-full bg-green-500 hover:bg-green-600 text-white">
+                        <Button asChild disabled={!config?.whatsappNumber || config.whatsappNumber === 'Não configurado'} className="w-full bg-green-500 hover:bg-green-600 text-white">
                             <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                             <Send className="mr-2 h-4 w-4" /> Combinar Pagamento
                             </Link>
@@ -170,6 +185,3 @@ export default function SolicitarSaldoPage() {
     </div>
   );
 }
-
-
-    
