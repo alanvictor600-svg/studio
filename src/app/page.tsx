@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award, Eye, EyeOff, LayoutDashboard } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
@@ -15,12 +14,12 @@ import type { Draw, Ticket } from '@/types';
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { TopTickets } from '@/components/TopTickets';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Separator } from '@/components/ui/separator';
 
 export default function LandingPage() {
   const [isClient, setIsClient] = useState(false);
@@ -28,8 +27,7 @@ export default function LandingPage() {
   const router = useRouter();
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
-  const [isLoginPopoverOpen, setIsLoginPopoverOpen] = useState(false);
-  const [isAdminPopoverOpen, setIsAdminPopoverOpen] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +63,6 @@ export default function LandingPage() {
 
   const handlePainelClick = () => {
     if (!currentUser) {
-        // This case should ideally not be reached if the button is only shown for logged-in users
         router.push('/login');
         return;
     }
@@ -89,7 +86,7 @@ export default function LandingPage() {
       setIsAdminLoginLoading(true);
       await login(adminUsername, adminPassword, 'admin');
       setIsAdminLoginLoading(false);
-      setIsAdminPopoverOpen(false);
+      setIsPopoverOpen(false);
       setAdminUsername('');
       setAdminPassword('');
   };
@@ -111,35 +108,9 @@ export default function LandingPage() {
                   <LayoutDashboard className="mr-2 h-5 w-5" /> Ir para o meu Painel
               </Button>
           ) : (
-            <Popover open={isLoginPopoverOpen} onOpenChange={setIsLoginPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button className="shadow-lg">
-                    <LogIn className="mr-2 h-5 w-5" /> Acessar Plataforma
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Escolha seu Acesso</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Selecione como você quer entrar na plataforma.
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Button onClick={() => router.push('/login?redirect=/cliente')}>
-                        <Users className="mr-2 h-4 w-4" /> Entrar como Cliente
-                    </Button>
-                     <Button variant="secondary" onClick={() => router.push('/login?redirect=/vendedor')}>
-                        <ShoppingCart className="mr-2 h-4 w-4" /> Entrar como Vendedor
-                    </Button>
-                    <Separator />
-                     <Button variant="link" size="sm" className="h-auto py-1 px-2" onClick={() => { setIsLoginPopoverOpen(false); setIsAdminPopoverOpen(true); }}>
-                        <ShieldCheck className="mr-2 h-4 w-4" /> Painel do Admin
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+              <Button onClick={() => router.push('/login')} className="shadow-lg">
+                  <LogIn className="mr-2 h-5 w-5" /> Entrar ou Cadastrar
+              </Button>
           )}
        </div>
 
@@ -195,15 +166,64 @@ export default function LandingPage() {
           <div className="text-center py-10 bg-card/80 backdrop-blur-sm rounded-lg shadow-inner">
             <h2 className="text-2xl font-bold text-primary text-center mb-4">A loteria ainda não começou!</h2>
             <p className="text-muted-foreground mb-8">Acesse a plataforma para começar a jogar ou vender.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <Link href="/login?redirect=/cliente" passHref>
+                <Card className="text-left hover:bg-muted/50 transition-colors shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-primary">
+                      <Users className="mr-3 h-6 w-6" />
+                      Acessar como Cliente
+                    </CardTitle>
+                    <CardDescription>
+                      Compre bilhetes, confira seus jogos e veja os resultados.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter>
+                    <Button variant="link" className="p-0 h-auto">
+                      Entrar na sua conta de cliente <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </Link>
+              <Link href="/login?redirect=/vendedor" passHref>
+                <Card className="text-left hover:bg-muted/50 transition-colors shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-secondary-foreground">
+                      <ShoppingCart className="mr-3 h-6 w-6 text-secondary" />
+                      Acessar como Vendedor
+                    </CardTitle>
+                    <CardDescription>
+                      Venda bilhetes, gerencie suas vendas e acompanhe suas comissões.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter>
+                     <Button variant="link" className="p-0 h-auto">
+                      Entrar no painel de vendas <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </Link>
+            </div>
           </div>
         )}
       </main>
 
       <div className="fixed bottom-6 left-6 z-50">
-        <Popover open={isAdminPopoverOpen} onOpenChange={setIsAdminPopoverOpen}>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
-             {/* This trigger is now just a placeholder. The popover is controlled by state. */}
-            <button aria-label="Abrir login do admin" className="sr-only" />
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-12 w-12 bg-card/80 backdrop-blur-sm shadow-lg border-border/50">
+                          <Settings className="h-6 w-6 text-muted-foreground" />
+                          <span className="sr-only">Configurações de Administrador</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        <p>Acesso do Administrador</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <form onSubmit={handleAdminLogin}>
@@ -270,5 +290,6 @@ export default function LandingPage() {
       </footer>
     </div>
   );
+}
 
     
