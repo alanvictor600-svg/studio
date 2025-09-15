@@ -41,7 +41,8 @@ export interface CreditRequestConfig {
 
 export interface SellerHistoryEntry {
   id: string;
-  sellerUsername: string; // The user this history entry belongs to
+  sellerId: string; // The user ID this history entry belongs to
+  sellerUsername: string; // Denormalized for easier querying/display
   endDate: string; // ISO string for date when the lottery cycle ended
   activeTicketsCount: number;
   totalRevenue: number;

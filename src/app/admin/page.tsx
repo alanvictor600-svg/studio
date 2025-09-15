@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs, setDoc, where } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs, setDoc, where, orderBy } from 'firebase/firestore';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -91,60 +91,14 @@ export default function AdminPage() {
   const { currentUser, isLoading, isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
-  // Load configs from Firestore
-  useEffect(() => {
-      const configDocRef = doc(db, 'configs', 'global');
-      const unsubscribe = onSnapshot(configDocRef, (doc) => {
-          if (doc.exists()) {
-              const data = doc.data();
-              const newLotteryConfig = {
-                  ticketPrice: data.ticketPrice || DEFAULT_LOTTERY_CONFIG.ticketPrice,
-                  sellerCommissionPercentage: data.sellerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage,
-                  ownerCommissionPercentage: data.ownerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage,
-                  clientSalesCommissionToOwnerPercentage: data.clientSalesCommissionToOwnerPercentage || DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage,
-              };
-              const newCreditConfig = {
-                  whatsappNumber: data.whatsappNumber || DEFAULT_CREDIT_CONFIG.whatsappNumber,
-                  pixKey: data.pixKey || DEFAULT_CREDIT_CONFIG.pixKey,
-              };
-
-              setLotteryConfig(newLotteryConfig);
-              setCreditRequestConfig(newCreditConfig);
-
-              // Update input fields
-              setTicketPriceInput(newLotteryConfig.ticketPrice.toString());
-              setCommissionInput(newLotteryConfig.sellerCommissionPercentage.toString());
-              setOwnerCommissionInput(newLotteryConfig.ownerCommissionPercentage.toString());
-              setClientSalesCommissionInput(newLotteryConfig.clientSalesCommissionToOwnerPercentage.toString());
-              setWhatsappInput(newCreditConfig.whatsappNumber);
-              setPixKeyInput(newCreditConfig.pixKey);
-          } else {
-            // Document doesn't exist, use defaults
-            setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
-            setCreditRequestConfig(DEFAULT_CREDIT_CONFIG);
-          }
-      }, (error) => {
-          console.error("Error fetching configs: ", error);
-          toast({ title: "Erro ao Carregar Configurações", description: "Não foi possível carregar as configurações do sistema.", variant: "destructive" });
-      });
-      
-      return () => unsubscribe();
-  }, [toast]);
-  
-  // Load local admin history
+  // Initial client-side mount
   useEffect(() => {
     setIsClient(true);
-    if (typeof window !== 'undefined') {
-        const storedAdminHistory = localStorage.getItem('adminHistory');
-        if (storedAdminHistory) setAdminHistory(JSON.parse(storedAdminHistory));
-    }
   }, []);
 
   // Auth check
   useEffect(() => {
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
     if (!isAuthenticated || currentUser?.role !== 'admin') {
       router.push('/login?redirect=/admin');
     }
@@ -154,10 +108,42 @@ export default function AdminPage() {
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') return;
 
-    const ticketsQuery = query(collection(db, 'tickets'));
-    const drawsQuery = query(collection(db, 'draws'));
-    const usersQuery = query(collection(db, 'users'));
+    // Global Configs
+    const configDocRef = doc(db, 'configs', 'global');
+    const unsubscribeConfig = onSnapshot(configDocRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            const newLotteryConfig = {
+                ticketPrice: data.ticketPrice || DEFAULT_LOTTERY_CONFIG.ticketPrice,
+                sellerCommissionPercentage: data.sellerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage,
+                ownerCommissionPercentage: data.ownerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage,
+                clientSalesCommissionToOwnerPercentage: data.clientSalesCommissionToOwnerPercentage || DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage,
+            };
+            const newCreditConfig = {
+                whatsappNumber: data.whatsappNumber || DEFAULT_CREDIT_CONFIG.whatsappNumber,
+                pixKey: data.pixKey || DEFAULT_CREDIT_CONFIG.pixKey,
+            };
 
+            setLotteryConfig(newLotteryConfig);
+            setCreditRequestConfig(newCreditConfig);
+
+            setTicketPriceInput(newLotteryConfig.ticketPrice.toString());
+            setCommissionInput(newLotteryConfig.sellerCommissionPercentage.toString());
+            setOwnerCommissionInput(newLotteryConfig.ownerCommissionPercentage.toString());
+            setClientSalesCommissionInput(newLotteryConfig.clientSalesCommissionToOwnerPercentage.toString());
+            setWhatsappInput(newCreditConfig.whatsappNumber);
+            setPixKeyInput(newCreditConfig.pixKey);
+        } else {
+          setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
+          setCreditRequestConfig(DEFAULT_CREDIT_CONFIG);
+        }
+    }, (error) => {
+        console.error("Error fetching configs: ", error);
+        toast({ title: "Erro ao Carregar Configurações", description: "Não foi possível carregar as configurações do sistema.", variant: "destructive" });
+    });
+
+    // Tickets
+    const ticketsQuery = query(collection(db, 'tickets'));
     const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
         setAllTickets(ticketsData);
@@ -166,6 +152,8 @@ export default function AdminPage() {
         toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar os dados dos bilhetes.", variant: "destructive" });
     });
 
+    // Draws
+    const drawsQuery = query(collection(db, 'draws'));
     const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
         const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
         setDraws(drawsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -174,6 +162,8 @@ export default function AdminPage() {
         toast({ title: "Erro ao Carregar Sorteios", description: "Não foi possível carregar os dados dos sorteios.", variant: "destructive" });
     });
 
+    // Users
+    const usersQuery = query(collection(db, 'users'));
     const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
         const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         setAllUsers(usersData);
@@ -181,19 +171,26 @@ export default function AdminPage() {
         console.error("Error fetching users: ", error);
         toast({ title: "Erro ao Carregar Usuários", description: "Não foi possível carregar os dados dos usuários.", variant: "destructive" });
     });
+
+    // Admin History
+    const adminHistoryQuery = query(collection(db, 'adminHistory'), orderBy('endDate', 'desc'));
+    const unsubscribeAdminHistory = onSnapshot(adminHistoryQuery, (querySnapshot) => {
+      const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminHistoryEntry));
+      setAdminHistory(historyData);
+    }, (error) => {
+      console.error("Error fetching admin history: ", error);
+      toast({ title: "Erro ao Carregar Histórico", description: "Não foi possível carregar o histórico do admin.", variant: "destructive" });
+    });
     
     return () => {
+        unsubscribeConfig();
         unsubscribeTickets();
         unsubscribeDraws();
         unsubscribeUsers();
+        unsubscribeAdminHistory();
     };
   }, [currentUser, toast]);
 
-
-  const saveAdminHistory = (newHistory: AdminHistoryEntry[]) => {
-      setAdminHistory(newHistory);
-      localStorage.setItem('adminHistory', JSON.stringify(newHistory));
-  }
 
   const processedTickets = useMemo(() => updateTicketStatusesBasedOnDraws(allTickets, draws), [allTickets, draws]);
   const winningTickets = processedTickets.filter(ticket => ticket.status === 'winning');
@@ -264,39 +261,43 @@ export default function AdminPage() {
     }
   };
   
-  const captureAndSaveSellerHistory = useCallback(() => {
+  const captureAndSaveSellerHistory = useCallback(async () => {
     const sellers = allUsers.filter(u => u.role === 'vendedor');
-    const existingHistory = localStorage.getItem('sellerHistory') ? JSON.parse(localStorage.getItem('sellerHistory')!) : [];
-    let newEntries: SellerHistoryEntry[] = [];
+    let entriesCreated = 0;
     
-    sellers.forEach(seller => {
-        const activeTickets = vendedorTickets.filter(ticket => ticket.status === 'active' && ticket.sellerUsername === seller.username);
-        const activeSellerTicketsCount = activeTickets.length;
-        const totalRevenueFromActiveTickets = activeSellerTicketsCount * lotteryConfig.ticketPrice;
-        const commissionEarned = totalRevenueFromActiveTickets * (lotteryConfig.sellerCommissionPercentage / 100);
+    for (const seller of sellers) {
+      const activeTickets = vendedorTickets.filter(ticket => ticket.status === 'active' && ticket.sellerId === seller.id);
+      const activeSellerTicketsCount = activeTickets.length;
+      const totalRevenueFromActiveTickets = activeSellerTicketsCount * lotteryConfig.ticketPrice;
+      const commissionEarned = totalRevenueFromActiveTickets * (lotteryConfig.sellerCommissionPercentage / 100);
 
-        if (activeSellerTicketsCount > 0) {
-            newEntries.push({
-              id: uuidv4(),
-              sellerUsername: seller.username,
-              endDate: new Date().toISOString(),
-              activeTicketsCount: activeSellerTicketsCount,
-              totalRevenue: totalRevenueFromActiveTickets,
-              totalCommission: commissionEarned,
-            });
+      if (activeSellerTicketsCount > 0) {
+        const newEntry: Omit<SellerHistoryEntry, 'id'> = {
+          sellerId: seller.id,
+          sellerUsername: seller.username,
+          endDate: new Date().toISOString(),
+          activeTicketsCount: activeSellerTicketsCount,
+          totalRevenue: totalRevenueFromActiveTickets,
+          totalCommission: commissionEarned,
+        };
+        try {
+          await addDoc(collection(db, 'sellerHistory'), newEntry);
+          entriesCreated++;
+        } catch (e) {
+          console.error(`Failed to save history for seller ${seller.username}: `, e);
+          toast({ title: "Erro no Histórico", description: `Falha ao salvar histórico para ${seller.username}.`, variant: "destructive" });
         }
-    });
+      }
+    }
 
-    if (newEntries.length > 0) {
-        localStorage.setItem('sellerHistory', JSON.stringify([...newEntries, ...existingHistory]));
-        toast({ title: "Histórico de Vendedores Salvo!", description: "Um resumo do ciclo de vendas atual foi salvo para cada vendedor.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
+    if (entriesCreated > 0) {
+      toast({ title: "Histórico de Vendedores Salvo!", description: `Resumos para ${entriesCreated} vendedor(es) foram salvos na nuvem.`, className: "bg-secondary text-secondary-foreground", duration: 3000 });
     }
   }, [allUsers, vendedorTickets, lotteryConfig, toast]);
   
-  const captureAndSaveAdminHistory = useCallback(() => {
+  const captureAndSaveAdminHistory = useCallback(async () => {
       const currentReport = financialReport;
-      const newHistoryEntry: AdminHistoryEntry = {
-        id: uuidv4(),
+      const newHistoryEntry: Omit<AdminHistoryEntry, 'id'> = {
         endDate: new Date().toISOString(),
         totalRevenue: currentReport.totalRevenue,
         totalSellerCommission: currentReport.sellerCommission,
@@ -306,10 +307,14 @@ export default function AdminPage() {
         sellerTicketCount: currentReport.sellerTicketCount,
       };
       
-      const updatedHistory = [newHistoryEntry, ...adminHistory];
-      saveAdminHistory(updatedHistory);
-      toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
-  }, [financialReport, adminHistory, toast]);
+      try {
+        await addDoc(collection(db, 'adminHistory'), newHistoryEntry);
+        toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo na nuvem.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
+      } catch (e) {
+         console.error(`Failed to save admin history: `, e);
+         toast({ title: "Erro no Histórico", description: `Falha ao salvar o resumo financeiro.`, variant: "destructive" });
+      }
+  }, [financialReport, toast]);
 
   const handleStartNewLottery = async () => {
     const CONTROL_PASSWORD = "Al@n2099";
@@ -318,8 +323,9 @@ export default function AdminPage() {
       return;
     }
     
-    captureAndSaveSellerHistory();
-    captureAndSaveAdminHistory();
+    // As functions now handle their own toasts
+    await captureAndSaveSellerHistory();
+    await captureAndSaveAdminHistory();
   
     try {
         const batch = writeBatch(db);
@@ -483,8 +489,8 @@ export default function AdminPage() {
   
   const getUserActiveTicketsCount = useCallback((user: User) => {
     const ticketsToCheck = user.role === 'cliente' ? clientTickets : vendedorTickets;
-    const usernameField = user.role === 'cliente' ? 'buyerName' : 'sellerUsername';
-    return ticketsToCheck.filter(t => t.status === 'active' && t[usernameField] === user.username).length;
+    const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
+    return ticketsToCheck.filter(t => t.status === 'active' && t[idField] === user.id).length;
   }, [clientTickets, vendedorTickets]);
 
   const filteredUsers = useMemo(() => {
