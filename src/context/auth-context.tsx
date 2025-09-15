@@ -27,6 +27,9 @@ const sanitizeUsernameForEmail = (username: string) => {
     return username.trim().toLowerCase();
 };
 
+// Exemplo de nome de cookie para o middleware
+const AUTH_COOKIE_NAME = '__session';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
@@ -41,37 +44,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (authError) {
       console.error("Firebase Auth Hook Error:", authError);
-      // Optional: Show a generic error toast if needed, but be careful not to annoy the user.
     }
   }, [authError]);
 
   useEffect(() => {
-    // If Firebase hook has a user, listen to their document in Firestore.
+    // Gerenciamento de cookie para o middleware
     if (firebaseUser) {
-      setIsFirestoreLoading(true);
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const unsubscribe = onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) {
-          setCurrentUser({ id: doc.id, ...doc.data() } as User);
-        } else {
-          // The user exists in Auth, but not in Firestore. This is an inconsistent state.
-          // Log them out to be safe.
-          console.error("User document not found for authenticated user:", firebaseUser.uid);
-          signOut(auth);
-          setCurrentUser(null);
-        }
-        setIsFirestoreLoading(false);
-      }, (error) => {
-        console.error("Error listening to user document:", error);
-        toast({ title: "Erro de Conexão", description: "Não foi possível sincronizar seus dados.", variant: "destructive" });
-        setIsFirestoreLoading(false);
-      });
+        // Define um cookie simples para indicar que há uma sessão ativa.
+        // Em um cenário de produção robusto, isso seria um cookie de sessão seguro gerado pelo backend.
+        document.cookie = `${AUTH_COOKIE_NAME}=true; path=/; max-age=2592000`; // 30 dias
 
-      return () => unsubscribe(); // Cleanup listener on unmount
+        setIsFirestoreLoading(true);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+            setCurrentUser({ id: doc.id, ...doc.data() } as User);
+            } else {
+            console.error("User document not found for authenticated user:", firebaseUser.uid);
+            signOut(auth); // Desloga se o documento não for encontrado
+            }
+            setIsFirestoreLoading(false);
+        }, (error) => {
+            console.error("Error listening to user document:", error);
+            toast({ title: "Erro de Conexão", description: "Não foi possível sincronizar seus dados.", variant: "destructive" });
+            setIsFirestoreLoading(false);
+        });
+
+        return () => unsubscribe();
     } else {
-      // If Firebase hook has no user, there's no current user.
-      setCurrentUser(null);
-      setIsFirestoreLoading(false);
+        // Se não há usuário, remove o cookie e reseta o estado
+        document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0`;
+        setCurrentUser(null);
+        setIsFirestoreLoading(false);
     }
   }, [firebaseUser, toast]);
 
@@ -96,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
            
-           // Redirection is now handled by the useEffect that watches `isAuthenticated`
            const redirectPath = searchParams.get('redirect');
            if (redirectPath && redirectPath !== '/') {
              router.push(redirectPath);
@@ -104,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
              router.push(userData.role === 'admin' ? '/admin' : `/dashboard/${userData.role}`);
            }
         } else {
-          // This case should be rare if registration is solid, but good to handle.
           await signOut(auth);
           toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
         }
@@ -121,7 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // currentUser will be set to null automatically by the useEffect listener
+      // O useEffect que observa firebaseUser cuidará de limpar o cookie e o estado
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
     } catch (error) {
@@ -145,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const newUser: User = {
             id: newFirebaseUser.uid,
-            username: originalUsername, // Salva o nome de usuário original para exibição
+            username: originalUsername, 
             role,
             createdAt: new Date().toISOString(),
             saldo: role === 'cliente' ? 50 : 0,
@@ -154,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-        await signOut(auth); // Desloga o usuário imediatamente após o cadastro
+        await signOut(auth); 
         router.push('/login');
 
     } catch (error: any) {

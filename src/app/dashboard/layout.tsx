@@ -35,6 +35,9 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  // A verificação de segurança agora é primariamente tratada pelo middleware.
+  // Este useEffect lida com a verificação do lado do cliente para o caso de o usuário
+  // fazer logout em outra aba, ou se o estado de autenticação mudar dinamicamente.
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');

@@ -47,6 +47,9 @@ export default function AdminLayout({
   
   const activeSection = searchParams.get('section') || 'configuracoes';
 
+  // A verificação de segurança agora é primariamente tratada pelo middleware.
+  // Este useEffect lida com a verificação do lado do cliente para o caso de o usuário
+  // fazer logout em outra aba, ou se o estado de autenticação mudar dinamicamente.
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
       router.replace('/login?redirect=/admin');
