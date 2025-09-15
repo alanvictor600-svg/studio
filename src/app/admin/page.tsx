@@ -160,7 +160,7 @@ export default function AdminPage() {
         unsubscribeDraws();
         unsubscribeUsers();
     };
-  }, [isClient, currentUser]);
+  }, [isClient, currentUser, toast]);
 
   // Auth check
   useEffect(() => {
