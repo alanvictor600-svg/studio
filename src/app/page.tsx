@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award, Eye, EyeOff } from 'lucide-react';
+import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award, Eye, EyeOff, LayoutDashboard } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -37,7 +37,6 @@ export default function LandingPage() {
   useEffect(() => {
     setIsClient(true);
     
-    // Listen for all draws
     const drawsQuery = query(collection(db, 'draws'));
     const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
         const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
@@ -47,7 +46,6 @@ export default function LandingPage() {
         toast({ title: "Erro ao Carregar Dados", description: "Não foi possível carregar os sorteios.", variant: "destructive" });
     });
 
-    // Listen for all tickets
     const ticketsQuery = query(collection(db, 'tickets'));
     const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
@@ -63,14 +61,26 @@ export default function LandingPage() {
     };
   }, [toast]);
 
-  const handleClienteClick = () => {
-    if (currentUser && currentUser.role === 'cliente') {
-      router.push('/cliente');
-    } else {
-      router.push('/login?redirect=/cliente');
+  const handlePainelClick = () => {
+    if (!currentUser) {
+        router.push('/login');
+        return;
+    }
+    switch (currentUser.role) {
+        case 'admin':
+            router.push('/admin');
+            break;
+        case 'cliente':
+            router.push('/cliente');
+            break;
+        case 'vendedor':
+            router.push('/vendedor');
+            break;
+        default:
+            router.push('/login');
     }
   };
-
+  
   const handleVendedorClick = () => {
      if (currentUser && currentUser.role === 'vendedor') {
       router.push('/vendedor');
@@ -79,18 +89,22 @@ export default function LandingPage() {
     }
   };
 
+  const handleClienteClick = () => {
+    if (currentUser && currentUser.role === 'cliente') {
+      router.push('/cliente');
+    } else {
+      router.push('/login?redirect=/cliente');
+    }
+  };
+
   const handleAdminLogin = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsAdminLoginLoading(true);
-      const success = await login(adminUsername, adminPassword, 'admin');
+      await login(adminUsername, adminPassword, 'admin');
       setIsAdminLoginLoading(false);
-
-      if (success) {
-          setIsPopoverOpen(false);
-          setAdminUsername('');
-          setAdminPassword('');
-      }
-      // No need for an else here, as the login function already shows a toast on failure.
+      setIsPopoverOpen(false);
+      setAdminUsername('');
+      setAdminPassword('');
   };
 
 
@@ -104,42 +118,21 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
-       {draws.length > 0 && (
-          <div className="fixed top-6 left-6 z-50 mt-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                  <Button type="button" className="shadow-lg">
-                    <LogIn className="mr-2 h-5 w-5" /> Entrar na sua conta
-                  </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Acesso Rápido</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Escolha seu painel para continuar ou cadastre-se.
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Button onClick={handleClienteClick} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Users className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'cliente' ? "Meu Painel de Cliente" : "Entrar como Cliente"}
+       <div className="fixed top-6 left-6 z-50">
+          {currentUser ? (
+              <Button onClick={handlePainelClick} className="shadow-lg">
+                  <LayoutDashboard className="mr-2 h-5 w-5" /> Ir para o meu Painel
+              </Button>
+          ) : (
+             draws.length > 0 && (
+                <Link href="/login" passHref>
+                    <Button className="shadow-lg">
+                        <LogIn className="mr-2 h-5 w-5" /> Entrar ou Cadastrar
                     </Button>
-                    <Button onClick={handleVendedorClick} variant="secondary" className="w-full">
-                      <ShoppingCart className="mr-2 h-4 w-4" /> {currentUser && currentUser.role === 'vendedor' ? "Meu Painel de Vendas" : "Entrar como Vendedor"}
-                    </Button>
-                    {!currentUser && (
-                        <Link href="/cadastrar" passHref className="mt-2">
-                          <Button variant="link" className="w-full">
-                            <UserPlus className="mr-2 h-4 w-4" /> Ainda não tem conta? Cadastre-se!
-                          </Button>
-                        </Link>
-                      )}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-       )}
+                </Link>
+             )
+          )}
+       </div>
 
       <div className="fixed top-6 right-6 z-50 flex space-x-2">
         {currentUser && (
@@ -152,7 +145,7 @@ export default function LandingPage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Sair</p>
+                <p>Sair ({currentUser.username})</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
