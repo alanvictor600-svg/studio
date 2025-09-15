@@ -11,7 +11,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDocs, setDoc, query, where, orderBy, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, orderBy } from 'firebase/firestore';
+
+// Import Services
+import { addDraw as addDrawService, startNewLottery as startNewLotteryService } from '@/lib/services/lotteryService';
+import { saveLotteryConfig, saveCreditRequestConfig } from '@/lib/services/configService';
+import { updateUserCredits, deleteUserAccount } from '@/lib/services/userService';
 
 // Import section components
 import { SettingsSection } from '@/components/admin/sections/SettingsSection';
@@ -177,113 +182,41 @@ export default function AdminPage() {
       toast({ title: "Ação Bloqueada", description: "Não é possível cadastrar sorteios enquanto houver bilhetes premiados. Inicie uma nova loteria.", variant: "destructive" });
       return;
     }
-    if (newNumbers.length !== 5) {
-      toast({ title: "Erro de Validação", description: "O sorteio deve conter exatamente 5 números.", variant: "destructive" });
-      return;
-    }
-
-    const newDrawData = {
-      numbers: newNumbers,
-      createdAt: new Date().toISOString(),
-      name: name || undefined,
-    };
-    
     try {
-        await addDoc(collection(db, 'draws'), newDrawData);
+        await addDrawService(newNumbers, name);
         toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes atualizados.", className: "bg-primary text-primary-foreground", duration: 3000 });
-
     } catch (e) {
         console.error("Error adding draw: ", e);
-        toast({ title: "Erro ao Salvar", description: "Não foi possível registrar o sorteio. Tente novamente.", variant: "destructive" });
+        if (e instanceof Error) {
+            toast({ title: "Erro ao Salvar", description: e.message, variant: "destructive" });
+        } else {
+            toast({ title: "Erro ao Salvar", description: "Não foi possível registrar o sorteio. Tente novamente.", variant: "destructive" });
+        }
     }
   };
   
   const handleStartNewLottery = async () => {
-    const vendedorTickets = processedTickets.filter(t => !!t.sellerUsername);
-    
-    // Capture Seller History
-    const sellers = allUsers.filter(u => u.role === 'vendedor');
-    let entriesCreated = 0;
-    
-    for (const seller of sellers) {
-      const activeTickets = vendedorTickets.filter(ticket => ticket.status === 'active' && ticket.sellerId === seller.id);
-      const activeSellerTicketsCount = activeTickets.length;
-      const totalRevenueFromActiveTickets = activeSellerTicketsCount * lotteryConfig.ticketPrice;
-      const commissionEarned = totalRevenueFromActiveTickets * (lotteryConfig.sellerCommissionPercentage / 100);
-
-      if (activeSellerTicketsCount > 0) {
-        const newEntry = {
-          sellerId: seller.id,
-          sellerUsername: seller.username,
-          endDate: new Date().toISOString(),
-          activeTicketsCount: activeSellerTicketsCount,
-          totalRevenue: totalRevenueFromActiveTickets,
-          totalCommission: commissionEarned,
-        };
-        try {
-          await addDoc(collection(db, 'sellerHistory'), newEntry);
-          entriesCreated++;
-        } catch (e) {
-          console.error(`Failed to save history for seller ${seller.username}: `, e);
-          toast({ title: "Erro no Histórico", description: `Falha ao salvar histórico para ${seller.username}.`, variant: "destructive" });
-        }
-      }
-    }
-     if (entriesCreated > 0) {
-      toast({ title: "Histórico de Vendedores Salvo!", description: `Resumos para ${entriesCreated} vendedor(es) foram salvos na nuvem.`, className: "bg-secondary text-secondary-foreground", duration: 3000 });
-    }
-    
-    // Capture Admin History
-      const newHistoryEntry: Omit<AdminHistoryEntry, 'id'> = {
-        endDate: new Date().toISOString(),
-        totalRevenue: financialReport.totalRevenue,
-        totalSellerCommission: financialReport.sellerCommission,
-        totalOwnerCommission: financialReport.ownerCommission,
-        totalPrizePool: financialReport.prizePool,
-        clientTicketCount: financialReport.clientTicketCount,
-        sellerTicketCount: financialReport.sellerTicketCount,
-      };
-      try {
-        await addDoc(collection(db, 'adminHistory'), newHistoryEntry);
-        toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo na nuvem.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
-      } catch (e) {
-         console.error(`Failed to save admin history: `, e);
-         toast({ title: "Erro no Histórico", description: `Falha ao salvar o resumo financeiro.`, variant: "destructive" });
-      }
-
-    // Reset Tickets and Draws
     try {
-        const batch = writeBatch(db);
-
-        const ticketsSnapshot = await getDocs(query(collection(db, 'tickets'), where('status', 'in', ['active', 'winning', 'unpaid'])));
-        ticketsSnapshot.forEach(ticketDoc => {
-            batch.update(ticketDoc.ref, { status: 'expired' });
-        });
-        
-        const drawsSnapshot = await getDocs(query(collection(db, 'draws')));
-        drawsSnapshot.forEach(drawDoc => {
-            batch.delete(drawDoc.ref);
-        });
-
-        await batch.commit();
-
+        await startNewLotteryService({ allUsers, processedTickets, lotteryConfig, financialReport });
         toast({
           title: "Nova Loteria Iniciada!",
-          description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
+          description: "Históricos foram salvos e o ciclo foi resetado com sucesso.",
           className: "bg-primary text-primary-foreground",
-          duration: 3000,
+          duration: 4000,
         });
-
     } catch (e) {
         console.error("Error starting new lottery: ", e);
-        toast({ title: "Erro", description: "Falha ao iniciar nova loteria no banco de dados.", variant: "destructive" });
+        if (e instanceof Error) {
+            toast({ title: "Erro", description: `Falha ao iniciar nova loteria: ${e.message}`, variant: "destructive" });
+        } else {
+            toast({ title: "Erro", description: "Falha ao iniciar nova loteria no banco de dados.", variant: "destructive" });
+        }
     }
   };
 
   const handleSaveLotteryConfig = async (newConfig: Partial<LotteryConfig>) => {
     try {
-        const configDocRef = doc(db, 'configs', 'global');
-        await setDoc(configDocRef, newConfig, { merge: true });
+        await saveLotteryConfig(newConfig);
         toast({ title: "Configurações Salvas!", description: "As novas configurações da loteria foram salvas na nuvem.", className: "bg-primary text-primary-foreground", duration: 3000 });
     } catch(e) {
         console.error("Error saving lottery config: ", e);
@@ -293,8 +226,7 @@ export default function AdminPage() {
   
   const handleSaveCreditRequestConfig = async (newConfig: CreditRequestConfig) => {
     try {
-        const configDocRef = doc(db, 'configs', 'global');
-        await setDoc(configDocRef, newConfig, { merge: true });
+        await saveCreditRequestConfig(newConfig);
         toast({ title: "Configurações Salvas!", description: "As informações de contato foram salvas na nuvem.", className: "bg-primary text-primary-foreground", duration: 3000 });
     } catch (e) {
         console.error("Error saving credit request config: ", e);
@@ -313,10 +245,8 @@ export default function AdminPage() {
   };
   
   const handleCreditChange = async (user: User, amount: number) => {
-    const newBalance = (user.saldo || 0) + amount;
-    const userRef = doc(db, 'users', user.id);
     try {
-        await updateDoc(userRef, { saldo: newBalance });
+        const newBalance = await updateUserCredits(user.id, amount);
         toast({
             title: "Saldo Atualizado!",
             description: `O saldo de ${user.username} agora é R$ ${newBalance.toFixed(2).replace('.', ',')}.`,
@@ -338,9 +268,9 @@ export default function AdminPage() {
   };
 
   const handleDeleteUser = async () => {
-    if (!userToDelete) return;
+    if (!userToDelete || !currentUser) return;
 
-    if (currentUser && currentUser.id === userToDelete.id) {
+    if (currentUser.id === userToDelete.id) {
       toast({ title: "Ação Bloqueada", description: "Não é possível excluir o usuário que está logado.", variant: "destructive" });
       setIsDeleteConfirmOpen(false);
       setUserToDelete(null);
@@ -348,9 +278,7 @@ export default function AdminPage() {
     }
     
     try {
-        const userRef = doc(db, 'users', userToDelete.id);
-        await deleteDoc(userRef);
-        // Associated tickets are not deleted to preserve sales history.
+        await deleteUserAccount(userToDelete.id);
         
         if (userToView && userToView.id === userToDelete.id) {
             setIsUserViewDialogOpen(false);
@@ -476,3 +404,5 @@ export default function AdminPage() {
     </>
   );
 }
+
+    
