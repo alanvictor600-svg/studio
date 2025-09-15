@@ -198,19 +198,10 @@ export default function LandingPage() {
       <div className="fixed bottom-6 left-6 z-50">
         <Popover>
           <PopoverTrigger asChild>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-12 w-12 bg-card/80 backdrop-blur-sm shadow-lg border-border/50">
-                          <Settings className="h-6 w-6 text-muted-foreground" />
-                          <span className="sr-only">Configurações de Administrador</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>Acesso do Administrador</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+              <Button variant="ghost" size="icon" className="h-12 w-12 bg-card/80 backdrop-blur-sm shadow-lg border-border/50">
+                <Settings className="h-6 w-6 text-muted-foreground" />
+                <span className="sr-only">Configurações de Administrador</span>
+              </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <form onSubmit={handleAdminLogin}>
@@ -277,4 +268,5 @@ export default function LandingPage() {
       </footer>
     </div>
   );
-}
+
+    
