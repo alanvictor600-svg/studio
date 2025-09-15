@@ -9,7 +9,7 @@ import { AdminDrawList } from '@/components/admin-draw-list';
 import { TicketList } from '@/components/ticket-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Eye, EyeOff, ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Ticket as TicketIcon } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Ticket as TicketIcon, LogOut } from 'lucide-react';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -88,7 +88,7 @@ export default function AdminPage() {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
-  const { currentUser, isLoading, isAuthenticated } = useAuth();
+  const { currentUser, isLoading, isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
   // Load configs from Firestore
@@ -621,6 +621,24 @@ export default function AdminPage() {
                         <ThemeToggleButton />
                     </CardContent>
                   </Card>
+
+                  <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/30">
+                    <CardHeader>
+                        <CardTitle className="text-xl text-center font-semibold flex items-center justify-center">
+                            <LogOut className="mr-2 h-5 w-5" />
+                            Encerrar Sessão
+                        </CardTitle>
+                        <CardDescription className="text-center text-muted-foreground">
+                            Sair da sua conta de administrador de forma segura.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center items-center py-6">
+                         <Button variant="destructive" onClick={logout}>
+                            <LogOut className="mr-2 h-4 w-4" /> Sair da Conta
+                        </Button>
+                    </CardContent>
+                  </Card>
+
                 </div>
               </TabsContent>
               <TabsContent value="contas" className="mt-6">
