@@ -15,7 +15,7 @@ import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase';
-import { runTransaction, doc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { runTransaction, doc, collection } from 'firebase/firestore';
 
 
 interface TicketSelectionFormProps {
@@ -156,7 +156,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
 
   return (
     <>
-      <Card className="w-full max-w-2xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+      <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-2xl text-center font-bold text-primary">Monte Seu Bilhete</CardTitle>
           <CardDescription className="text-center text-muted-foreground">
@@ -184,12 +184,14 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2 text-center">Escolha os Números (1-25):</h3>
-            <div className="grid grid-cols-5 sm:grid-cols-7 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 text-center">Escolha os Bichos (1-25):</h3>
+            <div className="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-9 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
               {animalMapping.map(animal => (
                 <NumberButton
                   key={animal.number}
                   number={animal.number}
+                  animalName={animal.name}
+                  animalEmoji={animal.emoji}
                   onClick={handleNumberClick}
                   disabled={isSubmitting || (numberCounts[animal.number] || 0) >= MAX_REPETITION || currentPicks.length >= MAX_PICKS}
                   isSelected={currentPicks.includes(animal.number)}
@@ -202,7 +204,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
         <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
           <div className="flex gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={handleAutoFill} className="flex-1 sm:flex-none shadow-md hover:shadow-lg" disabled={isSubmitting}>
-              <Sparkles className="mr-2 h-4 w-4" /> Auto-Preencher
+              <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
             </Button>
             <Button variant="destructive" onClick={handleClearSelection} className="flex-1 sm:flex-none shadow-md hover:shadow-lg" disabled={isSubmitting}>
               <Trash2 className="mr-2 h-4 w-4" /> Limpar
