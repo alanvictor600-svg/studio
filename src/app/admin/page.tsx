@@ -1,39 +1,27 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Draw, Ticket, LotteryConfig, SellerHistoryEntry, User, AdminHistoryEntry, CreditRequestConfig } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
-import { AdminDrawForm } from '@/components/admin-draw-form';
-import { AdminDrawList } from '@/components/admin-draw-list';
-import { TicketList } from '@/components/ticket-list';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Eye, EyeOff, ArrowLeft, Trophy, Rocket, AlertTriangle, Settings, DollarSign, Percent, PlusCircle, ShieldCheck, History, Menu, X, Palette as PaletteIcon, KeyRound, Users, Trash2, Edit, PieChart, BookText, Search, Coins, CreditCard, Contact, Ticket as TicketIcon, LogOut } from 'lucide-react';
-import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { CreditManagementDialog } from '@/components/credit-management-dialog';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs, setDoc, where, orderBy } from 'firebase/firestore';
-import { FinancialChart } from '@/components/financial-chart';
-import { generateFinancialReport } from '@/lib/reports';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDocs, setDoc, query, where, orderBy, addDoc, writeBatch } from 'firebase/firestore';
 
+// Import section components
+import { SettingsSection } from '@/components/admin/sections/SettingsSection';
+import { NewDrawSection } from '@/components/admin/sections/NewDrawSection';
+import { ControlsSection } from '@/components/admin/sections/ControlsSection';
+import { ReportsSection } from '@/components/admin/sections/ReportsSection';
+import { DrawHistorySection } from '@/components/admin/sections/DrawHistorySection';
+import { WinningTicketsSection } from '@/components/admin/sections/WinningTicketsSection';
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import { generateFinancialReport } from '@/lib/reports';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -56,21 +44,9 @@ export default function AdminPage() {
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [creditRequestConfig, setCreditRequestConfig] = useState<CreditRequestConfig>(DEFAULT_CREDIT_CONFIG);
   const [isClient, setIsClient] = useState(false);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const [ticketPriceInput, setTicketPriceInput] = useState('');
-  const [commissionInput, setCommissionInput] = useState('');
-  const [ownerCommissionInput, setOwnerCommissionInput] = useState('');
-  const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState('');
-  const [startLotteryPassword, setStartLotteryPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [whatsappInput, setWhatsappInput] = useState('');
-  const [pixKeyInput, setPixKeyInput] = useState('');
-
   const [activeSection, setActiveSection] = useState<AdminSection>('configuracoes');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [userToView, setUserToView] = useState<User | null>(null);
@@ -79,10 +55,9 @@ export default function AdminPage() {
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [userSearchTerm, setUserSearchTerm] = useState('');
   
   const [adminHistory, setAdminHistory] = useState<AdminHistoryEntry[]>([]);
-  const { currentUser, isLoading, isAuthenticated, logout } = useAuth();
+  const { currentUser, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -129,13 +104,6 @@ export default function AdminPage() {
 
             setLotteryConfig(newLotteryConfig);
             setCreditRequestConfig(newCreditConfig);
-
-            setTicketPriceInput(newLotteryConfig.ticketPrice.toString());
-            setCommissionInput(newLotteryConfig.sellerCommissionPercentage.toString());
-            setOwnerCommissionInput(newLotteryConfig.ownerCommissionPercentage.toString());
-            setClientSalesCommissionInput(newLotteryConfig.clientSalesCommissionToOwnerPercentage.toString());
-            setWhatsappInput(newCreditConfig.whatsappNumber);
-            setPixKeyInput(newCreditConfig.pixKey);
         } else {
           setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
           setCreditRequestConfig(DEFAULT_CREDIT_CONFIG);
@@ -196,8 +164,7 @@ export default function AdminPage() {
 
 
   const processedTickets = useMemo(() => updateTicketStatusesBasedOnDraws(allTickets, draws), [allTickets, draws]);
-  const winningTickets = processedTickets.filter(ticket => ticket.status === 'winning');
-  const vendedorTickets = processedTickets.filter(t => !!t.sellerUsername);
+  const winningTickets = useMemo(() => processedTickets.filter(ticket => ticket.status === 'winning'), [processedTickets]);
   
   const financialReport = useMemo(() => 
     generateFinancialReport(allTickets, lotteryConfig), 
@@ -231,7 +198,10 @@ export default function AdminPage() {
     }
   };
   
-  const captureAndSaveSellerHistory = useCallback(async () => {
+  const handleStartNewLottery = async () => {
+    const vendedorTickets = processedTickets.filter(t => !!t.sellerUsername);
+    
+    // Capture Seller History
     const sellers = allUsers.filter(u => u.role === 'vendedor');
     let entriesCreated = 0;
     
@@ -242,7 +212,7 @@ export default function AdminPage() {
       const commissionEarned = totalRevenueFromActiveTickets * (lotteryConfig.sellerCommissionPercentage / 100);
 
       if (activeSellerTicketsCount > 0) {
-        const newEntry: Omit<SellerHistoryEntry, 'id'> = {
+        const newEntry = {
           sellerId: seller.id,
           sellerUsername: seller.username,
           endDate: new Date().toISOString(),
@@ -259,24 +229,20 @@ export default function AdminPage() {
         }
       }
     }
-
-    if (entriesCreated > 0) {
+     if (entriesCreated > 0) {
       toast({ title: "Histórico de Vendedores Salvo!", description: `Resumos para ${entriesCreated} vendedor(es) foram salvos na nuvem.`, className: "bg-secondary text-secondary-foreground", duration: 3000 });
     }
-  }, [allUsers, vendedorTickets, lotteryConfig, toast]);
-  
-  const captureAndSaveAdminHistory = useCallback(async () => {
-      const currentReport = financialReport;
+    
+    // Capture Admin History
       const newHistoryEntry: Omit<AdminHistoryEntry, 'id'> = {
         endDate: new Date().toISOString(),
-        totalRevenue: currentReport.totalRevenue,
-        totalSellerCommission: currentReport.sellerCommission,
-        totalOwnerCommission: currentReport.ownerCommission,
-        totalPrizePool: currentReport.prizePool,
-        clientTicketCount: currentReport.clientTicketCount,
-        sellerTicketCount: currentReport.sellerTicketCount,
+        totalRevenue: financialReport.totalRevenue,
+        totalSellerCommission: financialReport.sellerCommission,
+        totalOwnerCommission: financialReport.ownerCommission,
+        totalPrizePool: financialReport.prizePool,
+        clientTicketCount: financialReport.clientTicketCount,
+        sellerTicketCount: financialReport.sellerTicketCount,
       };
-      
       try {
         await addDoc(collection(db, 'adminHistory'), newHistoryEntry);
         toast({ title: "Histórico do Admin Salvo!", description: "Um resumo financeiro do ciclo atual foi salvo na nuvem.", className: "bg-secondary text-secondary-foreground", duration: 3000 });
@@ -284,19 +250,8 @@ export default function AdminPage() {
          console.error(`Failed to save admin history: `, e);
          toast({ title: "Erro no Histórico", description: `Falha ao salvar o resumo financeiro.`, variant: "destructive" });
       }
-  }, [financialReport, toast]);
 
-  const handleStartNewLottery = async () => {
-    const CONTROL_PASSWORD = "Al@n2099";
-    if (startLotteryPassword !== CONTROL_PASSWORD) {
-      toast({ title: "Ação Bloqueada", description: "Senha de controle incorreta.", variant: "destructive" });
-      return;
-    }
-    
-    // As functions now handle their own toasts
-    await captureAndSaveSellerHistory();
-    await captureAndSaveAdminHistory();
-  
+    // Reset Tickets and Draws
     try {
         const batch = writeBatch(db);
 
@@ -323,44 +278,12 @@ export default function AdminPage() {
         console.error("Error starting new lottery: ", e);
         toast({ title: "Erro", description: "Falha ao iniciar nova loteria no banco de dados.", variant: "destructive" });
     }
-
-    setStartLotteryPassword('');
-    setIsConfirmDialogOpen(false); 
   };
 
-  const handleSaveLotteryConfig = async () => {
-    const price = parseFloat(ticketPriceInput);
-    const commission = parseInt(commissionInput, 10);
-    const ownerCommission = parseInt(ownerCommissionInput, 10);
-    const clientSalesCommission = parseInt(clientSalesCommissionInput, 10);
-
-    if (isNaN(price) || price <= 0) {
-      toast({ title: "Erro de Configuração", description: "Preço do bilhete inválido.", variant: "destructive" });
-      return;
-    }
-    if (isNaN(commission) || commission < 0 || commission > 100) {
-      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão do vendedor inválida (deve ser entre 0 e 100).", variant: "destructive" });
-      return;
-    }
-    if (isNaN(ownerCommission) || ownerCommission < 0 || ownerCommission > 100) {
-      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão geral inválida (deve ser entre 0 e 100).", variant: "destructive" });
-      return;
-    }
-    if (isNaN(clientSalesCommission) || clientSalesCommission < 0 || clientSalesCommission > 100) {
-      toast({ title: "Erro de Configuração", description: "Porcentagem de comissão de vendas de cliente inválida (deve ser entre 0 e 100).", variant: "destructive" });
-      return;
-    }
-
-    const newConfigData = { 
-      ticketPrice: price, 
-      sellerCommissionPercentage: commission, 
-      ownerCommissionPercentage: ownerCommission,
-      clientSalesCommissionToOwnerPercentage: clientSalesCommission
-    };
-
+  const handleSaveLotteryConfig = async (newConfig: Partial<LotteryConfig>) => {
     try {
         const configDocRef = doc(db, 'configs', 'global');
-        await setDoc(configDocRef, newConfigData, { merge: true });
+        await setDoc(configDocRef, newConfig, { merge: true });
         toast({ title: "Configurações Salvas!", description: "As novas configurações da loteria foram salvas na nuvem.", className: "bg-primary text-primary-foreground", duration: 3000 });
     } catch(e) {
         console.error("Error saving lottery config: ", e);
@@ -368,14 +291,10 @@ export default function AdminPage() {
     }
   };
   
-  const handleSaveCreditRequestConfig = async () => {
-    const newConfigData = {
-      whatsappNumber: whatsappInput.trim(),
-      pixKey: pixKeyInput.trim(),
-    };
+  const handleSaveCreditRequestConfig = async (newConfig: CreditRequestConfig) => {
     try {
         const configDocRef = doc(db, 'configs', 'global');
-        await setDoc(configDocRef, newConfigData, { merge: true });
+        await setDoc(configDocRef, newConfig, { merge: true });
         toast({ title: "Configurações Salvas!", description: "As informações de contato foram salvas na nuvem.", className: "bg-primary text-primary-foreground", duration: 3000 });
     } catch (e) {
         console.error("Error saving credit request config: ", e);
@@ -448,20 +367,6 @@ export default function AdminPage() {
     setUserToDelete(null);
   };
   
-  const getUserActiveTicketsCount = useCallback((user: User) => {
-    const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
-    return allTickets.filter(t => t.status === 'active' && t[idField] === user.id).length;
-  }, [allTickets]);
-
-  const filteredUsers = useMemo(() => {
-    if (!userSearchTerm) {
-      return allUsers;
-    }
-    return allUsers.filter(user =>
-      user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
-    );
-  }, [allUsers, userSearchTerm]);
-
   if (!isClient || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -474,433 +379,45 @@ export default function AdminPage() {
     switch (activeSection) {
       case 'configuracoes':
         return (
-          <section aria-labelledby="lottery-settings-heading">
-            <h2 id="lottery-settings-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-                <Settings className="mr-3 h-8 w-8 text-primary" />
-                Configurações
-            </h2>
-            <Tabs defaultValue="geral" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 h-auto">
-                <TabsTrigger value="geral" className="py-2.5">
-                    <PaletteIcon className="mr-2 h-4 w-4" /> Geral
-                </TabsTrigger>
-                <TabsTrigger value="contas" className="py-2.5">
-                    <Users className="mr-2 h-4 w-4" /> Contas
-                </TabsTrigger>
-                <TabsTrigger value="contato" className="py-2.5">
-                    <Contact className="mr-2 h-4 w-4" /> Contato
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="geral" className="mt-6">
-                <div className="space-y-8">
-                  <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                      <CardHeader>
-                          <CardTitle className="text-xl text-center font-semibold">Definir Preços e Comissões</CardTitle>
-                          <CardDescription className="text-center text-muted-foreground">
-                              Ajuste os valores da loteria.
-                          </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                          <div className="space-y-2">
-                              <Label htmlFor="ticketPrice" className="flex items-center">
-                                  <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  Preço do Bilhete (R$)
-                              </Label>
-                              <Input 
-                                  id="ticketPrice" 
-                                  type="number" 
-                                  value={ticketPriceInput}
-                                  onChange={(e) => setTicketPriceInput(e.target.value)}
-                                  placeholder="Ex: 2.50"
-                                  className="bg-background/70"
-                                  step="0.01"
-                                  min="0.01"
-                              />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="sellerCommission" className="flex items-center">
-                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  Comissão do Vendedor (%)
-                              </Label>
-                              <Input 
-                                  id="sellerCommission" 
-                                  type="number" 
-                                  value={commissionInput}
-                                  onChange={(e) => setCommissionInput(e.target.value)}
-                                  placeholder="Ex: 10"
-                                  className="bg-background/70"
-                                  min="0"
-                                  max="100"
-                              />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="ownerCommission" className="flex items-center">
-                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  Comissão Geral (Bolão %)
-                              </Label>
-                              <Input 
-                                  id="ownerCommission" 
-                                  type="number" 
-                                  value={ownerCommissionInput}
-                                  onChange={(e) => setOwnerCommissionInput(e.target.value)}
-                                  placeholder="Ex: 5"
-                                  className="bg-background/70"
-                                  min="0"
-                                  max="100"
-                              />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="clientSalesCommissionToOwner" className="flex items-center">
-                                  <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  Comissão Dono (Vendas Cliente %)
-                              </Label>
-                              <Input 
-                                  id="clientSalesCommissionToOwner" 
-                                  type="number" 
-                                  value={clientSalesCommissionInput}
-                                  onChange={(e) => setClientSalesCommissionInput(e.target.value)}
-                                  placeholder="Ex: 10"
-                                  className="bg-background/70"
-                                  min="0"
-                                  max="100"
-                              />
-                          </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-end">
-                          <Button onClick={handleSaveLotteryConfig} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                              <Settings className="mr-2 h-4 w-4" /> Salvar Configurações
-                          </Button>
-                      </CardFooter>
-                  </Card>
-
-                  <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="text-xl text-center font-semibold flex items-center justify-center">
-                            <PaletteIcon className="mr-2 h-5 w-5" />
-                            Tema da Aplicação
-                        </CardTitle>
-                        <CardDescription className="text-center text-muted-foreground">
-                            Escolha entre o tema claro ou escuro para a interface.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex justify-center items-center py-6">
-                        <ThemeToggleButton />
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              <TabsContent value="contas" className="mt-6">
-                 <Card className="bg-card/80 backdrop-blur-sm shadow-md">
-                    <CardHeader>
-                        <div className="mb-4 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                            placeholder="Pesquisar por nome de usuário..."
-                            value={userSearchTerm}
-                            onChange={(e) => setUserSearchTerm(e.target.value)}
-                            className="pl-10 h-10 w-full"
-                            />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                    <ScrollArea className="h-96">
-                        <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Usuário</TableHead>
-                            <TableHead>Perfil</TableHead>
-                            <TableHead className="text-center">Saldo</TableHead>
-                            <TableHead className="text-center">Bilhetes Ativos</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredUsers.length > 0 ? filteredUsers.map(user => (
-                            <TableRow key={user.id}>
-                                <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar>
-                                    <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-semibold text-foreground">{user.username}</span>
-                                </div>
-                                </TableCell>
-                                <TableCell>
-                                <Badge variant={user.role === 'vendedor' ? 'secondary' : (user.role === 'admin' ? 'destructive' : 'outline')}>
-                                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                                </Badge>
-                                </TableCell>
-                                <TableCell className="text-center font-mono text-yellow-600 dark:text-yellow-400">
-                                R$ {(user.saldo || 0).toFixed(2).replace('.', ',')}
-                                </TableCell>
-                                <TableCell className="text-center font-medium">
-                                {getUserActiveTicketsCount(user)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                <div className="flex gap-2 justify-end">
-                                    <Button variant="outline" size="sm" onClick={() => handleOpenCreditDialog(user)}>
-                                        <CreditCard className="mr-2 h-4 w-4" /> Saldo
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => handleOpenViewUser(user)}>
-                                        <Eye className="mr-2 h-4 w-4"/> Detalhes
-                                    </Button>
-                                </div>
-                                </TableCell>
-                            </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                         <p className="text-lg text-muted-foreground">Nenhum usuário encontrado.</p>
-                                         <p className="text-sm text-muted-foreground/80">
-                                            {userSearchTerm ? 'Tente um termo de busca diferente.' : 'Nenhum usuário registrado ainda.'}
-                                        </p>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                        </Table>
-                    </ScrollArea>
-                    </CardContent>
-                 </Card>
-              </TabsContent>
-              <TabsContent value="contato" className="mt-6">
-                <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                      <CardTitle className="text-xl text-center font-semibold">Informações de Contato</CardTitle>
-                      <CardDescription className="text-center text-muted-foreground">
-                          Defina as informações que serão exibidas na página de solicitação de saldo.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                          <Label htmlFor="whatsappNumber">Número do WhatsApp</Label>
-                          <Input 
-                              id="whatsappNumber" 
-                              type="text" 
-                              value={whatsappInput}
-                              onChange={(e) => setWhatsappInput(e.target.value)}
-                              placeholder="Ex: (84) 91234-5678"
-                              className="bg-background/70"
-                          />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="pixKey">Chave Pix</Label>
-                          <Input 
-                              id="pixKey" 
-                              type="text" 
-                              value={pixKeyInput}
-                              onChange={(e) => setPixKeyInput(e.target.value)}
-                              placeholder="Ex: seu-email@provedor.com"
-                              className="bg-background/70"
-                          />
-                      </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                      <Button onClick={handleSaveCreditRequestConfig} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                          <Settings className="mr-2 h-4 w-4" /> Salvar Informações de Contato
-                      </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </section>
+          <SettingsSection 
+            lotteryConfig={lotteryConfig}
+            creditRequestConfig={creditRequestConfig}
+            allUsers={allUsers}
+            allTickets={allTickets}
+            onSaveLotteryConfig={handleSaveLotteryConfig}
+            onSaveCreditRequestConfig={handleSaveCreditRequestConfig}
+            onOpenCreditDialog={handleOpenCreditDialog}
+            onOpenViewUser={handleOpenViewUser}
+          />
         );
       case 'cadastrar-sorteio':
         return (
-          <section aria-labelledby="draw-submission-heading">
-            <h2 id="draw-submission-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <PlusCircle className="mr-3 h-8 w-8 text-primary" />
-              Cadastrar Novo Sorteio
-            </h2>
-            <AdminDrawForm onAddDraw={handleAddDraw} hasWinningTickets={winningTickets.length > 0} />
-          </section>
+          <NewDrawSection
+            onAddDraw={handleAddDraw}
+            hasWinningTickets={winningTickets.length > 0}
+          />
         );
       case 'controles-loteria':
         return (
-          <section aria-labelledby="lottery-controls-heading">
-            <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
-              Controles da Loteria
-            </h2>
-            <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
-              <CardHeader>
-                <CardTitle className="text-xl text-center font-semibold">
-                  Gerenciar Ciclo da Loteria
-                </CardTitle>
-                <CardDescription className="text-center text-muted-foreground">
-                  Esta ação reinicia a loteria, cria um histórico de vendas e expira bilhetes ativos.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
-                      <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="flex items-center">
-                        <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
-                        Confirmar Nova Loteria?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação irá salvar um resumo do ciclo de vendas atual, limpar todos os sorteios existentes e marcar todos os bilhetes ativos, premiados e aguardando pagamento como 'expirados'. Esta ação não pode ser desfeita.
-                        <br/><br/>
-                        <span className="font-bold text-foreground">Digite a senha de controle para confirmar.</span>
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="space-y-2 py-2">
-                        <Label htmlFor="control-password" className="sr-only">
-                          Senha de Controle
-                        </Label>
-                        <div className="relative">
-                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                            id="control-password"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Senha de Controle"
-                            value={startLotteryPassword}
-                            onChange={(e) => setStartLotteryPassword(e.target.value)}
-                            className="pl-9 pr-10"
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </Button>
-                        </div>
-                    </div>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setStartLotteryPassword('')}>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleStartNewLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                        Confirmar e Iniciar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          </section>
+          <ControlsSection onStartNewLottery={handleStartNewLottery} />
         );
        case 'relatorios':
         return (
-          <section aria-labelledby="financial-reports-heading" className="space-y-12">
-            <h2 id="financial-reports-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <PieChart className="mr-3 h-8 w-8 text-primary" />
-              Relatórios Financeiros
-            </h2>
-            <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle className="text-2xl text-center font-bold text-primary">Resumo do Ciclo Atual</CardTitle>
-                    <CardDescription className="text-center text-muted-foreground">
-                        Visão geral das finanças baseada nos bilhetes ativos.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-center">
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <Users className="h-10 w-10 text-blue-500 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Vendas (Clientes)</p>
-                        <p className="text-3xl font-bold text-blue-500">
-                            R$ {financialReport.clientRevenue.toFixed(2).replace('.', ',')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount} bilhetes</p>
-                    </div>
-                     <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <Users className="h-10 w-10 text-orange-500 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Vendas (Vendedores)</p>
-                        <p className="text-3xl font-bold text-orange-500">
-                            R$ {financialReport.sellerRevenue.toFixed(2).replace('.', ',')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{financialReport.sellerTicketCount} bilhetes</p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <DollarSign className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Total Arrecadado</p>
-                        <p className="text-3xl font-bold text-green-500">
-                            R$ {financialReport.totalRevenue.toFixed(2).replace('.', ',')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount + financialReport.sellerTicketCount} bilhetes</p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <Percent className="h-10 w-10 text-secondary mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Comissão (Vendedores)</p>
-                        <p className="text-3xl font-bold text-secondary">
-                            R$ {financialReport.sellerCommission.toFixed(2).replace('.', ',')}
-                        </p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <Percent className="h-10 w-10 text-primary mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Comissão (Bolão)</p>
-                        <p className="text-3xl font-bold text-primary">
-                            R$ {financialReport.ownerCommission.toFixed(2).replace('.', ',')}
-                        </p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                        <Trophy className="h-10 w-10 text-accent mx-auto mb-2" />
-                        <p className="text-sm font-medium text-muted-foreground">Prêmio Estimado</p>
-                        <p className="text-3xl font-bold text-accent">
-                            R$ {financialReport.prizePool.toFixed(2).replace('.', ',')}
-                        </p>
-                    </div>
-                </CardContent>
-                <CardFooter className="pt-6">
-                    <p className="text-xs text-muted-foreground text-center w-full">
-                        Cálculos baseados em todos os bilhetes com status 'ativo'. O prêmio é o total arrecadado menos todas as comissões.
-                    </p>
-                </CardFooter>
-            </Card>
-
-            <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle className="text-2xl text-center font-bold text-primary flex items-center justify-center">
-                    <BookText className="mr-3 h-6 w-6" />
-                    Histórico de Ciclos Anteriores (Admin)
-                    </CardTitle>
-                    <CardDescription className="text-center text-muted-foreground">
-                    Resumo financeiro de cada ciclo de loteria encerrado.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {adminHistory.length > 0 ? (
-                    <FinancialChart data={adminHistory} />
-                    ) : (
-                    <p className="text-center text-muted-foreground py-10">Nenhum histórico de ciclo anterior encontrado para exibir o gráfico.</p>
-                    )}
-                </CardContent>
-            </Card>
-          </section>
+          <ReportsSection
+            financialReport={financialReport}
+            adminHistory={adminHistory}
+          />
         );
       case 'historico-sorteios':
         return (
-          <section aria-labelledby="draw-history-heading">
-            <h2 id="draw-history-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <History className="mr-3 h-8 w-8 text-primary" />
-              Resultados dos Sorteios
-            </h2>
-            <AdminDrawList draws={draws} />
-          </section>
+          <DrawHistorySection draws={draws} />
         );
       case 'bilhetes-premiados':
         return (
-          <section aria-labelledby="winning-tickets-heading">
-            <h2 id="winning-tickets-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
-              <Trophy className="mr-3 h-8 w-8 text-accent" />
-              Bilhetes Premiados ({winningTickets.length})
-            </h2>
-            {winningTickets.length > 0 ? (
-              <TicketList tickets={winningTickets} draws={draws} />
-            ) : (
-              <div className="text-center py-10 bg-card/50 rounded-lg shadow">
-                <Trophy size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground text-lg">Nenhum bilhete premiado no momento.</p>
-              </div>
-            )}
-          </section>
+          <WinningTicketsSection 
+            winningTickets={winningTickets} 
+            draws={draws} 
+          />
         );
       default:
         return null;
