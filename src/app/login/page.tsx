@@ -61,10 +61,8 @@ export default function LoginPage() {
     
     await login(username, password, expectedRole);
     
-    // The login function in auth-context will show toasts on success or failure.
-    // It will not throw, so the catch block is removed.
-    // We just need to handle the loading state.
-    
+    // O login function no auth-context vai mostrar toasts de sucesso ou falha e não vai lançar um erro.
+    // Apenas precisamos gerenciar o estado de loading.
     setIsSubmitting(false);
   };
   
@@ -150,7 +148,7 @@ export default function LoginPage() {
                     </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting || authLoading}>
                 <LogIn className="mr-2 h-5 w-5" />
                 {isSubmitting ? 'Entrando...' : 'Entrar com E-mail'}
               </Button>

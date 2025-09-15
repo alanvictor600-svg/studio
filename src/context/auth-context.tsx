@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -24,7 +24,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const sanitizeUsernameForEmail = (username: string) => {
-    // Keeps it simple: just trim and lowercase. This is robust.
     return username.trim().toLowerCase();
 };
 
@@ -113,22 +112,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (expectedRole && userData.role !== expectedRole) {
               await signOut(auth);
               toast({ title: "Acesso Negado", description: `As credenciais são válidas, mas não para um perfil de ${expectedRole}.`, variant: "destructive" });
-              return; // Stop execution
+              return;
           }
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
-           // The useEffect hook will handle redirection.
+           // O useEffect hook vai cuidar do redirecionamento
         } else {
           await signOut(auth);
           toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
         }
      } catch (error: any) {
-        console.error("Firebase login error:", error.code); // Log only the code for cleaner debugging
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        // Não relançar o erro, apenas mostrar o toast.
+        // Isso impede o erro "não tratado" no console.
+        if (error.code === 'auth/invalid-credential') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
         } else {
+             console.error("Firebase login error:", error.code);
              toast({ title: "Erro de Login", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
-        // Do not re-throw the error. Let this function handle it completely.
      }
   };
 
@@ -153,16 +153,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const emailUsername = sanitizeUsernameForEmail(originalUsername);
     const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
-    // It's better to rely on Firebase Auth's unique email constraint than to query the collection,
-    // as it's more direct and respects security rules.
-
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passwordRaw);
         const newFirebaseUser = userCredential.user;
 
         const newUser: User = {
             id: newFirebaseUser.uid,
-            username: originalUsername, // Save the original username for display
+            username: originalUsername, // Salva o nome de usuário original para exibição
             role,
             createdAt: new Date().toISOString(),
             saldo: role === 'cliente' ? 50 : 0,
@@ -171,17 +168,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-        await signOut(auth); // Log out the user immediately after registration
+        await signOut(auth); // Desloga o usuário imediatamente após o cadastro
         router.push('/login');
 
     } catch (error: any) {
-        console.error("Firebase registration error:", error);
         if (error.code === 'auth/email-already-in-use') {
-            // This now correctly indicates that the username is taken
             toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
         } else if (error.code === 'auth/weak-password') {
             toast({ title: "Erro de Cadastro", description: "A senha é muito fraca. Use pelo menos 6 caracteres.", variant: "destructive" });
         } else {
+            console.error("Firebase registration error:", error);
             toast({ title: "Erro de Cadastro", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
     }
@@ -206,4 +202,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
