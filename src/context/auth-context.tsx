@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isAuthenticated, isLoading, currentUser]);
 
 
-  const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => {
+  const login = async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         // Do not re-throw the error. Let this function handle it completely.
      }
-  }, [toast]);
+  };
 
   const logout = useCallback(async () => {
     try {
@@ -206,3 +206,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
