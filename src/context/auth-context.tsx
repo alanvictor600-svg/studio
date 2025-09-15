@@ -3,16 +3,13 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { User } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-// Local storage keys
-const AUTH_USERS_STORAGE_KEY = 'bolaoPotiguarAuthUsers';
-const AUTH_CURRENT_USER_STORAGE_KEY = 'bolaoPotiguarAuthCurrentUser';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -27,25 +24,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // This will now be primarily driven by Firebase's auth loading state
+  const [firebaseUser, authLoading, authError] = useAuthState(auth);
+  const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-
-  const [firebaseUser, authLoading, authError] = useAuthState(auth);
+  
+  const isLoading = authLoading || isFirestoreLoading;
 
   useEffect(() => {
     const checkUser = async () => {
       if (authLoading) {
-        setIsLoading(true);
+        setIsFirestoreLoading(true);
         return;
       }
       if (authError) {
         console.error("Firebase Auth Error:", authError);
         toast({ title: "Erro de Autenticação", description: "Ocorreu um problema ao verificar sua identidade.", variant: "destructive"});
-        setIsLoading(false);
         setCurrentUser(null);
+        setIsFirestoreLoading(false);
         return;
       }
 
@@ -67,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // No user is signed in with Firebase.
         setCurrentUser(null);
       }
-      setIsLoading(false);
+      setIsFirestoreLoading(false);
     };
 
     checkUser();
@@ -78,49 +75,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // We will migrate them in the next steps.
 
   const saveUsersToLocalStorage = (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-    localStorage.setItem(AUTH_USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+    // This function will be deprecated
   };
   
   const saveCurrentUserToLocalStorage = (user: User | null) => {
-    setCurrentUser(user);
-    if (user) {
-      localStorage.setItem(AUTH_CURRENT_USER_STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(AUTH_CURRENT_USER_STORAGE_KEY);
-    }
+     // This function will be deprecated
   };
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin'): Promise<boolean> => {
-    const userToLogin = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-
-    if (!userToLogin) {
-      toast({ title: "Erro de Login", description: "Usuário não encontrado.", variant: "destructive" });
-      return false;
-    }
-
-    if (userToLogin.passwordHash !== passwordAttempt) {
-      toast({ title: "Erro de Login", description: "Senha incorreta.", variant: "destructive" });
-      return false;
-    }
-
-    if (expectedRole && userToLogin.role !== expectedRole) {
-      toast({ title: "Acesso Negado", description: `Esta conta é de ${userToLogin.role}. Use o portal correto.`, variant: "destructive" });
-      return false;
-    }
-    
-    saveCurrentUserToLocalStorage(userToLogin);
-    toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${userToLogin.username}!`, className: "bg-primary text-primary-foreground", duration: 3000 });
-    
-    // Redirect after successful login
-    let redirectPath = '/';
-    if(userToLogin.role === 'admin') redirectPath = '/admin';
-    else if(userToLogin.role === 'cliente') redirectPath = '/cliente';
-    else if(userToLogin.role === 'vendedor') redirectPath = '/vendedor';
-    router.push(redirectPath);
-    
-    return true;
-  }, [users, router, toast]);
+     toast({ title: "Login em Migração", description: "A função de login ainda está sendo atualizada.", variant: "destructive" });
+     return false;
+  }, [router, toast]);
 
    const loginWithGoogle = async (): Promise<boolean> => {
      toast({ title: "Funcionalidade Indisponível", description: "Login com Google não está disponível na versão offline.", variant: "destructive" });
@@ -135,34 +100,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
     const trimmedUsername = username.trim();
-    if (users.some(u => u.username.toLowerCase() === trimmedUsername.toLowerCase())) {
-      toast({ title: "Erro de Cadastro", description: "Nome de usuário já existe.", variant: "destructive" });
-      return false;
+    const fakeEmail = `${trimmedUsername}@bolao.potiguar`; // Firebase requires an email for auth
+
+    try {
+        // 1. Create user in Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passwordRaw);
+        const newFirebaseUser = userCredential.user;
+
+        // 2. Create user profile in Firestore
+        const newUser: User = {
+            id: newFirebaseUser.uid, // Use Firebase UID as the unique ID
+            username: trimmedUsername,
+            passwordHash: '', // We no longer store the password hash here
+            role,
+            createdAt: new Date().toISOString(),
+            saldo: role === 'cliente' ? 50 : 0, // Give new clients a starting balance
+        };
+        
+        await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
+
+        toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
+        router.push('/login');
+        return true;
+
+    } catch (error: any) {
+        console.error("Firebase registration error:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
+        } else if (error.code === 'auth/weak-password') {
+            toast({ title: "Erro de Cadastro", description: "A senha é muito fraca. Use pelo menos 6 caracteres.", variant: "destructive" });
+        } else {
+            toast({ title: "Erro de Cadastro", description: "Ocorreu um erro inesperado ao se registrar.", variant: "destructive" });
+        }
+        return false;
     }
+  }, [router, toast]);
 
-    const newUser: User = {
-      id: uuidv4(),
-      username: trimmedUsername,
-      passwordHash: passwordRaw, // Storing plain text for prototype simplicity
-      role,
-      createdAt: new Date().toISOString(),
-      saldo: role === 'cliente' ? 50 : 0, // Give new clients a starting balance
-    };
-
-    const updatedUsers = [...users, newUser];
-    saveUsersToLocalStorage(updatedUsers);
-    
-    toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-    router.push('/login');
-    return true;
-  }, [users, router, toast]);
 
   const updateCurrentUserCredits = (newCredits: number) => {
     if (currentUser) {
       const updatedUser = { ...currentUser, saldo: newCredits };
-      const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
-      saveUsersToLocalStorage(updatedUsers);
-      saveCurrentUserToLocalStorage(updatedUser);
+      // TODO: Update this to use Firestore
     }
   };
 
