@@ -1,4 +1,3 @@
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -15,7 +14,6 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// Avoid re-initializing on Next.js hot-reloads
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with offline persistence, but only on the client-side.
