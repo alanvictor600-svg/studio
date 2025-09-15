@@ -122,10 +122,22 @@ export default function AdminPage() {
             setCreditRequestConfig(DEFAULT_CREDIT_CONFIG);
         }
     }
+  }, [isClient]);
 
+  // Auth check
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    if (!isAuthenticated || currentUser?.role !== 'admin') {
+      router.push('/login?redirect=/admin');
+    }
+  }, [isLoading, isAuthenticated, currentUser, router]);
+
+  // Realtime data from Firestore
+  useEffect(() => {
     if (!currentUser) return;
 
-    // Realtime data from Firestore
     const ticketsQuery = query(collection(db, 'tickets'));
     const drawsQuery = query(collection(db, 'draws'));
     const usersQuery = query(collection(db, 'users'));
@@ -160,17 +172,7 @@ export default function AdminPage() {
         unsubscribeDraws();
         unsubscribeUsers();
     };
-  }, [isClient, currentUser]);
-
-  // Auth check
-  useEffect(() => {
-    if (isLoading) {
-      return;
-    }
-    if (!isAuthenticated || currentUser?.role !== 'admin') {
-      router.push('/login?redirect=/admin');
-    }
-  }, [isLoading, isAuthenticated, currentUser, router]);
+  }, [currentUser, toast]);
 
 
   const saveAdminHistory = (newHistory: AdminHistoryEntry[]) => {
@@ -1053,7 +1055,5 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
 
     
