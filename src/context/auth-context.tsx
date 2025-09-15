@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -178,10 +178,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast]);
 
 
-  const updateCurrentUserCredits = (newCredits: number) => {
+  const updateCurrentUserCredits = async (newCredits: number) => {
     if (currentUser) {
-      const updatedUser = { ...currentUser, saldo: newCredits };
-      // TODO: Update this to use Firestore
+      const userDocRef = doc(db, "users", currentUser.id);
+      try {
+        await updateDoc(userDocRef, { saldo: newCredits });
+        setCurrentUser({ ...currentUser, saldo: newCredits });
+      } catch (error) {
+        console.error("Error updating user credits in Firestore:", error);
+        toast({ title: "Erro", description: "Não foi possível atualizar seu saldo.", variant: "destructive" });
+      }
     }
   };
 
