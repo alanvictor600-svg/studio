@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
@@ -73,29 +73,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // The functions below are still using the OLD localStorage logic.
   // We will migrate them in the next steps.
-
-  const saveUsersToLocalStorage = (updatedUsers: User[]) => {
-    // This function will be deprecated
-  };
   
-  const saveCurrentUserToLocalStorage = (user: User | null) => {
-     // This function will be deprecated
-  };
-
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin'): Promise<boolean> => {
      toast({ title: "Login em Migração", description: "A função de login ainda está sendo atualizada.", variant: "destructive" });
      return false;
   }, [router, toast]);
 
-   const loginWithGoogle = async (): Promise<boolean> => {
-     toast({ title: "Funcionalidade Indisponível", description: "Login com Google não está disponível na versão offline.", variant: "destructive" });
-     return false;
-   };
-
-  const logout = useCallback(() => {
-    saveCurrentUserToLocalStorage(null);
-    toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
-    router.push('/');
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      // The useEffect will handle setting currentUser to null automatically.
+      toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
+    }
   }, [router, toast]);
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
@@ -158,3 +151,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    

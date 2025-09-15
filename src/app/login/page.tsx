@@ -30,19 +30,10 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, currentUser, isLoading: authLoading } = useAuth();
-  const router = useRouter();
+  const { login, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [registrationHref, setRegistrationHref] = useState('/cadastrar');
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (currentUser) {
-      const redirectPath = searchParams.get('redirect');
-      router.push(redirectPath || (currentUser.role === 'cliente' ? '/cliente' : '/vendedor'));
-    }
-  }, [currentUser, authLoading, router, searchParams]);
 
   useEffect(() => {
       const redirectPath = searchParams.get('redirect');
@@ -61,8 +52,9 @@ export default function LoginPage() {
       return;
     }
     const redirectPath = searchParams.get('redirect');
-    const expectedRole = redirectPath?.includes('cliente') ? 'cliente' : redirectPath?.includes('vendedor') ? 'vendedor' : undefined;
+    const expectedRole = redirectPath?.includes('cliente') ? 'cliente' : redirectPath?.includes('vendedor') ? 'vendedor' : redirectPath?.includes('admin') ? 'admin' : undefined;
 
+    // The login function will now handle navigation on success.
     await login(username, password, expectedRole);
   };
   
@@ -168,3 +160,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

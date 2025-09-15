@@ -32,14 +32,12 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
-  const { register, currentUser, isLoading: authLoading } = useAuth();
+  const { register, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     const roleFromQuery = searchParams.get('role');
     if (roleFromQuery === 'cliente' || roleFromQuery === 'vendedor') {
       setRole(roleFromQuery);
@@ -64,6 +62,8 @@ export default function CadastroPage() {
         toast({ title: "Erro de Cadastro", description: "A senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
         return;
     }
+    
+    // The register function now handles navigation on success.
     await register(username.trim(), password, role);
   };
   
@@ -193,3 +193,5 @@ export default function CadastroPage() {
     </div>
   );
 }
+
+    
