@@ -111,6 +111,11 @@ export default function DashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:hidden sticky top-0 z-10">
+            <SidebarTrigger />
+            <span className="font-semibold text-primary">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
+            <div/>
+        </header>
         <div className="p-4 md:p-8">
             {children}
         </div>
