@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FC } from 'react';
@@ -124,21 +125,24 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
         const newBalance = currentBalance - ticketPrice;
 
         const newTicketRef = doc(collection(db, "tickets"));
-        const newTicketData: Ticket = {
+        const newTicketData: Omit<Ticket, 'buyerPhone'> & { buyerPhone?: string } = {
           id: newTicketRef.id,
           numbers: [...currentPicks].sort((a,b) => a-b),
           status: 'active',
           createdAt: new Date().toISOString(),
           buyerName: buyerName.trim(),
-          buyerPhone: buyerPhone.trim() || undefined,
           sellerId: currentUser.id,
           sellerUsername: currentUser.username,
         };
 
+        if (buyerPhone.trim()) {
+            newTicketData.buyerPhone = buyerPhone.trim();
+        }
+
         transaction.set(newTicketRef, newTicketData);
         transaction.update(userRef, { saldo: newBalance });
         
-        return newTicketData;
+        return newTicketData as Ticket;
       });
 
       updateCurrentUserCredits((currentUser.saldo || 0) - ticketPrice);
