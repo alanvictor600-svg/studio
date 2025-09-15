@@ -19,21 +19,30 @@ let db: Firestore;
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!getApps().length) {
-  // IMPORTANT: This service account setup is for demonstration.
-  // In a production environment, use environment variables or a secrets manager.
-  // The service-account.json file should be secured and not committed to your repository.
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-        initializeApp({
-          credential: cert(serviceAccount),
-        });
-        db = getFirestore();
-      } catch(e) {
-          console.error("Could not initialize Firebase Admin SDK. Make sure FIREBASE_SERVICE_ACCOUNT_KEY is set and is valid JSON.", e);
-      }
-  } else {
-      console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK not initialized.");
+  try {
+    // IMPORTANT: In a production environment, use environment variables or a secrets manager.
+    // For this prototype, we are embedding the key directly to avoid parsing issues with .env files.
+    const serviceAccount = {
+      "type": "service_account",
+      "project_id": "studio-19544357-e5b7b",
+      "private_key_id": "b401ca6e4dab37bab354f5f1b10954a15d5ea4c2",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCl9agQCMZwLQoo\nU9fervoL6WfsVJl9wTi0Og2+len+G6/p1t3muSVDRnLQQmCc6OvjQ/D+m/a96TMW\nP5fa4/8KL4mWSwxh+q6F4le9rEc5IbA3wgxXR5qoELqsOnDhbcB5JnsaKRjfX06k\nxmQgQZbFioLSiOWuwJV8d47weF9rMDaJAqVoHXYobP4R5gc/X0jBIj0IYjO93ktH\nxhxx0mYn0Gf0RYH8/EvWf0SUwEM0vfhReTT5qKqp/WmHFosS99YcpZeveyXP+MfK\nH1jLINR76/a15zb/gT12d55qATt6Z5QpN8NDQf9F3VGW8BMXjCuCLLiFvwfQdiGV\nJdKPrDMdAgMBAAECggEACQ3S4mhBwALx1LgzEboE3qHlAongnQsg92wnYQHRJzgG\nRXQ5Q1bpR1Dp/wSjPEw7LXkabIZaISULNw6D6VqaiMkfiqyDe228S1LJRXBg3lp0\nWhMv4ZJNexfJwPWoDOEtwmF5qJ61wnhZOp7ilx2DU6ADE4G82uc0zWD0a/57lJLE\nZPMxvZltLIxuXg6GFgq210ZbcaHNWYK74VMy2sp+0OeI59yglQNEvb/KMyCvDiwj\nDtcjRc9R5+UbicXCO0uE7tV7Xlh9c49axMhYnif01DxCNo4MFbaiYqnUTniQpNXz\nKw0mVmRecrQMLvaeD8NnsVyrNSWTkv1t/os80evYPQKBgQDi/5ZxkCsNZtsQXaGJ\nq/UyEchjt3LxBMPqE0mM4lAwHG7qH9s4/9lxmbZYwxAKS6cRu48duV/yWgEHd6Oy\nfAi7+f91aN9oqA2BzoGYYnFz2/R3yuxwRrFVNMYrKX0L8Tt0/iuO/ftiawkAbEKV\nvnQ92qwMDRJ5Ed+2leCCXW34rwKBgQC7Ka3wgtEAm6ZtNC6oEOMLW8sgYzB9abiL\nrJVZrMSkNXTsUt3CUehJY3uNr1BvwJtuTHA7sw9cGrqCIa96GhStDGFTZEZ93zcw\nb4dtM7PgAKZP0XT3dLnY5gPV8//CfQeE9IXPoh6dJn1jUuNufDOXOH8Dx58sijCs\nyRTQUihr8wKBgQChyNH7rGnSymz1VBZOd1KyzvMPjJQrznGuepg2+eU8p7mhL/k\n9wyOF6TLzHLBM7wmOkw9PiKxAw7auJ1WF2rONtaoYo9f8u51hq384qTDk4/AVUOA\nnhHDjbJzjsVN3qemsYRwDHq/YVPwFji6qxwD/bdDe4mf+mo8osN5hodbhwKBgGVa\ngsk17jyoDY4hrgpxaqJiCTP2wvGHaNqqkQ5I0wwhrrmzfkeW13W2m9f0UljSMtme\nJ0ENDIpSJyIFX+N9cCjuBV6FdO8BC//8xZfLYeMyNt4OjYrb+TCODxGz2pLV5laH\nnFb+chmkGE7LOkJAnCeN/qprVbVm+Ej5c34En8MlAoGAQkZQSzYHdGZuzVUkh3IL\nFaK2CYelnoINdzIf7x2Y2Z4XuIS7Jb9gGOP6JfnrZoYYV4AjiNaPyqoD0AQmLqNj\ntoK8MplHoStTLej5lo1MeLIUsX8Duc2+Bx/FZvXAjRzcmCj3mKt8q79CYVC3y+gl\nXqC5X093ljQUTO8kvqI5H1Y=\n-----END PRIVATE KEY-----\n".replace(/\\n/g, '\n'),
+      "client_email": "firebase-adminsdk-fbsvc@studio-19544357-e5b7b.iam.gserviceaccount.com",
+      "client_id": "103077689610030483479",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40studio-19544357-e5b7b.iam.gserviceaccount.com",
+      "universe_domain": "googleapis.com"
+    };
+
+    initializeApp({
+        credential: cert(serviceAccount),
+    });
+    db = getFirestore();
+
+  } catch (e) {
+    console.error("Could not initialize Firebase Admin SDK. Service account key might be invalid.", e);
   }
 } else {
     // If the app is already initialized, just get the firestore instance
@@ -71,7 +80,7 @@ const buyTicketFlow = ai.defineFlow(
     if (!db) {
         return {
             success: false,
-            error: "Firebase Admin SDK is not initialized. Check server configuration and FIREBASE_SERVICE_ACCOUNT_KEY.",
+            error: "Firebase Admin SDK is not initialized. Check server configuration.",
         };
     }
       
