@@ -10,7 +10,7 @@ import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import type { Draw, Ticket } from '@/types';
+import type { Draw } from '@/types';
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { TopTickets } from '@/components/TopTickets';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -26,7 +26,6 @@ export default function LandingPage() {
   const { currentUser, logout, login } = useAuth();
   const router = useRouter();
   const [draws, setDraws] = useState<Draw[]>([]);
-  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,18 +43,8 @@ export default function LandingPage() {
         console.error("Error fetching draws: ", error);
     });
 
-    const ticketsQuery = query(collection(db, 'tickets'));
-    const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-        const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-        setAllTickets(ticketsData);
-    }, (error) => {
-        console.error("Error fetching tickets: ", error);
-    });
-
-
     return () => {
         unsubscribeDraws();
-        unsubscribeTickets();
     };
   }, []);
 
@@ -188,7 +177,7 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold text-primary text-center flex items-center justify-center">
                 <Award className="mr-3 h-6 w-6" /> Acertos
             </h2>
-            <TopTickets tickets={allTickets} draws={draws} />
+            <TopTickets draws={draws} />
           </div>
         </div>
         
@@ -268,3 +257,4 @@ export default function LandingPage() {
     </div>
   );
     
+

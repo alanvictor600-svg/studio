@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Ticket, Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { calculateTicketMatches, countOccurrences } from '@/lib/lottery-utils';
@@ -11,21 +11,39 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface TopTicketsProps {
-  tickets: Ticket[];
   draws: Draw[];
 }
 
-export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
+export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+
+  useEffect(() => {
+    const ticketsQuery = query(collection(db, 'tickets'));
+    const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+        const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+        setAllTickets(ticketsData);
+    }, (error) => {
+        // This error might be expected for non-logged-in users if rules are strict
+        // We can handle it silently or show a message if needed.
+        console.error("Error fetching tickets for TopTickets: ", error.message);
+        setAllTickets([]); // Clear tickets on permission error
+    });
+
+    return () => unsubscribeTickets();
+  }, []);
+
 
   const rankedTickets = useMemo(() => {
-    if (!tickets || !draws || draws.length === 0) {
+    if (!allTickets || !draws || draws.length === 0) {
       return [];
     }
     
-    const relevantTicketsWithMatches = tickets
+    const relevantTicketsWithMatches = allTickets
       .filter(ticket => ticket.status === 'active' || ticket.status === 'winning')
       .map(ticket => ({
         ...ticket,
@@ -40,7 +58,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ tickets, draws }) => {
     });
 
     return sortedTickets;
-  }, [tickets, draws]);
+  }, [allTickets, draws]);
 
   const filteredTickets = useMemo(() => {
     if (!searchTerm) {
