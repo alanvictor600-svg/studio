@@ -63,10 +63,16 @@ export function FinancialChart({ data }: FinancialChartProps) {
             cursor={false}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
+                const tooltipData = payload.map(p => ({
+                  name: chartConfig[p.dataKey as keyof typeof chartConfig]?.label || p.name,
+                  value: p.value,
+                  color: p.color
+                }));
+
                 return (
                   <div className="z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
                     <p className="font-bold">{payload[0].payload.endDateFormatted}</p>
-                    {payload.map((p, i) => (
+                    {tooltipData.map((p, i) => (
                       <div key={i} className="flex justify-between gap-4">
                         <span style={{ color: p.color }}>{p.name}:</span>
                         <span>R$ {p.value?.toFixed(2).replace('.', ',')}</span>
@@ -78,7 +84,23 @@ export function FinancialChart({ data }: FinancialChartProps) {
               return null;
             }}
           />
-          <Legend />
+          <Legend content={({ payload }) => {
+            if (!payload) return null;
+            return (
+              <div className="flex items-center justify-center gap-4 pt-4">
+                {payload.map((entry, index) => {
+                  const configKey = entry.dataKey as keyof typeof chartConfig;
+                  if (!chartConfig[configKey]) return null;
+                  return (
+                    <div key={`item-${index}`} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                       {chartConfig[configKey].label}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }}/>
           <Bar dataKey="totalRevenue" fill="var(--color-totalRevenue)" radius={4} />
           <Bar dataKey="totalPrizePool" fill="var(--color-totalPrizePool)" radius={4} />
           <Bar dataKey="totalOwnerCommission" fill="var(--color-totalOwnerCommission)" radius={4} />
@@ -88,5 +110,3 @@ export function FinancialChart({ data }: FinancialChartProps) {
     </ChartContainer>
   )
 }
-
-    
