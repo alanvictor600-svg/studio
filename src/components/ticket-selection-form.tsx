@@ -185,7 +185,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
 
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2 text-center">Escolha os Bichos (1-25):</h3>
-            <div className="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-9 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
+            <div className="grid grid-cols-5 md:grid-cols-7 gap-2 md:gap-3 p-2 rounded-lg bg-background/30">
               {animalMapping.map(animal => (
                 <NumberButton
                   key={animal.number}
