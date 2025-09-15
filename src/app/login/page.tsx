@@ -32,24 +32,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { login, isLoading: authLoading, isAuthenticated, currentUser } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
   const [registrationHref, setRegistrationHref] = useState('/cadastrar');
   
   useEffect(() => {
-      // Se o usuário já está autenticado, redireciona para a home ou painel
-      if (isAuthenticated) {
-          router.push('/');
+    const redirectPath = searchParams.get('redirect');
+    // If user is already authenticated, redirect them.
+    if (isAuthenticated && currentUser) {
+      if (redirectPath && redirectPath !== '/') {
+        router.push(redirectPath);
+      } else {
+        router.push(currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
       }
-  }, [isAuthenticated, router]);
+    }
+  }, [isAuthenticated, currentUser, router, searchParams]);
 
   useEffect(() => {
-      const redirectPath = searchParams.get('redirect');
-      if (redirectPath?.includes('cliente')) {
+      const redirectParam = searchParams.get('redirect');
+      if (redirectParam?.includes('cliente')) {
         setRegistrationHref('/cadastrar?role=cliente');
-      } else if (redirectPath?.includes('vendedor')) {
+      } else if (redirectParam?.includes('vendedor')) {
         setRegistrationHref('/cadastrar?role=vendedor');
       } else {
         setRegistrationHref('/cadastrar');
@@ -70,17 +75,24 @@ export default function LoginPage() {
     
     await login(username, password, expectedRole);
     
-    // O auth-context agora lida com os toasts e o redirecionamento em caso de sucesso.
-    // O erro não é mais propagado, então não precisamos de try/catch aqui.
-    // Apenas resetamos o estado de submissão.
+    // The auth-context now handles toasts and redirection on success.
+    // We just reset the submitting state.
     setIsSubmitting(false);
   };
   
-  // Exibe o loading do AuthContext, que é o estado de carregamento inicial do app
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Verificando autenticação...</p>
+      </div>
+    );
+  }
+
+  // If user is already logged in and we are just waiting for redirect, show loading
+  if (isAuthenticated) {
+     return (
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <p className="text-foreground text-xl">Redirecionando...</p>
       </div>
     );
   }

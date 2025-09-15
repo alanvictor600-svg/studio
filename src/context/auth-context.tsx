@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -99,10 +98,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
            
            // Redirection is now handled by the useEffect that watches `isAuthenticated`
            const redirectPath = searchParams.get('redirect');
-           if (redirectPath) {
+           if (redirectPath && redirectPath !== '/') {
              router.push(redirectPath);
            } else {
-             router.push(userData.role === 'admin' ? '/admin' : userData.role === 'vendedor' ? '/dashboard/vendedor' : '/dashboard/cliente');
+             router.push(userData.role === 'admin' ? '/admin' : `/dashboard/${userData.role}`);
            }
         } else {
           // This case should be rare if registration is solid, but good to handle.
