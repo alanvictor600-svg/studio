@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FC } from 'react';
@@ -10,12 +9,10 @@ import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib
 import { NumberButton } from '@/components/number-button';
 import { X, Sparkles, Trash2, TicketPlus, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from 'uuid';
 import type { Ticket, User, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
-import { collection, addDoc } from "firebase/firestore"; 
-import { db } from '@/lib/firebase';
+import { buyTicket } from '@/ai/flows/buy-ticket-flow';
 
 interface TicketSelectionFormProps {
   isLotteryPaused?: boolean;
@@ -98,42 +95,32 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
       return;
     }
 
-    const ticketCost = lotteryConfig.ticketPrice;
-    if ((currentUser.saldo || 0) < ticketCost) {
-      setIsCreditsDialogOpen(true);
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-        const newTicketData = {
+        const result = await buyTicket({
+            userId: currentUser.id,
             numbers: [...currentPicks].sort((a,b) => a-b),
-            status: 'active' as const,
-            createdAt: new Date().toISOString(),
             buyerName: currentUser.username,
-            buyerId: currentUser.id, // Associate ticket with user ID
-            sellerUsername: null, // Explicitly null for client tickets
-        };
+        });
 
-        const docRef = await addDoc(collection(db, "tickets"), newTicketData);
-
-        const finalTicket: Ticket = {
-          id: docRef.id,
-          ...newTicketData,
+        if (result.success && result.ticket && result.newBalance !== undefined) {
+            updateCurrentUserCredits(result.newBalance);
+            setCurrentPicks([]);
+            setReceiptTicket(result.ticket);
+            
+            toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu comprovante foi gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+        } else {
+            if(result.error === 'Insufficient credits.') {
+                setIsCreditsDialogOpen(true);
+            } else {
+                toast({ title: "Erro na Compra", description: result.error || "Não foi possível registrar seu bilhete.", variant: "destructive" });
+            }
         }
 
-        // Deduct credits
-        await updateCurrentUserCredits((currentUser.saldo || 0) - ticketCost);
-
-        setCurrentPicks([]);
-        setReceiptTicket(finalTicket); // Set ticket to show receipt
-        
-        toast({ title: "Bilhete Adicionado!", description: "Boa sorte! Seu comprovante foi gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
-
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        toast({ title: "Erro ao Salvar", description: "Não foi possível salvar seu bilhete. Tente novamente.", variant: "destructive" });
+    } catch (e: any) {
+        console.error("Error calling buyTicket flow: ", e);
+        toast({ title: "Erro Inesperado", description: "Ocorreu um erro de comunicação com o servidor.", variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
@@ -176,7 +163,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
                   key={animal.number}
                   number={animal.number}
                   onClick={handleNumberClick}
-                  disabled={(numberCounts[animal.number] || 0) >= MAX_REPETITION || currentPicks.length >= MAX_PICKS}
+                  disabled={isSubmitting || (numberCounts[animal.number] || 0) >= MAX_REPETITION || currentPicks.length >= MAX_PICKS}
                   isSelected={currentPicks.includes(animal.number)}
                   countInSelection={numberCounts[animal.number] || 0}
                 />
@@ -223,5 +210,3 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     </>
   );
 };
-
-    

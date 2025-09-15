@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FC } from 'react';
@@ -16,8 +15,7 @@ import type { Ticket, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
-import { collection, addDoc } from "firebase/firestore";
-import { db } from '@/lib/firebase';
+import { buyTicket } from '@/ai/flows/buy-ticket-flow';
 
 interface SellerTicketCreationFormProps {
   isLotteryPaused?: boolean;
@@ -104,46 +102,40 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
       return;
     }
     
-    const ticketCost = lotteryConfig.ticketPrice;
-    if ((currentUser.saldo || 0) < ticketCost) {
-        setIsCreditsDialogOpen(true);
-        return;
-    }
-
     setIsSubmitting(true);
     
     try {
-      const newTicketData = {
+      const result = await buyTicket({
+        userId: currentUser.id,
         numbers: [...currentPicks].sort((a,b) => a-b),
-        status: 'active' as const,
-        createdAt: new Date().toISOString(),
         buyerName: buyerName.trim(),
         buyerPhone: buyerPhone.trim(),
-        sellerUsername: currentUser.username,
-        sellerId: currentUser.id, // Associate with seller ID
-      };
+      });
 
-      const docRef = await addDoc(collection(db, "tickets"), newTicketData);
-      
-      const finalTicket: Ticket = {
-        id: docRef.id,
-        ...newTicketData,
-      };
+      if (result.success && result.ticket && result.newBalance !== undefined) {
+         updateCurrentUserCredits(result.newBalance);
 
-      // Deduct credits from seller
-      await updateCurrentUserCredits((currentUser.saldo || 0) - ticketCost);
+         // The onTicketCreated prop might not be needed anymore if the parent component
+         // is already listening to Firestore for real-time updates.
+         // onTicketCreated(result.ticket);
 
-      onTicketCreated(finalTicket);
-      setCurrentPicks([]);
-      setBuyerName('');
-      setBuyerPhone('');
-      setReceiptTicket(finalTicket);
+         setCurrentPicks([]);
+         setBuyerName('');
+         setBuyerPhone('');
+         setReceiptTicket(result.ticket);
 
-      toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+         toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
+      } else {
+        if (result.error === 'Insufficient credits.') {
+          setIsCreditsDialogOpen(true);
+        } else {
+          toast({ title: "Erro ao Vender", description: result.error || "Não foi possível registrar a venda.", variant: "destructive" });
+        }
+      }
 
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      toast({ title: "Erro ao Salvar", description: "Não foi possível registrar a venda. Tente novamente.", variant: "destructive" });
+    } catch (e: any) {
+      console.error("Error calling buyTicket flow: ", e);
+      toast({ title: "Erro Inesperado", description: "Ocorreu um erro de comunicação com o servidor.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -263,5 +255,3 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     </>
   );
 };
-
-    

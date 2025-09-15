@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -8,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -18,7 +17,7 @@ interface AuthContextType {
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<boolean>;
   isLoading: boolean;
   isAuthenticated: boolean;
-  updateCurrentUserCredits: (newCredits: number) => void;
+  updateCurrentUserCredits: (newCredits: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,60 +40,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const isLoading = authLoading || isFirestoreLoading;
   
-  const fetchUserDocument = useCallback(async (user: import('firebase/auth').User) => {
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-            return userDoc.data() as User;
-        }
-    } catch (e) {
-        console.error("Error fetching user document: ", e);
-    }
-    return null;
-  }, []);
-
+  // This useEffect handles listening for real-time updates to the current user's document
   useEffect(() => {
-    const checkUser = async () => {
-      if (authLoading) {
-        setIsFirestoreLoading(true);
-        return;
-      }
-      if (authError) {
-        console.error("Firebase Auth Error:", authError);
-        toast({ title: "Erro de Autenticação", description: "Ocorreu um problema ao verificar sua identidade.", variant: "destructive"});
-        setCurrentUser(null);
-        setIsFirestoreLoading(false);
-        return;
-      }
-      if (firebaseUser) {
-        const userData = await fetchUserDocument(firebaseUser);
-        if (userData) {
-          setCurrentUser(userData);
-          const redirectPath = searchParams.get('redirect');
-          if (redirectPath) {
-             if ((redirectPath.includes('admin') && userData.role !== 'admin') ||
-                (redirectPath.includes('cliente') && userData.role !== 'cliente') ||
-                (redirectPath.includes('vendedor') && userData.role !== 'vendedor')) 
-             {
-                toast({ title: "Acesso Negado", description: `Você não tem permissão para acessar essa área.`, variant: "destructive" });
-                router.push('/'); 
-             } else {
-                router.push(redirectPath);
-             }
-          }
+    if (firebaseUser) {
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const unsubscribe = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setCurrentUser(doc.data() as User);
         } else {
-          toast({ title: "Erro de Perfil", description: "Não foi possível encontrar os dados do seu perfil.", variant: "destructive" });
-          await signOut(auth);
+          // This case might happen if the user is deleted from Firestore but not from Auth
           setCurrentUser(null);
         }
-      } else {
-        setCurrentUser(null);
-      }
+        if(isFirestoreLoading) setIsFirestoreLoading(false);
+      }, (error) => {
+        console.error("Error listening to user document:", error);
+        toast({ title: "Erro de Conexão", description: "Não foi possível sincronizar seus dados.", variant: "destructive" });
+        setIsFirestoreLoading(false);
+      });
+
+      return () => unsubscribe(); // Cleanup the listener on unmount or user change
+    } else {
+      // No firebaseUser, so not loading and no current user
+      setCurrentUser(null);
       setIsFirestoreLoading(false);
-    };
-    checkUser();
-  }, [firebaseUser, authLoading, authError, toast, router, searchParams, fetchUserDocument]);
+    }
+  }, [firebaseUser, toast, isFirestoreLoading]);
+
+  // This useEffect handles the initial auth check and redirection logic
+  useEffect(() => {
+    if (authLoading) return; // Wait until Firebase Auth is ready
+
+    if (authError) {
+      console.error("Firebase Auth Error:", authError);
+      toast({ title: "Erro de Autenticação", description: "Ocorreu um problema ao verificar sua identidade.", variant: "destructive"});
+      return;
+    }
+
+    if (firebaseUser && currentUser) { // Check both Firebase user and Firestore data
+        const redirectPath = searchParams.get('redirect');
+        if (redirectPath) {
+            if ((redirectPath.includes('admin') && currentUser.role !== 'admin') ||
+              (redirectPath.includes('cliente') && currentUser.role !== 'cliente') ||
+              (redirectPath.includes('vendedor') && currentUser.role !== 'vendedor')) 
+            {
+              toast({ title: "Acesso Negado", description: `Você não tem permissão para acessar essa área.`, variant: "destructive" });
+              router.push('/'); 
+            } else {
+              router.push(redirectPath);
+            }
+        }
+    }
+  }, [firebaseUser, currentUser, authLoading, authError, router, searchParams, toast]);
 
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin'): Promise<boolean> => {
@@ -104,15 +100,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
      try {
         const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
         const fbUser = userCredential.user;
-        const userData = await fetchUserDocument(fbUser);
         
-        if (userData && expectedRole && userData.role !== expectedRole) {
-            toast({ title: "Acesso Negado", description: `As credenciais são válidas, mas não para um perfil de ${expectedRole}.`, variant: "destructive" });
-            await signOut(auth); // Sign out the user
-            return false;
+        // After sign-in, we need to fetch the user doc to check the role
+        const userDocRef = doc(db, "users", fbUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as User;
+          if (expectedRole && userData.role !== expectedRole) {
+              toast({ title: "Acesso Negado", description: `As credenciais são válidas, mas não para um perfil de ${expectedRole}.`, variant: "destructive" });
+              await signOut(auth); // Sign out the user
+              return false;
+          }
+        } else {
+          // This should ideally not happen if registration is done correctly
+          toast({ title: "Erro de Login", description: "Dados do usuário não encontrados.", variant: "destructive" });
+          await signOut(auth);
+          return false;
         }
 
-        // The useEffect will now handle setting the user and redirecting.
+        // The useEffects will now handle setting the user state and redirecting.
         return true;
      } catch (error: any) {
         console.error("Firebase login error:", error);
@@ -123,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return false;
      }
-  }, [toast, fetchUserDocument]);
+  }, [toast]);
 
   const logout = useCallback(async () => {
     try {
@@ -177,19 +184,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   const updateCurrentUserCredits = async (newCredits: number) => {
+    // This function can now just update the local state.
+    // The server is the source of truth, and the onSnapshot listener will
+    // automatically catch the update from the server transaction.
+    // However, for immediate UI feedback, we can optimistically update the state.
     if (currentUser) {
-      const userDocRef = doc(db, "users", currentUser.id);
-      try {
-        await updateDoc(userDocRef, { saldo: newCredits });
-        setCurrentUser({ ...currentUser, saldo: newCredits });
-      } catch (error) {
-        console.error("Error updating user credits in Firestore:", error);
-        toast({ title: "Erro", description: "Não foi possível atualizar seu saldo.", variant: "destructive" });
-      }
+      setCurrentUser({ ...currentUser, saldo: newCredits });
+      // No need to write to Firestore here, the server flow does it.
     }
   };
 
-  const isAuthenticated = !isLoading && !!currentUser;
+  const isAuthenticated = !isLoading && !!currentUser && !!firebaseUser;
   
   const value = { currentUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 
