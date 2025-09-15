@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -18,13 +19,12 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with offline persistence, but only on the client-side.
+// This prevents server-side rendering errors.
 const db = typeof window !== 'undefined'
   ? initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: 'MEMORY' })
+      localCache: persistentLocalCache(/* No parameters needed here */)
     })
-  : initializeFirestore(app, {
-      localCache: memoryLocalCache()
-  });
+  : getFirestore(app); // Use a simpler initialization for the server.
 
 const auth = getAuth(app);
 
