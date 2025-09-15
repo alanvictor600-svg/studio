@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, writeBatch, query, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -123,6 +123,8 @@ export default function AdminPage() {
         }
     }
 
+    if (!currentUser) return;
+
     // Realtime data from Firestore
     const ticketsQuery = query(collection(db, 'tickets'));
     const drawsQuery = query(collection(db, 'draws'));
@@ -158,7 +160,7 @@ export default function AdminPage() {
         unsubscribeDraws();
         unsubscribeUsers();
     };
-  }, [toast]);
+  }, [isClient, currentUser]);
 
   // Auth check
   useEffect(() => {
@@ -302,29 +304,32 @@ export default function AdminPage() {
     captureAndSaveSellerHistory();
     captureAndSaveAdminHistory();
   
-    // Expire active/winning tickets in Firestore
-    const batch = writeBatch(db);
-    allTickets.forEach(ticket => {
-        if (ticket.status === 'active' || ticket.status === 'winning' || ticket.status === 'unpaid') {
-            const ticketRef = doc(db, 'tickets', ticket.id);
-            batch.update(ticketRef, { status: 'expired' });
-        }
-    });
-
-    // Clear draws in Firestore
-    draws.forEach(draw => {
-        const drawRef = doc(db, 'draws', draw.id);
-        batch.delete(drawRef);
-    });
-
     try {
+        const batch = writeBatch(db);
+
+        // Expire active/winning/unpaid tickets
+        allTickets.forEach(ticket => {
+            if (ticket.status === 'active' || ticket.status === 'winning' || ticket.status === 'unpaid') {
+                const ticketRef = doc(db, 'tickets', ticket.id);
+                batch.update(ticketRef, { status: 'expired' });
+            }
+        });
+
+        // Clear draws by fetching all and deleting them in the same batch
+        const drawsSnapshot = await getDocs(query(collection(db, 'draws')));
+        drawsSnapshot.forEach(drawDoc => {
+            batch.delete(drawDoc.ref);
+        });
+
         await batch.commit();
+
         toast({
           title: "Nova Loteria Iniciada!",
           description: "Sorteios e bilhetes ativos/premiados foram resetados/expirados.",
           className: "bg-primary text-primary-foreground",
           duration: 3000,
         });
+
     } catch (e) {
         console.error("Error starting new lottery: ", e);
         toast({ title: "Erro", description: "Falha ao iniciar nova loteria no banco de dados.", variant: "destructive" });
@@ -1048,3 +1053,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
