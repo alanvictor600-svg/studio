@@ -20,13 +20,17 @@ if (!getApps().length) {
   // IMPORTANT: This service account setup is for demonstration.
   // In a production environment, use environment variables or a secrets manager.
   // The service-account.json file should be secured and not committed to your repository.
-  try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } catch(e) {
-      console.error("Could not initialize Firebase Admin SDK. Make sure FIREBASE_SERVICE_ACCOUNT_KEY is set.", e);
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        initializeApp({
+          credential: cert(serviceAccount),
+        });
+      } catch(e) {
+          console.error("Could not initialize Firebase Admin SDK. Make sure FIREBASE_SERVICE_ACCOUNT_KEY is set and is valid JSON.", e);
+      }
+  } else {
+      console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK not initialized.");
   }
 }
 
@@ -60,6 +64,14 @@ const buyTicketFlow = ai.defineFlow(
     outputSchema: BuyTicketOutputSchema,
   },
   async (input) => {
+    // Ensure admin is initialized before proceeding
+    if (!getApps().length) {
+        return {
+            success: false,
+            error: "Firebase Admin SDK is not initialized. Check server configuration.",
+        };
+    }
+      
     const lotteryConfig = getLotteryConfig(); // This is currently sync, reading from a static source.
     const ticketPrice = lotteryConfig.ticketPrice;
     
