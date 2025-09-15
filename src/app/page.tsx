@@ -28,7 +28,8 @@ export default function LandingPage() {
   const router = useRouter();
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isLoginPopoverOpen, setIsLoginPopoverOpen] = useState(false);
+  const [isAdminPopoverOpen, setIsAdminPopoverOpen] = useState(false);
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +65,7 @@ export default function LandingPage() {
 
   const handlePainelClick = () => {
     if (!currentUser) {
+        // This case should ideally not be reached if the button is only shown for logged-in users
         router.push('/login');
         return;
     }
@@ -81,29 +83,13 @@ export default function LandingPage() {
             router.push('/login');
     }
   };
-  
-  const handleVendedorClick = () => {
-     if (currentUser && currentUser.role === 'vendedor') {
-      router.push('/vendedor');
-    } else {
-      router.push('/login?redirect=/vendedor');
-    }
-  };
-
-  const handleClienteClick = () => {
-    if (currentUser && currentUser.role === 'cliente') {
-      router.push('/cliente');
-    } else {
-      router.push('/login?redirect=/cliente');
-    }
-  };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsAdminLoginLoading(true);
       await login(adminUsername, adminPassword, 'admin');
       setIsAdminLoginLoading(false);
-      setIsPopoverOpen(false);
+      setIsAdminPopoverOpen(false);
       setAdminUsername('');
       setAdminPassword('');
   };
@@ -125,11 +111,35 @@ export default function LandingPage() {
                   <LayoutDashboard className="mr-2 h-5 w-5" /> Ir para o meu Painel
               </Button>
           ) : (
-            <Link href="/login" passHref>
+            <Popover open={isLoginPopoverOpen} onOpenChange={setIsLoginPopoverOpen}>
+              <PopoverTrigger asChild>
                 <Button className="shadow-lg">
-                    <LogIn className="mr-2 h-5 w-5" /> Entrar ou Cadastrar
+                    <LogIn className="mr-2 h-5 w-5" /> Acessar Plataforma
                 </Button>
-            </Link>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Escolha seu Acesso</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Selecione como você quer entrar na plataforma.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Button onClick={() => router.push('/login?redirect=/cliente')}>
+                        <Users className="mr-2 h-4 w-4" /> Entrar como Cliente
+                    </Button>
+                     <Button variant="secondary" onClick={() => router.push('/login?redirect=/vendedor')}>
+                        <ShoppingCart className="mr-2 h-4 w-4" /> Entrar como Vendedor
+                    </Button>
+                    <Separator />
+                     <Button variant="link" size="sm" className="h-auto py-1 px-2" onClick={() => { setIsLoginPopoverOpen(false); setIsAdminPopoverOpen(true); }}>
+                        <ShieldCheck className="mr-2 h-4 w-4" /> Painel do Admin
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
        </div>
 
@@ -182,55 +192,18 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center">
+          <div className="text-center py-10 bg-card/80 backdrop-blur-sm rounded-lg shadow-inner">
             <h2 className="text-2xl font-bold text-primary text-center mb-4">A loteria ainda não começou!</h2>
-            <p className="text-muted-foreground mb-8">Escolha um perfil abaixo para começar.</p>
+            <p className="text-muted-foreground mb-8">Acesse a plataforma para começar a jogar ou vender.</p>
           </div>
-        )}
-
-        {!currentUser && (
-          <>
-            <Separator className="my-12" />
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-foreground mb-2">Acesse sua Conta</h3>
-              <p className="text-muted-foreground mb-8">Escolha seu perfil para comprar ou vender bilhetes.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl mx-auto">
-              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="items-center text-center">
-                  <Users className="w-12 h-12 text-primary mb-2" />
-                  <CardTitle className="text-2xl">Acessar como Cliente</CardTitle>
-                  <CardDescription>Compre e gerencie seus bilhetes.</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={handleClienteClick} className="w-full">
-                      Entrar como Cliente <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="items-center text-center">
-                  <ShoppingCart className="w-12 h-12 text-secondary mb-2" />
-                  <CardTitle className="text-2xl">Acessar como Vendedor</CardTitle>
-                  <CardDescription>Venda bilhetes e acompanhe seu desempenho.</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button onClick={handleVendedorClick} variant="secondary" className="w-full">
-                    Entrar como Vendedor <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          </>
         )}
       </main>
 
       <div className="fixed bottom-6 left-6 z-50">
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <Popover open={isAdminPopoverOpen} onOpenChange={setIsAdminPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" aria-label="Opções de Administrador" className="shadow-lg rounded-full">
-              <Settings className="h-5 w-5" />
-            </Button>
+             {/* This trigger is now just a placeholder. The popover is controlled by state. */}
+            <button aria-label="Abrir login do admin" className="sr-only" />
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <form onSubmit={handleAdminLogin}>
