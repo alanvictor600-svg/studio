@@ -37,7 +37,7 @@ export default function LandingPage() {
   useEffect(() => {
     setIsClient(true);
     
-    // Sorteios são públicos, qualquer um pode carregar
+    // Sorteios e bilhetes são públicos para a página inicial
     const drawsQuery = query(collection(db, 'draws'));
     const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
         const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
@@ -47,27 +47,21 @@ export default function LandingPage() {
         toast({ title: "Erro ao Carregar Sorteios", description: "Não foi possível carregar os dados dos sorteios.", variant: "destructive" });
     });
 
-    // Bilhetes são privados, carregue apenas se o usuário estiver logado
-    let unsubscribeTickets = () => {};
-    if (currentUser) {
-        const ticketsQuery = query(collection(db, 'tickets'));
-        unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-            const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-            setAllTickets(ticketsData);
-        }, (error) => {
-            console.error("Error fetching tickets: ", error);
-            // Não mostre toast de erro aqui, pode ser apenas falta de permissão momentânea
-        });
-    } else {
-        // Limpa os bilhetes se o usuário deslogar
-        setAllTickets([]);
-    }
+    const ticketsQuery = query(collection(db, 'tickets'));
+    const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+        const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+        setAllTickets(ticketsData);
+    }, (error) => {
+        console.error("Error fetching tickets: ", error);
+        // Não mostre toast aqui, pois as regras de segurança podem bloquear inicialmente.
+    });
+
 
     return () => {
         unsubscribeDraws();
         unsubscribeTickets();
     };
-  }, [toast, currentUser]);
+  }, [toast]);
 
   const handlePainelClick = () => {
     if (!currentUser) {
@@ -116,9 +110,35 @@ export default function LandingPage() {
                   <LayoutDashboard className="mr-2 h-5 w-5" /> Ir para o meu Painel
               </Button>
           ) : (
-              <Button onClick={() => router.push('/login')} className="shadow-lg">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button className="shadow-lg">
                   <LogIn className="mr-2 h-5 w-5" /> Entrar ou Cadastrar
-              </Button>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none text-primary">Acessar Plataforma</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Escolha seu tipo de acesso para continuar.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Button asChild variant="outline">
+                      <Link href="/login?redirect=/cliente">
+                        <Users className="mr-2 h-4 w-4" /> Acessar como Cliente
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline">
+                      <Link href="/login?redirect=/vendedor">
+                        <ShoppingCart className="mr-2 h-4 w-4" /> Acessar como Vendedor
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
        </div>
 
@@ -174,47 +194,6 @@ export default function LandingPage() {
                 <Award className="mr-3 h-6 w-6" /> Acertos
             </h2>
             <TopTickets tickets={allTickets} draws={draws} />
-          </div>
-        </div>
-
-        <div className="text-center py-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <Link href="/login?redirect=/cliente" passHref>
-              <Card className="text-left hover:bg-muted/50 transition-colors shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary">
-                    <Users className="mr-3 h-6 w-6" />
-                    Acessar como Cliente
-                  </CardTitle>
-                  <CardDescription>
-                    Compre bilhetes, confira seus jogos e veja os resultados.
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button variant="link" className="p-0 h-auto">
-                    Entrar na sua conta de cliente <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Link>
-            <Link href="/login?redirect=/vendedor" passHref>
-              <Card className="text-left hover:bg-muted/50 transition-colors shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-secondary-foreground">
-                    <ShoppingCart className="mr-3 h-6 w-6 text-secondary" />
-                    Acessar como Vendedor
-                  </CardTitle>
-                  <CardDescription>
-                    Venda bilhetes, gerencie suas vendas e acompanhe suas comissões.
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                   <Button variant="link" className="p-0 h-auto">
-                    Entrar no painel de vendas <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Link>
           </div>
         </div>
         
@@ -303,3 +282,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
