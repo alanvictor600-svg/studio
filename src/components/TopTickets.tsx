@@ -4,7 +4,7 @@
 import type { FC } from 'react';
 import { useMemo, useState, useEffect } from 'react';
 import type { Ticket, Draw } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { calculateTicketMatches, countOccurrences } from '@/lib/lottery-utils';
 import { Trophy, User, ShoppingCart, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -13,25 +13,49 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TopTicketsProps {
   draws: Draw[];
 }
 
+const TicketSkeleton: FC = () => (
+  <li className="relative p-3 rounded-lg bg-background/70 shadow-sm border pb-8">
+    <div className="flex items-start gap-4">
+      <div className="flex-grow min-w-0">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded-full" />
+          <Skeleton className="h-5 w-2/3" />
+        </div>
+      </div>
+      <Skeleton className="h-7 w-20 rounded-full" />
+    </div>
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} className="h-5 w-8 rounded-full" />
+        ))}
+      </div>
+    </div>
+  </li>
+);
+
+
 export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const ticketsQuery = query(collection(db, 'tickets'));
     const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
         setAllTickets(ticketsData);
+        setIsLoading(false);
     }, (error) => {
-        // This error might be expected for non-logged-in users if rules are strict
-        // We can handle it silently or show a message if needed.
         console.error("Error fetching tickets for TopTickets: ", error.message);
         setAllTickets([]); // Clear tickets on permission error
+        setIsLoading(false);
     });
 
     return () => unsubscribeTickets();
@@ -39,7 +63,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
 
 
   const rankedTickets = useMemo(() => {
-    if (!allTickets || !draws || draws.length === 0) {
+    if (isLoading || !allTickets || !draws || draws.length === 0) {
       return [];
     }
     
@@ -58,7 +82,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
     });
 
     return sortedTickets;
-  }, [allTickets, draws]);
+  }, [allTickets, draws, isLoading]);
 
   const filteredTickets = useMemo(() => {
     if (!searchTerm) {
@@ -76,6 +100,25 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
     }
     return countOccurrences(draws.flatMap(draw => draw.numbers));
   }, [draws]);
+
+  if (isLoading) {
+    return (
+       <Card className="h-full flex flex-col">
+          <CardHeader className="p-4 border-b">
+            <Skeleton className="h-9 w-full" />
+          </CardHeader>
+          <CardContent className="p-0 flex-grow">
+            <ScrollArea className="h-80 rounded-md">
+              <ul className="p-4 space-y-3">
+                <TicketSkeleton />
+                <TicketSkeleton />
+                <TicketSkeleton />
+              </ul>
+            </ScrollArea>
+          </CardContent>
+       </Card>
+    );
+  }
 
   if (rankedTickets.length === 0) {
     return (
