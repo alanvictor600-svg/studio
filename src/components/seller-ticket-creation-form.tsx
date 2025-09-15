@@ -16,7 +16,7 @@ import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase';
-import { runTransaction, doc, collection, serverTimestamp } from 'firebase/firestore';
+import { runTransaction, doc, collection } from 'firebase/firestore';
 
 
 interface SellerTicketCreationFormProps {
