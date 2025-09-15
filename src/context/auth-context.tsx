@@ -23,6 +23,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to sanitize username for Firebase email compatibility
+const sanitizeUsernameForEmail = (username: string) => {
+    // Firebase emails are sensitive. Let's allow letters, numbers, and specific chars.
+    // Replace any character that is NOT a letter, number, period, underscore, or hyphen.
+    return username.trim().replace(/[^a-zA-Z0-9_.-]/g, '');
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
@@ -35,8 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const checkUser = async () => {
-      if (authLoading) {
-        setIsFirestoreLoading(true);
+      if (isLoading) {
         return;
       }
       if (authError) {
@@ -48,50 +55,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
-        // User is signed in with Firebase. Now, fetch their profile from Firestore.
         const userDocRef = doc(db, "users", firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           setCurrentUser(userDoc.data() as User);
         } else {
-          // This case is unlikely if registration is handled correctly, but good to have.
-          // It means user exists in Firebase Auth but not in Firestore 'users' collection.
           toast({ title: "Erro de Perfil", description: "Não foi possível encontrar os dados do seu perfil.", variant: "destructive" });
-          auth.signOut(); // Log out the user
+          auth.signOut();
           setCurrentUser(null);
         }
       } else {
-        // No user is signed in with Firebase.
         setCurrentUser(null);
       }
       setIsFirestoreLoading(false);
     };
 
     checkUser();
-  }, [firebaseUser, authLoading, authError, toast]);
+  }, [firebaseUser, authLoading, authError, toast, isLoading]);
 
 
   const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin'): Promise<boolean> => {
-     const trimmedUsername = username.trim();
-     const fakeEmail = `${trimmedUsername}@bolao.potiguar`;
+     const sanitizedUsername = sanitizeUsernameForEmail(username);
+     const fakeEmail = `${sanitizedUsername}@bolao.potiguar`;
 
      try {
         const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
         const loggedInUser = userCredential.user;
 
-        // The useEffect will handle setting the currentUser based on the Firebase auth state change
-        // But we can check the role here for immediate redirection logic.
         const userDocRef = doc(db, "users", loggedInUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
             const userData = userDoc.data() as User;
             
-            // Role verification
             if (expectedRole && userData.role !== expectedRole) {
                 toast({ title: "Acesso Negado", description: `Você não tem permissão para acessar a área de ${expectedRole}.`, variant: "destructive" });
-                await signOut(auth); // Sign out the user
+                await signOut(auth);
                 return false;
             }
 
@@ -101,7 +101,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (redirectPath) {
                 router.push(redirectPath);
             } else {
-                // Default redirect based on role
                 switch(userData.role) {
                     case 'admin': router.push('/admin'); break;
                     case 'cliente': router.push('/cliente'); break;
@@ -111,7 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             return true;
         } else {
-            // Should not happen if data is consistent
             toast({ title: "Erro de Login", description: "Dados do usuário não encontrados.", variant: "destructive" });
             await signOut(auth);
             return false;
@@ -130,7 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // The useEffect will handle setting currentUser to null automatically.
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
     } catch (error) {
@@ -140,26 +137,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast]);
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor'): Promise<boolean> => {
-    const trimmedUsername = username.trim();
-    const fakeEmail = `${trimmedUsername}@bolao.potiguar`; // Firebase requires an email for auth
-
-    // Check if a user with this username (and thus fake email) already exists in Firestore.
-    // This is a more robust check than relying solely on Firebase Auth errors.
-    // Note: This requires an index in Firestore for production apps to be efficient. 
-    // For this prototype, it's fine.
+    const sanitizedUsername = sanitizeUsernameForEmail(username);
+    if(sanitizedUsername !== username.trim()){
+        toast({ title: "Nome de Usuário Inválido", description: "Seu nome de usuário contém caracteres não permitidos e foi ajustado.", variant: "default" });
+    }
+    const fakeEmail = `${sanitizedUsername}@bolao.potiguar`;
 
     try {
-        // 1. Create user in Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passwordRaw);
         const newFirebaseUser = userCredential.user;
 
-        // 2. Create user profile in Firestore
         const newUser: User = {
-            id: newFirebaseUser.uid, // Use Firebase UID as the unique ID
-            username: trimmedUsername,
+            id: newFirebaseUser.uid,
+            username: sanitizedUsername, // Save the sanitized username
             role,
             createdAt: new Date().toISOString(),
-            saldo: role === 'cliente' ? 50 : 0, // Give new clients a starting balance
+            saldo: role === 'cliente' ? 50 : 0,
         };
         
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);

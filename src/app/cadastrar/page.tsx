@@ -64,7 +64,7 @@ export default function CadastroPage() {
     }
     
     // The register function now handles navigation on success.
-    await register(username.trim(), password, role);
+    await register(username, password, role);
   };
   
   if (authLoading) {
