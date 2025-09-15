@@ -27,7 +27,6 @@ export default function LandingPage() {
   const router = useRouter();
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,14 +36,12 @@ export default function LandingPage() {
   useEffect(() => {
     setIsClient(true);
     
-    // Sorteios e bilhetes são públicos para a página inicial
     const drawsQuery = query(collection(db, 'draws'));
     const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
         const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
         setDraws(drawsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     }, (error) => {
         console.error("Error fetching draws: ", error);
-        // Não mostre toast aqui, pois as regras de segurança podem bloquear inicialmente.
     });
 
     const ticketsQuery = query(collection(db, 'tickets'));
@@ -53,7 +50,6 @@ export default function LandingPage() {
         setAllTickets(ticketsData);
     }, (error) => {
         console.error("Error fetching tickets: ", error);
-        // Não mostre toast aqui, pois as regras de segurança podem bloquear inicialmente.
     });
 
 
@@ -61,7 +57,7 @@ export default function LandingPage() {
         unsubscribeDraws();
         unsubscribeTickets();
     };
-  }, [toast]);
+  }, []);
 
   const handlePainelClick = () => {
     if (!currentUser) {
@@ -88,7 +84,7 @@ export default function LandingPage() {
       setIsAdminLoginLoading(true);
       await login(adminUsername, adminPassword, 'admin');
       setIsAdminLoginLoading(false);
-      setIsPopoverOpen(false);
+      // O Popover se fechará sozinho ao clicar fora. Resetamos os campos para a próxima vez.
       setAdminUsername('');
       setAdminPassword('');
   };
@@ -200,7 +196,7 @@ export default function LandingPage() {
       </main>
 
       <div className="fixed bottom-6 left-6 z-50">
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <Popover>
           <PopoverTrigger asChild>
             <TooltipProvider>
                 <Tooltip>
