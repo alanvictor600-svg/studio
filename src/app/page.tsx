@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -58,10 +59,10 @@ export default function LandingPage() {
             router.push('/admin');
             break;
         case 'cliente':
-            router.push('/cliente');
+            router.push('/dashboard/cliente');
             break;
         case 'vendedor':
-            router.push('/vendedor');
+            router.push('/dashboard/vendedor');
             break;
         default:
             router.push('/login');
@@ -110,12 +111,12 @@ export default function LandingPage() {
                   </div>
                   <div className="grid gap-2">
                     <Button asChild variant="outline">
-                      <Link href="/login?redirect=/cliente">
+                      <Link href="/login?redirect=/dashboard/cliente">
                         <Users className="mr-2 h-4 w-4" /> Acessar como Cliente
                       </Link>
                     </Button>
                     <Button asChild variant="outline">
-                      <Link href="/login?redirect=/vendedor">
+                      <Link href="/login?redirect=/dashboard/vendedor">
                         <ShoppingCart className="mr-2 h-4 w-4" /> Acessar como Vendedor
                       </Link>
                     </Button>
@@ -257,4 +258,5 @@ export default function LandingPage() {
     </div>
   );
     
+
 

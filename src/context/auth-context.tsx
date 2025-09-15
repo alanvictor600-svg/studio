@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -101,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
            if (redirectPath) {
              router.push(redirectPath);
            } else {
-             router.push(userData.role === 'admin' ? '/admin' : userData.role === 'vendedor' ? '/vendedor' : '/cliente');
+             router.push(userData.role === 'admin' ? '/admin' : userData.role === 'vendedor' ? '/dashboard/vendedor' : '/dashboard/cliente');
            }
         } else {
           // This case should be rare if registration is solid, but good to handle.
