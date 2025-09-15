@@ -79,10 +79,12 @@ export default function DashboardPage() {
 
       // After determining lottery status, fetch and process user tickets
       const idField = role === 'cliente' ? 'buyerId' : 'sellerId';
-      const ticketsQuery = query(collection(db, 'tickets'), where(idField, '==', currentUser.id), orderBy('createdAt', 'desc'));
+      const ticketsQuery = query(collection(db, 'tickets'), where(idField, '==', currentUser.id));
       const unsubscribeTickets = onSnapshot(ticketsQuery, (ticketSnapshot) => {
         const userTicketsData = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-        const updatedUserTickets = updateTicketStatusesBasedOnDraws(userTicketsData, drawsData);
+        // Sort tickets client-side to avoid composite index requirement
+        const sortedTickets = userTicketsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const updatedUserTickets = updateTicketStatusesBasedOnDraws(sortedTickets, drawsData);
         setUserTickets(updatedUserTickets);
         setIsDataLoading(false);
       }, (error) => {
@@ -150,4 +152,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
