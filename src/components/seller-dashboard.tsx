@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, type FC } from 'react';
-import type { Ticket, LotteryConfig, SellerHistoryEntry, User } from '@/types';
+import type { Ticket, LotteryConfig, SellerHistoryEntry, User, Draw } from '@/types';
 import { SellerTicketCreationForm } from '@/components/seller-ticket-creation-form';
 import { TicketList } from '@/components/ticket-list';
 import { Ticket as TicketIcon } from 'lucide-react';
@@ -14,6 +14,7 @@ interface SellerDashboardProps {
     onTicketCreated: (ticket: Ticket) => void;
     userTickets: Ticket[];
     currentUser: User | null;
+    allDraws: Draw[];
 }
 
 export const SellerDashboard: FC<SellerDashboardProps> = ({ 
@@ -21,7 +22,8 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
     lotteryConfig,
     onTicketCreated,
     userTickets,
-    currentUser
+    currentUser,
+    allDraws,
 }) => {
     
     return (
@@ -36,7 +38,7 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
                     <TicketIcon className="mr-3 h-6 w-6" />
                     Meus Bilhetes Vendidos (Ciclo Atual)
                 </h2>
-                <TicketList tickets={userTickets} />
+                <TicketList tickets={userTickets} draws={allDraws} />
             </section>
         </div>
     );

@@ -4,12 +4,12 @@
 import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { User, LotteryConfig, Ticket } from '@/types';
+import type { User, LotteryConfig, Ticket, Draw } from '@/types';
 
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
-import { SellerDashboard } from '@/components/seller-dashboard'; // Import the new seller dashboard
+import { SellerDashboard } from '@/components/seller-dashboard';
 import { TicketList } from '@/components/ticket-list';
-import { doc, onSnapshot, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
@@ -32,6 +32,7 @@ export default function DashboardPage() {
   const [userTickets, setUserTickets] = useState<Ticket[]>([]);
   const [isLotteryPaused, setIsLotteryPaused] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [allDraws, setAllDraws] = useState<Draw[]>([]);
 
   // Validate the role from the URL
   useEffect(() => {
@@ -48,7 +49,6 @@ export default function DashboardPage() {
     
     setIsDataLoading(true);
 
-    // Fetch global lottery config
     const configDocRef = doc(db, 'configs', 'global');
     const unsubscribeConfig = onSnapshot(configDocRef, (doc) => {
       if (doc.exists()) {
@@ -65,54 +65,50 @@ export default function DashboardPage() {
       toast({ title: "Erro de Configuração", description: "Não foi possível carregar as configurações da loteria.", variant: "destructive" });
     });
 
-    // Fetch draws to check if lottery is paused (has winning tickets)
     const drawsQuery = query(collection(db, 'draws'));
-    const unsubscribeDraws = onSnapshot(drawsQuery, async (drawsSnapshot) => {
-      const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    const unsubscribeDraws = onSnapshot(drawsQuery, (drawsSnapshot) => {
+      const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
+      setAllDraws(drawsData);
       
-      // We need all tickets to determine if there are winners globally
-      const allTicketsSnapshot = await getDocs(query(collection(db, 'tickets')));
-      const allTicketsData = allTicketsSnapshot.docs.map(t => ({ id: t.id, ...t.data() } as Ticket));
-      const processedTickets = updateTicketStatusesBasedOnDraws(allTicketsData, drawsData);
-      const hasWinningTickets = processedTickets.some(t => t.status === 'winning');
+      const allTicketsQuery = query(collection(db, 'tickets'));
+      onSnapshot(allTicketsQuery, (allTicketsSnapshot) => {
+        const allTicketsData = allTicketsSnapshot.docs.map(t => ({ id: t.id, ...t.data() } as Ticket));
+        const processedTickets = updateTicketStatusesBasedOnDraws(allTicketsData, drawsData);
+        const hasWinningTickets = processedTickets.some(t => t.status === 'winning');
+        setIsLotteryPaused(hasWinningTickets);
+      });
 
-      setIsLotteryPaused(hasWinningTickets);
+    }, (error) => {
+      console.error("Error fetching draws for pause check: ", error);
+    });
 
-      // After determining lottery status, fetch and process user tickets
-      const idField = role === 'cliente' ? 'buyerId' : 'sellerId';
-      const ticketsQuery = query(collection(db, 'tickets'), where(idField, '==', currentUser.id));
+    const idField = role === 'cliente' ? 'buyerId' : 'sellerId';
+    const ticketsQuery = query(
+        collection(db, 'tickets'), 
+        where(idField, '==', currentUser.id)
+    );
       
-      const unsubscribeTickets = onSnapshot(ticketsQuery, (ticketSnapshot) => {
+    const unsubscribeTickets = onSnapshot(ticketsQuery, (ticketSnapshot) => {
         const userTicketsData = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
         const sortedTickets = userTicketsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        const updatedUserTickets = updateTicketStatusesBasedOnDraws(sortedTickets, drawsData);
-        setUserTickets(updatedUserTickets);
+        // We will update the status on the client side based on the latest draws
+        setUserTickets(sortedTickets);
         setIsDataLoading(false);
-      }, (error) => {
+    }, (error) => {
         console.error("Error fetching user tickets: ", error);
         toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar seus bilhetes.", variant: "destructive" });
         setIsDataLoading(false);
-      });
-
-      return () => {
-        // This inner unsubscribe is crucial to prevent leaks when draws update
-        if (unsubscribeTickets) {
-          unsubscribeTickets();
-        }
-      };
-    }, (error) => {
-      console.error("Error fetching draws for pause check: ", error);
-      setIsDataLoading(false);
     });
 
     return () => {
       unsubscribeConfig();
       unsubscribeDraws();
-      // The tickets subscription is handled inside the draws subscription
+      unsubscribeTickets();
     };
 
   }, [currentUser, role, toast]);
 
+  const processedUserTickets = updateTicketStatusesBasedOnDraws(userTickets, allDraws);
 
   if (isLoading || isDataLoading) {
     return <div className="text-center p-10">Carregando dados do painel...</div>;
@@ -127,7 +123,6 @@ export default function DashboardPage() {
   }
 
   const handleTicketCreated = (newTicket: Ticket) => {
-    // This is an optimistic update. The real-time listener will soon get the new data.
     setUserTickets(prevTickets => [newTicket, ...prevTickets]);
   };
   
@@ -145,7 +140,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-center text-primary mb-6">
               Meus Bilhetes
             </h2>
-            <TicketList tickets={userTickets} />
+            <TicketList tickets={processedUserTickets} draws={allDraws} />
           </section>
         </>
       )}
@@ -155,8 +150,9 @@ export default function DashboardPage() {
             isLotteryPaused={isLotteryPaused}
             lotteryConfig={lotteryConfig}
             onTicketCreated={handleTicketCreated}
-            userTickets={userTickets}
+            userTickets={processedUserTickets}
             currentUser={currentUser}
+            allDraws={allDraws}
          />
       )}
     </div>
