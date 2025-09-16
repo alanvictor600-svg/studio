@@ -13,7 +13,7 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => Promise<void>;
+  login: (username: string, passwordAttempt: string) => Promise<void>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<void>;
   isLoading: boolean;
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [firebaseUser, toast]);
 
-  const login = useCallback(async (username: string, passwordAttempt: string, expectedRole?: 'cliente' | 'vendedor' | 'admin') => {
+  const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
@@ -83,11 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDoc.exists()) {
           const userData = userDoc.data() as User;
           
-          if (expectedRole && userData.role !== expectedRole) {
-              await signOut(auth);
-              toast({ title: "Acesso Negado", description: `As credenciais são válidas, mas não para um perfil de ${expectedRole}.`, variant: "destructive" });
-              return;
-          }
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
            
            const redirectPath = searchParams.get('redirect');

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import type { User, LotteryConfig, Ticket, Draw } from '@/types';
 
@@ -27,6 +27,7 @@ export default function DashboardPage() {
   
   const { currentUser, isLoading, isAuthenticated, updateCurrentUserCredits } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [userTickets, setUserTickets] = useState<Ticket[]>([]);
@@ -90,11 +91,13 @@ export default function DashboardPage() {
     const ticketsQuery = query(
         collection(db, 'tickets'), 
         where(idField, '==', currentUser.id),
-        orderBy('createdAt', 'desc')
     );
       
     const unsubscribeTickets = onSnapshot(ticketsQuery, (ticketSnapshot) => {
-        const userTicketsData = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+        const userTicketsData = ticketSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         setUserTickets(userTicketsData);
         setIsDataLoading(false);
     }, (error) => {
@@ -118,7 +121,8 @@ export default function DashboardPage() {
   }
 
   if (!isAuthenticated || !currentUser) {
-    return <div className="text-center p-10">Você precisa estar logado para ver esta página.</div>;
+    router.replace('/login?redirect=/dashboard/' + role);
+    return <div className="text-center p-10">Você precisa estar logado para ver esta página. Redirecionando...</div>;
   }
   
   if (currentUser.role !== role) {

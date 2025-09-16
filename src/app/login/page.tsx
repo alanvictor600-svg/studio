@@ -31,18 +31,17 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isLoading: authLoading, isAuthenticated, currentUser } = useAuth();
+  const { login, isLoading, isAuthenticated, currentUser } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [registrationHref, setRegistrationHref] = useState('/cadastrar');
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     // Este efeito lida com o redirecionamento de usuários já autenticados.
     // Se o estado de autenticação não está mais carregando E o usuário está autenticado,
     // ele deve ser redirecionado para longe da página de login.
-    if (!authLoading && isAuthenticated && currentUser) {
+    if (!isLoading && isAuthenticated && currentUser) {
       const redirectPath = searchParams.get('redirect');
       if (redirectPath && redirectPath !== '/') {
         router.replace(redirectPath);
@@ -51,18 +50,7 @@ export default function LoginPage() {
         router.replace(currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
       }
     }
-  }, [authLoading, isAuthenticated, currentUser, router, searchParams]);
-
-  useEffect(() => {
-      const redirectParam = searchParams.get('redirect');
-      if (redirectParam?.includes('cliente')) {
-        setRegistrationHref('/cadastrar?role=cliente');
-      } else if (redirectParam?.includes('vendedor')) {
-        setRegistrationHref('/cadastrar?role=vendedor');
-      } else {
-        setRegistrationHref('/cadastrar');
-      }
-  }, [searchParams]);
+  }, [isLoading, isAuthenticated, currentUser, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,11 +61,8 @@ export default function LoginPage() {
     
     setIsSubmitting(true);
     
-    const redirectPath = searchParams.get('redirect');
-    const expectedRole = redirectPath?.includes('admin') ? 'admin' : redirectPath?.includes('cliente') ? 'cliente' : redirectPath?.includes('vendedor') ? 'vendedor' : undefined;
-    
     // A função login agora lida com o redirecionamento em caso de sucesso.
-    await login(username, password, expectedRole);
+    await login(username, password);
     
     // Se o login falhar, o estado de envio é resetado para permitir nova tentativa.
     // O toast de erro é tratado dentro da função de login.
@@ -87,7 +72,7 @@ export default function LoginPage() {
   // Se o estado de autenticação está sendo verificado, ou se o usuário já está logado e
   // esperando o redirecionamento do useEffect, mostramos um estado de carregamento.
   // Isso evita que o formulário de login pisque na tela para um usuário já autenticado.
-  if (authLoading || (!authLoading && isAuthenticated)) {
+  if (isLoading || (!isLoading && isAuthenticated)) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Verificando sessão...</p>
@@ -170,7 +155,7 @@ export default function LoginPage() {
                     </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting || authLoading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting || isLoading}>
                 <LogIn className="mr-2 h-5 w-5" />
                 {isSubmitting ? 'Entrando...' : 'Entrar com E-mail'}
               </Button>
@@ -179,7 +164,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-2 pt-6">
           <p className="text-sm text-muted-foreground">Não tem uma conta?</p>
-          <Link href={registrationHref} passHref>
+          <Link href="/cadastrar" passHref>
             <Button variant="link" className="text-primary h-auto py-1 px-2">
               <UserPlus className="mr-2 h-4 w-4" /> Cadastre-se aqui
             </Button>

@@ -103,6 +103,15 @@ export default function DashboardLayout({
                         </Link>
                     </SidebarMenuButton>
                  </SidebarMenuItem>
+                 {isSeller && (
+                    <SidebarMenuItem>
+                         <SidebarMenuButton asChild isActive={pathname.includes('/relatorios')}>
+                             <Link href="/dashboard/vendedor/relatorios">
+                                <FileText /> Relatórios
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild variant="secondary" className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12">
                          <Link href="/solicitar-saldo">
