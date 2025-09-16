@@ -72,15 +72,8 @@ export default function DashboardPage() {
       const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
       setAllDraws(drawsData);
       
-      const allTicketsQuery = query(collection(db, 'tickets'));
-      const unsubscribePauseCheck = onSnapshot(allTicketsQuery, (allTicketsSnapshot) => {
-        const allTicketsData = allTicketsSnapshot.docs.map(t => ({ id: t.id, ...t.data() } as Ticket));
-        const processedTickets = updateTicketStatusesBasedOnDraws(allTicketsData, drawsData);
-        const hasWinningTickets = processedTickets.some(t => t.status === 'winning');
-        setIsLotteryPaused(hasWinningTickets);
-      });
-      
-      return () => unsubscribePauseCheck();
+      // Vendas são pausadas assim que o primeiro sorteio é cadastrado.
+      setIsLotteryPaused(drawsData.length > 0);
 
     }, (error) => {
       console.error("Error fetching draws for pause check: ", error);
