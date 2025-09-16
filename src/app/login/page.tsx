@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -32,25 +31,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading, isAuthenticated, currentUser } = useAuth();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // If the user is already authenticated, redirect them away from the login page.
+  // This is now the ONLY redirection logic on this page.
   useEffect(() => {
-    // Este efeito lida com o redirecionamento de usuários já autenticados.
-    // Se o estado de autenticação não está mais carregando E o usuário está autenticado,
-    // ele deve ser redirecionado para longe da página de login.
     if (!isLoading && isAuthenticated && currentUser) {
-      const redirectPath = searchParams.get('redirect');
-      if (redirectPath && redirectPath !== '/') {
-        router.replace(redirectPath);
-      } else {
-        // Redirecionamento padrão baseado no perfil do usuário
-        router.replace(currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
-      }
+        // Default redirect based on role if no other redirect is specified.
+        const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
+        router.replace(defaultRedirect);
     }
-  }, [isLoading, isAuthenticated, currentUser, router, searchParams]);
+  }, [isLoading, isAuthenticated, currentUser, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,17 +54,15 @@ export default function LoginPage() {
     
     setIsSubmitting(true);
     
-    // A função login agora lida com o redirecionamento em caso de sucesso.
+    // The login function now handles the redirection on success.
+    // We just await its completion.
     await login(username, password);
     
-    // Se o login falhar, o estado de envio é resetado para permitir nova tentativa.
-    // O toast de erro é tratado dentro da função de login.
+    // If login fails, the user remains on the page, and the `login` function shows an error toast.
     setIsSubmitting(false);
   };
   
-  // Se o estado de autenticação está sendo verificado, ou se o usuário já está logado e
-  // esperando o redirecionamento do useEffect, mostramos um estado de carregamento.
-  // Isso evita que o formulário de login pisque na tela para um usuário já autenticado.
+  // While checking auth state or if user is already logged in and waiting for redirect, show loading.
   if (isLoading || (!isLoading && isAuthenticated)) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -80,7 +71,7 @@ export default function LoginPage() {
     );
   }
   
-  // A partir daqui, temos certeza que o usuário não está logado.
+  // From here, we know the user is not authenticated.
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
        <div className="absolute top-6 left-6 z-50">

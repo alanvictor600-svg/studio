@@ -52,8 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
+              // This can happen if the user is deleted from Firestore but not from Auth
               console.error("User document not found for authenticated user:", firebaseUser.uid);
-              signOut(auth);
+              signOut(auth); // Log out the user to prevent inconsistent state
             }
             setIsFirestoreLoading(false);
         }, (error) => {
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return () => unsubscribe();
     } else {
+        // If there's no Firebase user, ensure local state is also cleared
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
@@ -85,19 +87,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
            
+           // Centralized redirection logic
            const redirectPath = searchParams.get('redirect');
            
            if (redirectPath && redirectPath !== '/') {
              router.replace(redirectPath);
            } else {
+             // Default redirection based on user role
              router.replace(userData.role === 'admin' ? '/admin' : `/dashboard/${userData.role}`);
            }
         } else {
+          // This is a failsafe, but the onSnapshot listener should also handle this.
           await signOut(auth);
           toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
         }
      } catch (error: any) {
-        if (error.code === 'auth/invalid-credential') {
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
         } else {
              console.error("Firebase login error:", error.code, error.message);
@@ -109,8 +114,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      setCurrentUser(null); // Explicitly clear local user state
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
-      router.push('/');
+      router.push('/'); // Navigate to home page on logout
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
@@ -135,13 +141,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             username: originalUsername, 
             role,
             createdAt: new Date().toISOString(),
-            saldo: role === 'cliente' ? 50 : 0,
+            saldo: role === 'cliente' ? 50 : 0, // Initial balance
         };
         
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-        await signOut(auth);
+        await signOut(auth); // Sign out the new user so they have to log in
         router.push('/login');
 
     } catch (error: any) {
