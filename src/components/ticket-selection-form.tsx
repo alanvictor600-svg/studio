@@ -114,11 +114,19 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
               </Badge>
             ))}
           </div>
-           <div className="flex justify-center mt-4">
+           <div className="flex justify-between mt-4 gap-2">
+                <Button variant="destructive" onClick={handleClearSelection} className="w-full shadow-md hover:shadow-lg" disabled={isSubmitting || currentPicks.length === 0}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Limpar Seleção
+                </Button>
+                <Button onClick={handleAddTicketToCart} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl text-base py-3" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
+                    <PlusCircle className="mr-2 h-5 w-5" /> Adicionar ao Carrinho
+                </Button>
+            </div>
+             <div className="flex justify-center mt-4">
               <Button variant="outline" size="sm" onClick={handleAutoFill} className="shadow-sm" disabled={isSubmitting}>
                 <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
               </Button>
-          </div>
+            </div>
         </div>
 
         <div>
@@ -139,14 +147,6 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
-          <Button variant="destructive" onClick={handleClearSelection} className="w-full sm:w-auto shadow-md hover:shadow-lg" disabled={isSubmitting || currentPicks.length === 0}>
-              <Trash2 className="mr-2 h-4 w-4" /> Limpar Seleção
-          </Button>
-          <Button onClick={handleAddTicketToCart} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl text-base py-3 px-6" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
-              <PlusCircle className="mr-2 h-5 w-5" /> Adicionar ao Carrinho
-          </Button>
-      </CardFooter>
     </Card>
   );
 };
