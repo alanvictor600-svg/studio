@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ticket as TicketIcon, ShoppingBag, Repeat } from 'lucide-react';
-import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useDashboard } from '@/context/dashboard-context';
 
 
@@ -43,7 +42,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('aposta');
   
   const [ticketToRebet, setTicketToRebet] = useState<number[] | null>(null);
-  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
   
 
   // Validate the role from the URL
@@ -206,10 +204,6 @@ export default function DashboardPage() {
          />
       )}
     </div>
-    <InsufficientCreditsDialog
-        isOpen={isCreditsDialogOpen}
-        onOpenChange={setIsCreditsDialogOpen}
-      />
     </>
   );
 }

@@ -27,6 +27,7 @@ import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from '@/components/shopping-cart';
 import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
+import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
@@ -37,7 +38,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     setCart, 
     handlePurchaseCart, 
     isSubmitting, 
-    lotteryConfig 
+    lotteryConfig,
+    isCreditsDialogOpen,
+    setIsCreditsDialogOpen
   } = useDashboard();
 
   useEffect(() => {
@@ -160,6 +163,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="p-4 md:p-8">
             {children}
         </div>
+        <InsufficientCreditsDialog
+            isOpen={isCreditsDialogOpen}
+            onOpenChange={setIsCreditsDialogOpen}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

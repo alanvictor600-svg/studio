@@ -16,6 +16,8 @@ interface DashboardContextType {
     lotteryConfig: LotteryConfig;
     setLotteryConfig: Dispatch<SetStateAction<LotteryConfig>>;
     handlePurchaseCart: () => Promise<void>;
+    isCreditsDialogOpen: boolean;
+    setIsCreditsDialogOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -31,7 +33,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     const [cart, setCart] = useState<number[][]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
-    const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false); // Can be moved here if needed by other components
+    const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
     const { currentUser, updateCurrentUserCredits } = useAuth();
     const { toast } = useToast();
 
@@ -92,8 +94,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         } catch (e: any) {
             console.error("Transaction failed: ", e);
             if (e.message === 'Insufficient credits.') {
-                // This state should probably be managed here too if the dialog is global
-                toast({ title: "Saldo Insuficiente", description: "Vá para a página de solicitar saldo.", variant: "destructive" });
+                setIsCreditsDialogOpen(true);
             } else {
                 toast({ title: "Erro na Compra", description: e.message || "Não foi possível registrar seus bilhetes.", variant: "destructive" });
             }
@@ -109,7 +110,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setIsSubmitting,
         lotteryConfig,
         setLotteryConfig,
-        handlePurchaseCart
+        handlePurchaseCart,
+        isCreditsDialogOpen,
+        setIsCreditsDialogOpen
     };
 
     return (
