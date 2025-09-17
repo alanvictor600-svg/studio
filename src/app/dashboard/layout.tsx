@@ -101,8 +101,8 @@ export default function DashboardLayout({
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === dashboardPath}>
                         <Link href={dashboardPath}>
-                            {isSeller ? <LayoutDashboard /> : <Ticket />}
-                            {isSeller ? 'Meu Painel' : 'Fazer Aposta'}
+                            <LayoutDashboard />
+                            Meu Painel
                         </Link>
                     </SidebarMenuButton>
                  </SidebarMenuItem>

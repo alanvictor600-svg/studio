@@ -13,6 +13,8 @@ import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Ticket as TicketIcon, ShoppingBag } from 'lucide-react';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -139,20 +141,32 @@ export default function DashboardPage() {
       </header>
       
       {role === 'cliente' && (
-        <>
-          <TicketSelectionForm
-            isLotteryPaused={isLotteryPaused}
-            currentUser={currentUser}
-            updateCurrentUserCredits={updateCurrentUserCredits}
-            lotteryConfig={lotteryConfig}
-          />
-          <section>
-            <h2 className="text-2xl font-bold text-center text-primary mb-6">
-              Meus Bilhetes
-            </h2>
-            <TicketList tickets={processedUserTickets} draws={allDraws} />
-          </section>
-        </>
+        <Tabs defaultValue="aposta" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 h-auto mb-8">
+                <TabsTrigger value="aposta" className="py-3 text-base">
+                    <TicketIcon className="mr-2 h-5 w-5" /> Fazer Aposta
+                </TabsTrigger>
+                <TabsTrigger value="bilhetes" className="py-3 text-base">
+                    <ShoppingBag className="mr-2 h-5 w-5" /> Meus Bilhetes
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="aposta">
+                 <TicketSelectionForm
+                    isLotteryPaused={isLotteryPaused}
+                    currentUser={currentUser}
+                    updateCurrentUserCredits={updateCurrentUserCredits}
+                    lotteryConfig={lotteryConfig}
+                />
+            </TabsContent>
+            <TabsContent value="bilhetes">
+                 <section>
+                    <h2 className="text-2xl font-bold text-center text-primary mb-6">
+                        Meus Bilhetes
+                    </h2>
+                    <TicketList tickets={processedUserTickets} draws={allDraws} />
+                </section>
+            </TabsContent>
+        </Tabs>
       )}
 
       {role === 'vendedor' && (
