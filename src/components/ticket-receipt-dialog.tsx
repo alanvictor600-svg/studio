@@ -81,6 +81,29 @@ const ReceiptContent: FC<{ tickets: Ticket[]; lotteryConfig: LotteryConfig }> = 
   </div>
 );
 
+const generateReceiptText = (tickets: Ticket[], lotteryConfig: LotteryConfig): string => {
+  let text = "Bolão Potiguar - Comprovante de Aposta\n\n";
+
+  tickets.forEach((ticket, idx) => {
+    if (idx > 0) {
+      text += "--------------------------------\n";
+    }
+    text += `Data/Hora: ${format(parseISO(ticket.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}\n`;
+    text += `Bilhete ID: #${ticket.id.substring(0, 8)}\n`;
+    if (ticket.buyerName) {
+      text += `Comprador: ${ticket.buyerName}\n`;
+    }
+    if (ticket.sellerUsername) {
+      text += `Vendedor: ${ticket.sellerUsername}\n`;
+    }
+    text += `\nNúmeros: ${ticket.numbers.join(', ')}\n\n`;
+    text += `Valor Pago: R$ ${lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}\n`;
+  });
+
+  text += "\nBoa Sorte! 🍀";
+  return text;
+};
+
 
 export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOpenChange, tickets, lotteryConfig }) => {
   const { toast } = useToast();
@@ -91,47 +114,48 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
   }
 
   const handleShare = async () => {
-    if (!receiptRef.current) {
-        toast({ title: 'Erro', description: 'Não foi possível gerar a imagem do comprovante.', variant: 'destructive' });
-        return;
-    }
     if (!navigator.share) {
-        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta o compartilhamento de imagens.', variant: 'destructive' });
+        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento.', variant: 'destructive' });
         return;
     }
 
     try {
-        const canvas = await html2canvas(receiptRef.current, { 
-            useCORS: true, 
-            backgroundColor: null 
-        });
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                toast({ title: 'Erro', description: 'Falha ao converter comprovante para imagem.', variant: 'destructive' });
-                return;
-            }
-            const file = new File([blob], 'comprovante.png', { type: 'image/png' });
-            
-            const buyerName = tickets[0]?.buyerName || 'cliente';
+        const buyerName = tickets[0]?.buyerName || 'cliente';
+        
+        // Tenta compartilhar como imagem primeiro
+        if (receiptRef.current) {
+            const canvas = await html2canvas(receiptRef.current, { useCORS: true, backgroundColor: null });
+            const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Comprovante de Aposta - Bolão Potiguar',
-                    text: `Comprovante da aposta para ${buyerName}`,
-                });
-                toast({ title: 'Comprovante compartilhado!' });
-            } else {
-                 toast({ title: 'Não Suportado', description: 'Seu navegador não suporta o compartilhamento de imagens.', variant: 'destructive' });
+            if (blob) {
+                const file = new File([blob], 'comprovante.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Comprovante de Aposta - Bolão Potiguar',
+                        text: `Comprovante da aposta para ${buyerName}`,
+                    });
+                    toast({ title: 'Comprovante compartilhado!' });
+                    return; // Termina a função se o compartilhamento da imagem for bem-sucedido
+                }
             }
-        }, 'image/png');
+        }
+
+        // Fallback para compartilhar como texto
+        console.log("Fallback: Compartilhando como texto, pois imagem não é suportada.");
+        const receiptText = generateReceiptText(tickets, lotteryConfig);
+        await navigator.share({
+            title: 'Comprovante de Aposta - Bolão Potiguar',
+            text: receiptText,
+        });
+        toast({ title: 'Comprovante compartilhado!' });
 
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-            toast({ title: "Compartilhamento cancelado", variant: "default" });
+            // Não mostra toast se o usuário cancelar
         } else {
-            console.error('Erro ao gerar ou compartilhar imagem:', error);
-            toast({ title: 'Ocorreu um erro ao compartilhar a imagem', variant: 'destructive' });
+            console.error('Erro ao compartilhar:', error);
+            toast({ title: 'Ocorreu um erro ao compartilhar', variant: 'destructive' });
         }
     }
   };
@@ -154,7 +178,7 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
 
         <DialogFooter className="sm:flex-col gap-3">
           <Button type="button" onClick={handleShare} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-             <Share2 className="mr-2 h-4 w-4" /> Compartilhar Imagem do Comprovante
+             <Share2 className="mr-2 h-4 w-4" /> Compartilhar Comprovante
           </Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary" className="w-full">
@@ -166,3 +190,4 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
     </Dialog>
   );
 };
+
