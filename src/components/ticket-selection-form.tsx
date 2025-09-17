@@ -69,9 +69,8 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
   };
 
   const handleAutoFill = () => {
-    const newTicket = generateAutoFilledTicket();
-    onCartChange([...cart, newTicket]);
-    toast({ title: "Surpresinha Adicionada!", description: "Um bilhete com números aleatórios foi adicionado ao seu carrinho.", duration: 3000 });
+    setCurrentPicks(generateAutoFilledTicket());
+    toast({ title: "Surpresinha Gerada!", description: "Os números foram preenchidos para você. Adicione-os ao carrinho para comprar.", duration: 3000 });
   };
   
   const handleAddTicketToCart = () => {
@@ -145,7 +144,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6">
           <Button variant="outline" onClick={handleAutoFill} className="shadow-md hover:shadow-lg" disabled={isSubmitting}>
-              <Sparkles className="mr-2 h-4 w-4" /> Add Surpresinha ao Carrinho
+              <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
           </Button>
       </CardFooter>
     </Card>
