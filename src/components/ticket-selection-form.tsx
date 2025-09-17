@@ -114,15 +114,9 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
               </Badge>
             ))}
           </div>
-           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
-              <Button variant="destructive" size="sm" onClick={handleClearSelection} className="shadow-sm" disabled={isSubmitting || currentPicks.length === 0}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Limpar Seleção
-              </Button>
+           <div className="flex justify-center mt-4">
               <Button variant="outline" size="sm" onClick={handleAutoFill} className="shadow-sm" disabled={isSubmitting}>
                 <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
-              </Button>
-              <Button onClick={handleAddTicketToCart} size="sm" className="bg-green-600 hover:bg-green-700 text-white shadow-sm" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar ao Carrinho
               </Button>
           </div>
         </div>
@@ -145,6 +139,14 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           </div>
         </div>
       </CardContent>
+      <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 pt-6">
+          <Button variant="destructive" onClick={handleClearSelection} className="w-full sm:w-auto shadow-md hover:shadow-lg" disabled={isSubmitting || currentPicks.length === 0}>
+              <Trash2 className="mr-2 h-4 w-4" /> Limpar Seleção
+          </Button>
+          <Button onClick={handleAddTicketToCart} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl text-base py-3 px-6" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
+              <PlusCircle className="mr-2 h-5 w-5" /> Adicionar ao Carrinho
+          </Button>
+      </CardFooter>
     </Card>
   );
 };
