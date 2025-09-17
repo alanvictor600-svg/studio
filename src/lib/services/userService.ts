@@ -1,6 +1,7 @@
 // src/lib/services/userService.ts
 import { doc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { deleteUser } from '@/ai/flows/user-flow';
 
 /**
  * Updates a user's credit balance. Can be a positive or negative amount.
@@ -27,13 +28,17 @@ export const updateUserCredits = async (userId: string, amount: number): Promise
 };
 
 /**
- * Deletes a user account from Firestore.
+ * Deletes a user account from Firestore and Firebase Auth by calling a secure Genkit flow.
  * @param userId - The ID of the user to delete.
  */
 export const deleteUserAccount = async (userId: string): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    await deleteDoc(userRef);
-    // Associated tickets are not deleted to preserve sales history.
+    try {
+        await deleteUser({ userId });
+    } catch (error) {
+        console.error("Error calling delete user flow: ", error);
+        if (error instanceof Error) {
+            throw new Error(`Falha ao excluir usuário: ${error.message}`);
+        }
+        throw new Error("Falha ao excluir usuário.");
+    }
 };
-
-    
