@@ -16,6 +16,7 @@ import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ticket as TicketIcon, ShoppingBag, Repeat } from 'lucide-react';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
+import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -24,26 +25,33 @@ const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   clientSalesCommissionToOwnerPercentage: 10,
 };
 
-export default function DashboardPage() {
+// Componente Interno que usa o contexto
+function DashboardContent() {
   const params = useParams();
   const { role } = params as { role: 'cliente' | 'vendedor' };
-  
   const { currentUser, isLoading, isAuthenticated, updateCurrentUserCredits } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  // Estados agora gerenciados pelo contexto, mas inicializados aqui
+  const {
+      cart,
+      setCart,
+      isSubmitting,
+      setIsSubmitting,
+      lotteryConfig,
+      setLotteryConfig,
+  } = useDashboard();
   
-  const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
   const [userTickets, setUserTickets] = useState<Ticket[]>([]);
   const [isLotteryPaused, setIsLotteryPaused] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [allDraws, setAllDraws] = useState<Draw[]>([]);
   const [activeTab, setActiveTab] = useState('aposta');
   
-  // States for the Shopping Cart feature
-  const [cart, setCart] = useState<number[][]>([]);
   const [ticketToRebet, setTicketToRebet] = useState<number[] | null>(null);
   const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
 
   // Validate the role from the URL
   useEffect(() => {
@@ -64,7 +72,7 @@ export default function DashboardPage() {
         duration: 4000
       });
     }
-  }, [ticketToRebet, toast]);
+  }, [ticketToRebet, toast, setCart]);
 
   // Main data fetching and real-time listeners effect
   useEffect(() => {
@@ -103,7 +111,6 @@ export default function DashboardPage() {
       console.error("Error fetching draws for pause check: ", error);
     });
 
-    // OPTIMIZED QUERY: Fetch only tickets relevant to the user.
     const idField = role === 'cliente' ? 'buyerId' : 'sellerId';
     const ticketsQuery = query(
         collection(db, 'tickets'), 
@@ -129,7 +136,7 @@ export default function DashboardPage() {
       unsubscribeTickets();
     };
 
-  }, [currentUser, role, toast, isLoading]);
+  }, [currentUser, role, toast, isLoading, setLotteryConfig]);
 
   const processedUserTickets = updateTicketStatusesBasedOnDraws(userTickets, allDraws);
 
@@ -148,91 +155,10 @@ export default function DashboardPage() {
 
   const handleTicketCreated = (newTicket: Ticket) => {
     // The onSnapshot listener will handle the update automatically.
-    // This function can be kept for optimistic updates in the future if needed.
   };
 
   const handleRebet = (numbers: number[]) => {
     setTicketToRebet(numbers);
-  };
-
-  const handlePurchaseCart = async () => {
-    if (!currentUser) {
-        toast({ title: "Erro", description: "Você precisa estar logado para comprar.", variant: "destructive" });
-        return;
-    }
-    if (cart.length === 0) {
-      toast({ title: "Carrinho Vazio", description: "Adicione pelo menos um bilhete ao carrinho para comprar.", variant: "destructive" });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    const totalCost = cart.length * lotteryConfig.ticketPrice;
-
-    try {
-      const userRef = doc(db, "users", currentUser.id);
-      
-      const batch = writeBatch(db);
-      cart.forEach(ticketNumbers => {
-          const newTicketRef = doc(collection(db, "tickets"));
-          const newTicketData: Ticket = {
-            id: newTicketRef.id,
-            numbers: ticketNumbers.sort((a,b) => a-b),
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            buyerName: currentUser.username,
-            buyerId: currentUser.id,
-          };
-          batch.set(newTicketRef, newTicketData);
-      });
-      
-      await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) {
-          throw new Error("User not found.");
-        }
-        const currentBalance = userDoc.data().saldo || 0;
-        if (currentBalance < totalCost) {
-          throw new Error("Insufficient credits.");
-        }
-        const newBalance = currentBalance - totalCost;
-        transaction.update(userRef, { saldo: newBalance });
-      });
-
-      await batch.commit();
-
-      updateCurrentUserCredits((currentUser.saldo || 0) - totalCost);
-      
-      toast({ 
-          title: `Compra Realizada! (${cart.length} bilhete${cart.length > 1 ? 's' : ''})`, 
-          description: `Boa sorte! Seus bilhetes estão em "Meus Bilhetes".`, 
-          className: "bg-primary text-primary-foreground", 
-          duration: 4000 
-      });
-
-      setCart([]);
-
-    } catch (e: any) {
-      console.error("Transaction failed: ", e);
-      if (e.message === 'Insufficient credits.') {
-        setIsCreditsDialogOpen(true);
-      } else {
-        toast({ title: "Erro na Compra", description: e.message || "Não foi possível registrar seus bilhetes.", variant: "destructive" });
-      }
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-
-  const dashboardProps = {
-    cart,
-    setCart,
-    currentUser,
-    lotteryConfig,
-    isSubmitting,
-    isLotteryPaused,
-    handlePurchaseCart,
-    updateCurrentUserCredits
   };
   
   return (
@@ -293,4 +219,13 @@ export default function DashboardPage() {
       />
     </>
   );
+}
+
+// Componente principal que provê o contexto
+export default function DashboardPage() {
+    return (
+        <DashboardProvider>
+            <DashboardContent />
+        </DashboardProvider>
+    );
 }

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { User, LotteryConfig, Ticket } from '@/types';
+import type { User } from '@/types';
 import Link from 'next/link';
 
 import { 
@@ -26,19 +26,7 @@ import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from '@/components/shopping-cart';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
-
-// Props passed down from the page to the layout
-interface DashboardPageProps {
-  cart: number[][];
-  setCart: React.Dispatch<React.SetStateAction<number[][]>>;
-  currentUser: User | null;
-  lotteryConfig: LotteryConfig;
-  isSubmitting: boolean;
-  handlePurchaseCart: () => Promise<void>;
-}
+import { useDashboard } from '@/context/dashboard-context';
 
 export default function DashboardLayout({
   children,
@@ -48,7 +36,13 @@ export default function DashboardLayout({
   const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const pageProps = children.props.children.props as DashboardPageProps;
+  const { 
+    cart, 
+    setCart, 
+    handlePurchaseCart, 
+    isSubmitting, 
+    lotteryConfig 
+  } = useDashboard();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -156,12 +150,12 @@ export default function DashboardLayout({
             <div className="flex items-center gap-4 ml-auto">
                 {currentUser.role === 'cliente' && (
                     <ShoppingCart 
-                        cart={pageProps.cart}
-                        currentUser={pageProps.currentUser}
-                        lotteryConfig={pageProps.lotteryConfig}
-                        isSubmitting={pageProps.isSubmitting}
-                        onPurchase={pageProps.handlePurchaseCart}
-                        onRemoveFromCart={(index) => pageProps.setCart(pageProps.cart.filter((_, i) => i !== index))}
+                        cart={cart}
+                        currentUser={currentUser}
+                        lotteryConfig={lotteryConfig}
+                        isSubmitting={isSubmitting}
+                        onPurchase={handlePurchaseCart}
+                        onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
                     />
                 )}
                 <ThemeToggleButton />
