@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Image as ImageIcon, FileText } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import html2canvas from 'html2canvas';
@@ -81,30 +81,6 @@ const ReceiptContent: FC<{ tickets: Ticket[]; lotteryConfig: LotteryConfig }> = 
   </div>
 );
 
-const generateReceiptText = (tickets: Ticket[], lotteryConfig: LotteryConfig): string => {
-  let text = "Bolão Potiguar - Comprovante de Aposta\n\n";
-
-  tickets.forEach((ticket, idx) => {
-    if (idx > 0) {
-      text += "--------------------------------\n";
-    }
-    text += `Data/Hora: ${format(parseISO(ticket.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}\n`;
-    text += `Bilhete ID: #${ticket.id.substring(0, 8)}\n`;
-    if (ticket.buyerName) {
-      text += `Comprador: ${ticket.buyerName}\n`;
-    }
-    if (ticket.sellerUsername) {
-      text += `Vendedor: ${ticket.sellerUsername}\n`;
-    }
-    text += `\nNúmeros: ${ticket.numbers.join(', ')}\n\n`;
-    text += `Valor Pago: R$ ${lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}\n`;
-  });
-
-  text += "\nBoa Sorte! 🍀";
-  return text;
-};
-
-
 export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOpenChange, tickets, lotteryConfig }) => {
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -140,39 +116,16 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
                 title: 'Comprovante de Aposta - Bolão Potiguar',
                 text: `Comprovante da aposta para ${buyerName}`,
             });
-            toast({ title: 'Comprovante compartilhado como imagem!' });
+            toast({ title: 'Comprovante compartilhado!' });
         } else {
-             toast({ title: 'Não Suportado', description: 'Seu navegador não suporta o compartilhamento de imagens neste formato.', variant: 'destructive' });
+             toast({ title: 'Não Suportado', description: 'Seu navegador não suporta o compartilhamento de imagens.', variant: 'destructive' });
         }
     } catch (error) {
         if (error instanceof Error && (error.name === 'AbortError' || error.name === 'NotAllowedError')) {
             // User cancelled the share action, do nothing.
         } else {
             console.error('Erro ao compartilhar imagem:', error);
-            toast({ title: 'Erro ao compartilhar imagem', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
-        }
-    }
-  };
-
-  const handleShareText = async () => {
-    if (!navigator.share) {
-        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento.', variant: 'destructive' });
-        return;
-    }
-
-    try {
-        const receiptText = generateReceiptText(tickets, lotteryConfig);
-        await navigator.share({
-            title: 'Comprovante de Aposta - Bolão Potiguar',
-            text: receiptText,
-        });
-        toast({ title: 'Comprovante compartilhado como texto!' });
-    } catch (error) {
-       if (error instanceof Error && (error.name === 'AbortError' || error.name === 'NotAllowedError')) {
-            // User cancelled the share action, do nothing.
-        } else {
-            console.error('Erro ao compartilhar texto:', error);
-            toast({ title: 'Erro ao compartilhar texto', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+            toast({ title: 'Erro ao compartilhar', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
         }
     }
   };
@@ -194,14 +147,9 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
         </ScrollArea>
 
         <DialogFooter className="sm:flex-col gap-3">
-          <div className="grid grid-cols-2 gap-2">
-             <Button type="button" onClick={handleShareImage} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                <ImageIcon className="mr-2 h-4 w-4" /> Imagem
-            </Button>
-            <Button type="button" onClick={handleShareText} className="w-full" variant="outline">
-                <FileText className="mr-2 h-4 w-4" /> Texto
-            </Button>
-          </div>
+          <Button type="button" onClick={handleShareImage} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <ImageIcon className="mr-2 h-4 w-4" /> Compartilhar Comprovante
+          </Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary" className="w-full">
               Fechar
