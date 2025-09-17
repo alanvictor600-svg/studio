@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Award, CircleDot, TimerOff, CalendarDays, User, Phone, Clock, Ban } from 'lucide-react';
+import { Award, CircleDot, TimerOff, CalendarDays, User, Phone, Clock, Ban, CheckCircle } from 'lucide-react';
+import { calculateTicketMatches } from '@/lib/lottery-utils';
 
 
 interface TicketCardProps {
@@ -18,6 +19,9 @@ interface TicketCardProps {
 }
 
 export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
+  
+  const matches = useMemo(() => calculateTicketMatches(ticket, draws || []), [ticket, draws]);
+  
   const getStatusProps = () => {
     switch (ticket.status) {
       case 'winning':
@@ -105,12 +109,20 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
       `border-2 ${statusProps.borderColor}`
     )}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl flex items-center justify-between">
+        <CardTitle className="text-xl flex flex-wrap items-center justify-between gap-2">
           <span>Bilhete <span className="font-mono text-sm opacity-80">#{ticket.id.substring(0, 6)}</span></span>
-          <Badge variant="outline" className={cn("text-sm", statusProps.textColor, `border-${statusProps.borderColor}`, `bg-${statusProps.bgColor}/50`)}>
-            <statusProps.Icon className="mr-1.5 h-4 w-4" />
-            {statusProps.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {ticket.status === 'active' && draws && draws.length > 0 && (
+                <Badge variant="outline" className={cn("text-sm", statusProps.textColor, `border-${statusProps.borderColor}`, `bg-${statusProps.bgColor}/50`)}>
+                    <CheckCircle className="mr-1.5 h-4 w-4" />
+                    {matches} Acerto{matches !== 1 ? 's' : ''}
+                </Badge>
+            )}
+            <Badge variant="outline" className={cn("text-sm", statusProps.textColor, `border-${statusProps.borderColor}`, `bg-${statusProps.bgColor}/50`)}>
+                <statusProps.Icon className="mr-1.5 h-4 w-4" />
+                {statusProps.label}
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
