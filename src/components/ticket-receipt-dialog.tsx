@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Image as ImageIcon, Download } from 'lucide-react';
+import { Image as ImageIcon, Download, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import html2canvas from 'html2canvas';
@@ -110,7 +110,10 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
 
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
-    link.download = 'comprovante-bolao-potiguar.png';
+    
+    const firstTicketId = tickets[0].id.substring(0, 8);
+    link.download = `comprovante-bolao-potiguar-${firstTicketId}.png`;
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -119,7 +122,7 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
 
   const handleShareImage = async () => {
     if (!navigator.share) {
-        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento de nativo.', variant: 'destructive' });
+        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento nativo.', variant: 'destructive' });
         return;
     }
 
@@ -173,10 +176,10 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
 
         <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Button type="button" onClick={handleDownloadImage} variant="outline" className="w-full sm:w-auto">
-            <Download className="mr-2 h-4 w-4" /> Baixar Comprovante
+            <Download className="mr-2 h-4 w-4" /> Baixar
           </Button>
-          <Button type="button" onClick={handleShareImage} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
-            <ImageIcon className="mr-2 h-4 w-4" /> Compartilhar
+          <Button type="button" onClick={handleShareImage} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
+            <Share2 className="mr-2 h-4 w-4" /> Compartilhar
           </Button>
           <DialogClose asChild className="sm:hidden">
             <Button type="button" variant="secondary" className="w-full">
