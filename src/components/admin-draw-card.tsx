@@ -53,7 +53,7 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="relative z-10 pt-6 mt-4 border-t border-primary-foreground/20 flex-col sm:flex-row justify-between items-center text-xs opacity-90 gap-2">
+      <CardFooter className="relative z-10 pt-6 mt-4 border-t border-primary-foreground/20 flex justify-between items-center text-xs opacity-90 gap-4">
          <div className="flex items-center">
             <Hash className="mr-1.5 h-4 w-4 shrink-0" />
             <span className="truncate">
