@@ -145,7 +145,7 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
              toast({ title: 'Não Suportado', description: 'Seu navegador não suporta o compartilhamento de imagens neste formato.', variant: 'destructive' });
         }
     } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
+        if (error instanceof Error && (error.name === 'AbortError' || error.name === 'NotAllowedError')) {
             // User cancelled the share action, do nothing.
         } else {
             console.error('Erro ao compartilhar imagem:', error);
@@ -168,7 +168,7 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
         });
         toast({ title: 'Comprovante compartilhado como texto!' });
     } catch (error) {
-       if (error instanceof Error && error.name === 'AbortError') {
+       if (error instanceof Error && (error.name === 'AbortError' || error.name === 'NotAllowedError')) {
             // User cancelled the share action, do nothing.
         } else {
             console.error('Erro ao compartilhar texto:', error);
