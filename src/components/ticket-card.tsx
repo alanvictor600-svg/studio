@@ -26,37 +26,43 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
     switch (ticket.status) {
       case 'winning':
         return {
-          bgColor: 'bg-accent',
-          textColor: 'text-accent-foreground',
+          borderColor: 'border-green-500',
+          textColor: 'text-green-600 dark:text-green-500',
+          badgeBg: 'bg-green-500/10',
+          gradient: 'bg-gradient-to-br from-green-500/10 via-background/0 to-background/0',
           Icon: Award,
           label: 'Premiado!',
         };
       case 'awaiting_payment':
         return {
-          bgColor: 'bg-orange-400',
-          textColor: 'text-orange-900',
+          borderColor: 'border-orange-400',
+          textColor: 'text-orange-500',
+          badgeBg: 'bg-orange-400/10',
           Icon: Clock,
           label: 'Aguardando Pagamento',
         };
        case 'unpaid':
         return {
-          bgColor: 'bg-red-500',
-          textColor: 'text-red-100',
+          borderColor: 'border-red-500',
+          textColor: 'text-red-600 dark:text-red-500',
+          badgeBg: 'bg-red-500/10',
           Icon: Ban,
           label: 'Não Pago',
         };
       case 'expired':
         return {
-          bgColor: 'bg-muted',
+          borderColor: 'border-muted',
           textColor: 'text-muted-foreground',
+          badgeBg: 'bg-muted/50',
           Icon: TimerOff,
           label: 'Expirado',
         };
       case 'active':
       default:
         return {
-          bgColor: 'bg-secondary',
-          textColor: 'text-secondary-foreground',
+          borderColor: 'border-blue-500',
+          textColor: 'text-blue-600 dark:text-blue-500',
+          badgeBg: 'bg-blue-500/10',
           Icon: CircleDot,
           label: 'Ativo',
         };
@@ -99,68 +105,72 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
   return (
     <Card className={cn(
       "shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between h-full",
-      statusProps.bgColor,
-      statusProps.textColor
+      "bg-card border-l-4 relative overflow-hidden",
+      statusProps.borderColor,
+      ticket.status === 'winning' && 'ring-2 ring-green-500/50'
     )}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between">
-          <span>Bilhete <span className="font-mono text-sm opacity-60">#{ticket.id.substring(0, 6)}</span></span>
-          <div className="flex items-center gap-2">
-             {ticket.status === 'active' && draws && draws.length > 0 && (
-                <Badge variant="outline" className="text-base font-bold py-1 px-3 shadow-md bg-background/70 text-primary border-primary/50">
-                    <CheckCircle className="mr-1.5 h-4 w-4" />
-                    {matches} Acerto{matches !== 1 ? 's' : ''}
+       {ticket.status === 'winning' && (
+         <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-green-500/10 via-transparent to-transparent z-0"></div>
+       )}
+       <div className="relative z-10 flex flex-col h-full">
+            <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center justify-between gap-2">
+                <span className="font-semibold text-foreground">Bilhete <span className="font-mono text-sm text-muted-foreground">#{ticket.id.substring(0, 6)}</span></span>
+                <Badge variant="outline" className={cn("text-sm shadow-sm", statusProps.badgeBg, statusProps.textColor, `border-current/30`)}>
+                    <statusProps.Icon className="mr-1.5 h-4 w-4" />
+                    {statusProps.label}
                 </Badge>
-            )}
-            <Badge variant="outline" className="text-sm shadow bg-background/20 backdrop-blur-sm">
-                <statusProps.Icon className="mr-1.5 h-4 w-4" />
-                {statusProps.label}
-            </Badge>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="flex flex-wrap gap-2">
-          {processedTicketNumbers.map(({ numberValue, isMatched }, index) => (
-            <Badge
-              key={`${ticket.id}-num-${index}`}
-              variant="outline"
-              className={cn(
-                "text-base font-semibold px-2 py-1 shadow-sm bg-background/20",
-                isMatched && 'ring-2 ring-yellow-300'
-              )}
-            >
-              {numberValue}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-       <CardFooter className="pt-3 pb-4 border-t border-current/20 mt-auto">
-          <div className="w-full space-y-1 text-xs opacity-90">
-             {(ticket.buyerName || ticket.buyerPhone) && (
-              <div className="space-y-1">
-                {ticket.buyerName && (
-                  <div className="flex items-center">
-                    <User size={14} className="mr-1.5" />
-                    <span className="font-semibold mr-1">Comprador:</span>
-                    <span>{ticket.buyerName}</span>
-                  </div>
+                </CardTitle>
+                {ticket.status === 'active' && draws && draws.length > 0 && (
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                        <CheckCircle className="mr-1.5 h-4 w-4 text-primary" />
+                        Acertos até agora: <span className="font-bold text-primary ml-1">{matches}</span>
+                    </div>
                 )}
-                {ticket.buyerPhone && (
-                  <div className="flex items-center">
-                    <Phone size={14} className="mr-1.5" />
-                     <span className="font-semibold mr-1">Telefone:</span>
-                    <span>{ticket.buyerPhone}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex items-center">
-                <CalendarDays size={14} className="mr-1.5" />
-                {format(parseISO(ticket.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </div>
-          </div>
-        </CardFooter>
+            </CardHeader>
+            <CardContent className="flex-grow py-2">
+                <div className="flex flex-wrap gap-2 justify-center">
+                {processedTicketNumbers.map(({ numberValue, isMatched }, index) => (
+                    <Badge
+                    key={`${ticket.id}-num-${index}`}
+                    variant="outline"
+                    className={cn(
+                        "text-base font-semibold px-2 py-1 shadow-sm h-8 w-8 flex items-center justify-center rounded-md text-foreground",
+                        isMatched ? "bg-green-500/20 text-green-800 dark:text-green-300 border-green-500/30" : "bg-muted/50"
+                    )}
+                    >
+                    {numberValue}
+                    </Badge>
+                ))}
+                </div>
+            </CardContent>
+            <CardFooter className="pt-4 pb-4 border-t mt-auto">
+                <div className="w-full space-y-2 text-xs text-muted-foreground">
+                    {(ticket.buyerName || ticket.buyerPhone) && (
+                    <div className="space-y-1.5">
+                        {ticket.buyerName && (
+                        <div className="flex items-center">
+                            <User size={14} className="mr-1.5" />
+                            <span className="font-semibold mr-1 text-foreground/80">Comprador:</span>
+                            <span className="font-medium text-foreground">{ticket.buyerName}</span>
+                        </div>
+                        )}
+                        {ticket.buyerPhone && (
+                        <div className="flex items-center">
+                            <Phone size={14} className="mr-1.5" />
+                            <span className="font-semibold mr-1 text-foreground/80">Telefone:</span>
+                            <span className="font-medium text-foreground">{ticket.buyerPhone}</span>
+                        </div>
+                        )}
+                    </div>
+                    )}
+                    <div className="flex items-center pt-1">
+                        <CalendarDays size={14} className="mr-1.5" />
+                        {format(parseISO(ticket.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </div>
+                </div>
+            </CardFooter>
+       </div>
     </Card>
   );
 };
