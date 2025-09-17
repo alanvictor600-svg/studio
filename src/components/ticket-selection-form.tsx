@@ -114,11 +114,14 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
               </Badge>
             ))}
           </div>
-           <div className="flex gap-2 mt-2">
-              <Button variant="destructive" size="sm" onClick={handleClearSelection} className="flex-1 shadow-sm" disabled={isSubmitting || currentPicks.length === 0}>
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+              <Button variant="destructive" size="sm" onClick={handleClearSelection} className="shadow-sm" disabled={isSubmitting || currentPicks.length === 0}>
                   <Trash2 className="mr-2 h-4 w-4" /> Limpar Seleção
               </Button>
-              <Button onClick={handleAddTicketToCart} size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-sm" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
+              <Button variant="outline" size="sm" onClick={handleAutoFill} className="shadow-sm" disabled={isSubmitting}>
+                <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
+              </Button>
+              <Button onClick={handleAddTicketToCart} size="sm" className="bg-green-600 hover:bg-green-700 text-white shadow-sm" disabled={isSubmitting || currentPicks.length !== MAX_PICKS}>
                   <PlusCircle className="mr-2 h-4 w-4" /> Adicionar ao Carrinho
               </Button>
           </div>
@@ -142,11 +145,6 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6">
-          <Button variant="outline" onClick={handleAutoFill} className="shadow-md hover:shadow-lg" disabled={isSubmitting}>
-              <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
-          </Button>
-      </CardFooter>
     </Card>
   );
 };
