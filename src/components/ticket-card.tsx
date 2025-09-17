@@ -121,7 +121,7 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws, onRebet }) => {
                         <statusProps.Icon className="mr-1 h-4 w-4" />
                         {statusProps.label}
                     </div>
-                     <p className="font-mono text-xs text-muted-foreground pl-3">#{ticket.id.substring(0, 8)}</p>
+                     <p className="font-mono text-xs text-muted-foreground pl-3">Bilhete ID: #{ticket.id.substring(0, 8)}</p>
                 </div>
                 
                 {(ticket.status === 'active' || ticket.status === 'winning') && draws && draws.length > 0 && (
