@@ -32,7 +32,7 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
-  const { register, signInWithGoogle, isLoading: authLoading } = useAuth();
+  const { register, signInWithGoogle, isLoading: authLoading, currentUser, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -43,6 +43,13 @@ export default function CadastroPage() {
       setRole(roleFromQuery);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && currentUser) {
+        const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
+        router.replace(defaultRedirect);
+    }
+  }, [authLoading, isAuthenticated, currentUser, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +73,7 @@ export default function CadastroPage() {
     await register(username, password, role);
   };
   
-  if (authLoading) {
+  if (authLoading || (!authLoading && isAuthenticated)) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Verificando autenticação...</p>

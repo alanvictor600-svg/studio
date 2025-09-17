@@ -145,8 +145,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: "Conta criada com sucesso!", description: "Bem-vindo(a) ao Bolão Potiguar!", className: "bg-primary text-primary-foreground", duration: 3000 });
         }
         
-        // Redirect to the correct dashboard
-        router.replace(`/dashboard/${finalRole}`);
+        // Redirect to the correct dashboard based on the FINAL role (either existing or new)
+        const redirectPath = searchParams.get('redirect');
+        if (redirectPath && redirectPath.includes('/dashboard/')) {
+            router.replace(`/dashboard/${finalRole}`);
+        } else if (redirectPath && redirectPath !== '/') {
+            router.replace(redirectPath);
+        } else {
+            router.replace(`/dashboard/${finalRole}`);
+        }
 
     } catch (error: any) {
         // Handle specific errors
@@ -159,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
         }
     }
-  }, [router, toast]);
+  }, [router, toast, searchParams]);
 
 
   const logout = useCallback(async () => {
