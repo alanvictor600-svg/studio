@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             username: originalUsername, 
             role,
             createdAt: new Date().toISOString(),
-            saldo: role === 'cliente' ? 50 : 0, // Initial balance
+            saldo: 0, // Initial balance is always 0
         };
         
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
