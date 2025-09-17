@@ -1,0 +1,73 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check for admin role
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Usuários
+    match /users/{userId} {
+      // Criação: Qualquer um pode criar seu próprio usuário (registro)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Leitura: Um usuário pode ler seu próprio perfil. Um admin pode ler qualquer perfil.
+      allow read: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+      
+      // Atualização: Um usuário só pode atualizar seu próprio perfil. Admins podem atualizar qualquer um.
+      // Importante: impede que o usuário mude o próprio 'role' ou 'saldo'.
+      allow update: if (request.auth != null && request.auth.uid == userId && 
+                       request.resource.data.role == resource.data.role &&
+                       request.resource.data.saldo == resource.data.saldo) || isAdmin();
+
+      // Exclusão: Apenas admins podem deletar usuários.
+      allow delete: if isAdmin();
+    }
+    
+    // Bilhetes
+    match /tickets/{ticketId} {
+      // Leitura: O comprador, o vendedor ou um admin podem ler.
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.buyerId || 
+                      request.auth.uid == resource.data.sellerId || 
+                      isAdmin());
+                      
+      // Escrita (Criação/Atualização/Exclusão): Nenhuma permissão no lado do cliente.
+      // TODAS as operações de escrita devem passar por uma Cloud Function (ou API route) segura.
+      allow write: if false;
+    }
+    
+    // Sorteios
+    match /draws/{drawId} {
+      // Leitura: Qualquer usuário autenticado pode ver os sorteios.
+      allow read: if request.auth != null;
+      // Escrita: Apenas admins (via Cloud Function/API)
+      allow write: if false;
+    }
+    
+    // Configurações
+    match /configs/global {
+      // Leitura: Qualquer usuário autenticado pode ler as configs.
+      allow read: if request.auth != null;
+      // Escrita: Apenas admins (via Cloud Function/API)
+      allow write: if false;
+    }
+    
+    // Históricos (Admin e Vendedor)
+    match /adminHistory/{historyId} {
+      // Acesso apenas por admins (via Cloud Function/API)
+      allow read, write: if false;
+    }
+    
+    match /sellerHistory/{historyId} {
+      // Leitura: Apenas o vendedor dono do histórico ou um admin.
+      allow read: if (request.auth != null && request.auth.uid == resource.data.sellerId) || isAdmin();
+      // Escrita: Ninguém no cliente.
+      allow write: if false;
+    }
+  }
+}
