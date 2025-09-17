@@ -3,7 +3,7 @@
 
 import type { FC } from 'react';
 import type { Draw } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, Hash, Clover } from 'lucide-react';
@@ -21,23 +21,15 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-white/10 rounded-full blur-3xl animate-pulse delay-500"></div>
 
       <CardHeader className="pb-4 relative z-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-2">
-            <CardTitle className="text-lg flex items-center font-bold">
-                <Hash className="mr-2 h-5 w-5 shrink-0" />
-                <span className="truncate">
-                Sorteio ID: <span className="font-mono text-sm opacity-90 ml-1.5">#{draw.id.substring(0, 8)}</span>
-                </span>
-            </CardTitle>
-            <div className="text-xs opacity-90 flex items-center text-right shrink-0">
-                <CalendarDays size={14} className="mr-1.5" />
-                {format(parseISO(draw.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </div>
-        </div>
-        {draw.name && (
-            <CardDescription className="text-lg font-semibold text-primary-foreground mt-2 flex items-center justify-center text-center pt-2 border-t border-primary-foreground/20">
-                <Clover size={18} className="mr-2 shrink-0 text-green-300" />
+        {draw.name ? (
+            <CardDescription className="text-xl font-bold text-primary-foreground flex items-center justify-center text-center">
+                <Clover size={20} className="mr-2 shrink-0 text-green-300" />
                 <span>{draw.name}</span>
             </CardDescription>
+        ) : (
+            <CardTitle className="text-xl flex items-center font-bold justify-center">
+                Sorteio Realizado
+            </CardTitle>
         )}
       </CardHeader>
       <CardContent className="relative z-10">
@@ -61,6 +53,18 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
           </div>
         </div>
       </CardContent>
+      <CardFooter className="relative z-10 pt-6 mt-4 border-t border-primary-foreground/20 flex-col sm:flex-row justify-between items-center text-xs opacity-90 gap-2">
+         <div className="flex items-center">
+            <Hash className="mr-1.5 h-4 w-4 shrink-0" />
+            <span className="truncate">
+            ID: <span className="font-mono text-sm opacity-90 ml-1">#{draw.id.substring(0, 8)}</span>
+            </span>
+        </div>
+        <div className="flex items-center text-right shrink-0">
+            <CalendarDays size={14} className="mr-1.5" />
+            {format(parseISO(draw.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+        </div>
+      </CardFooter>
     </Card>
   );
 };
