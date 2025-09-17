@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import html2canvas from 'html2canvas';
@@ -81,6 +81,7 @@ const ReceiptContent: FC<{ tickets: Ticket[]; lotteryConfig: LotteryConfig }> = 
   </div>
 );
 
+
 export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOpenChange, tickets, lotteryConfig }) => {
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -89,18 +90,43 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
     return null;
   }
 
-  const handleShareImage = async () => {
+  const generateCanvas = async (): Promise<HTMLCanvasElement | null> => {
     if (!receiptRef.current) {
         toast({ title: 'Erro', description: 'Não foi possível gerar a imagem do comprovante.', variant: 'destructive' });
-        return;
+        return null;
     }
+    try {
+        return await html2canvas(receiptRef.current, { useCORS: true, backgroundColor: null });
+    } catch (error) {
+        console.error('Erro ao gerar canvas:', error);
+        toast({ title: 'Erro ao gerar imagem', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+        return null;
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    const canvas = await generateCanvas();
+    if (!canvas) return;
+
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'comprovante-bolao-potiguar.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Download Iniciado!', description: 'O comprovante está sendo salvo.', className: 'bg-primary text-primary-foreground' });
+  };
+
+  const handleShareImage = async () => {
     if (!navigator.share) {
-        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento.', variant: 'destructive' });
+        toast({ title: 'Não Suportado', description: 'Seu navegador não suporta a função de compartilhamento de nativo.', variant: 'destructive' });
         return;
     }
 
+    const canvas = await generateCanvas();
+    if (!canvas) return;
+
     try {
-        const canvas = await html2canvas(receiptRef.current, { useCORS: true, backgroundColor: null });
         const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
 
         if (!blob) {
@@ -130,7 +156,6 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
     }
   };
 
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card">
@@ -146,11 +171,14 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
             </div>
         </ScrollArea>
 
-        <DialogFooter className="sm:flex-col gap-3">
-          <Button type="button" onClick={handleShareImage} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            <ImageIcon className="mr-2 h-4 w-4" /> Compartilhar Comprovante
+        <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <Button type="button" onClick={handleDownloadImage} variant="outline" className="w-full sm:w-auto">
+            <Download className="mr-2 h-4 w-4" /> Baixar Comprovante
           </Button>
-          <DialogClose asChild>
+          <Button type="button" onClick={handleShareImage} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
+            <ImageIcon className="mr-2 h-4 w-4" /> Compartilhar
+          </Button>
+          <DialogClose asChild className="sm:hidden">
             <Button type="button" variant="secondary" className="w-full">
               Fechar
             </Button>
