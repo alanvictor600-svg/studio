@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from '@/components/shopping-cart';
 import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
+import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
@@ -40,7 +41,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     isSubmitting, 
     lotteryConfig,
     isCreditsDialogOpen,
-    setIsCreditsDialogOpen
+    setIsCreditsDialogOpen,
+    receiptTickets,
+    setReceiptTickets,
   } = useDashboard();
 
   useEffect(() => {
@@ -166,6 +169,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         <InsufficientCreditsDialog
             isOpen={isCreditsDialogOpen}
             onOpenChange={setIsCreditsDialogOpen}
+        />
+        <TicketReceiptDialog
+            isOpen={!!receiptTickets}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                setReceiptTickets(null);
+              }
+            }}
+            tickets={receiptTickets}
+            lotteryConfig={lotteryConfig}
         />
       </SidebarInset>
     </SidebarProvider>

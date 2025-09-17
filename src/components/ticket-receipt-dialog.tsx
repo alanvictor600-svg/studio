@@ -16,19 +16,20 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Share2, Image as ImageIcon } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import html2canvas from 'html2canvas';
+import { ScrollArea } from './ui/scroll-area';
 
 interface TicketReceiptDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  ticket: Ticket | null;
+  tickets: Ticket[] | null;
   lotteryConfig: LotteryConfig;
 }
 
-const ReceiptContent: FC<{ ticket: Ticket; lotteryConfig: LotteryConfig }> = ({ ticket, lotteryConfig }) => (
+const ReceiptContent: FC<{ tickets: Ticket[]; lotteryConfig: LotteryConfig }> = ({ tickets, lotteryConfig }) => (
   <div className="bg-white text-black font-mono p-6 max-w-sm mx-auto rounded-lg shadow-lg border-2 border-dashed border-gray-400">
     <div className="text-center mb-4">
       <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" />
@@ -36,36 +37,42 @@ const ReceiptContent: FC<{ ticket: Ticket; lotteryConfig: LotteryConfig }> = ({ 
       <p className="text-sm">Comprovante de Aposta</p>
     </div>
 
-    <Separator className="my-4 border-dashed bg-gray-400" />
+    {tickets.map((ticket, idx) => (
+      <div key={ticket.id}>
+        {idx > 0 && <Separator className="my-4 border-t-2 border-dashed bg-gray-400" />}
+        
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between"><span>Data/Hora:</span> <span>{format(parseISO(ticket.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}</span></div>
+          <div className="flex justify-between"><span>Bilhete ID:</span> <span>#{ticket.id.substring(0, 8)}</span></div>
+          {ticket.buyerName && (
+            <div className="flex justify-between"><span>Comprador:</span> <span className="font-bold">{ticket.buyerName}</span></div>
+          )}
+          {ticket.sellerUsername && (
+            <div className="flex justify-between"><span>Vendedor:</span> <span>{ticket.sellerUsername}</span></div>
+          )}
+        </div>
 
-    <div className="space-y-2 text-sm">
-      <div className="flex justify-between"><span>Data/Hora:</span> <span>{format(parseISO(ticket.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}</span></div>
-      <div className="flex justify-between"><span>Bilhete ID:</span> <span>#{ticket.id.substring(0, 8)}</span></div>
-      <div className="flex justify-between"><span>Comprador:</span> <span className="font-bold">{ticket.buyerName}</span></div>
-      {ticket.sellerUsername && (
-        <div className="flex justify-between"><span>Vendedor:</span> <span>{ticket.sellerUsername}</span></div>
-      )}
-    </div>
+        <Separator className="my-4 border-dashed bg-gray-400" />
 
-    <Separator className="my-4 border-dashed bg-gray-400" />
+        <p className="text-center text-sm uppercase tracking-widest mb-2">Seus Números da Sorte</p>
+        <div className="grid grid-cols-5 gap-2 text-center">
+          {ticket.numbers.map((num, index) => (
+            <span key={index} className="flex items-center justify-center h-10 w-10 rounded-md bg-gray-200 font-bold text-lg shadow-inner">
+              {num.toString().padStart(2, '0')}
+            </span>
+          ))}
+        </div>
 
-    <p className="text-center text-sm uppercase tracking-widest mb-2">Seus Números da Sorte</p>
-    <div className="grid grid-cols-5 gap-2 text-center">
-      {ticket.numbers.map((num, index) => (
-        <span key={index} className="flex items-center justify-center h-10 w-10 rounded-md bg-gray-200 font-bold text-lg shadow-inner">
-          {num.toString().padStart(2, '0')}
-        </span>
-      ))}
-    </div>
+        <Separator className="my-4 border-dashed bg-gray-400" />
 
-    <Separator className="my-4 border-dashed bg-gray-400" />
-
-    <div className="space-y-2 text-sm">
-      <div className="flex justify-between font-bold text-base">
-        <span>Valor Pago:</span>
-        <span>R$ {lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}</span>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between font-bold text-base">
+            <span>Valor Pago:</span>
+            <span>R$ {lotteryConfig.ticketPrice.toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
       </div>
-    </div>
+    ))}
     
     <div className="text-center mt-6">
       <p className="font-bold text-sm">Boa Sorte! 🍀</p>
@@ -75,11 +82,11 @@ const ReceiptContent: FC<{ ticket: Ticket; lotteryConfig: LotteryConfig }> = ({ 
 );
 
 
-export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOpenChange, ticket, lotteryConfig }) => {
+export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOpenChange, tickets, lotteryConfig }) => {
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
 
-  if (!ticket) {
+  if (!tickets || tickets.length === 0) {
     return null;
   }
 
@@ -96,7 +103,7 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
     try {
         const canvas = await html2canvas(receiptRef.current, { 
             useCORS: true, 
-            backgroundColor: null // Use transparent background, the component has its own
+            backgroundColor: null 
         });
         canvas.toBlob(async (blob) => {
             if (!blob) {
@@ -105,11 +112,13 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
             }
             const file = new File([blob], 'comprovante.png', { type: 'image/png' });
             
+            const buyerName = tickets[0]?.buyerName || 'cliente';
+
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
                     title: 'Comprovante de Aposta - Bolão Potiguar',
-                    text: `Comprovante da aposta para ${ticket.buyerName}`,
+                    text: `Comprovante da aposta para ${buyerName}`,
                 });
                 toast({ title: 'Comprovante compartilhado!' });
             } else {
@@ -136,10 +145,12 @@ export const TicketReceiptDialog: FC<TicketReceiptDialogProps> = ({ isOpen, onOp
             Comprovante Gerado
           </DialogTitle>
         </DialogHeader>
-
-        <div ref={receiptRef} className="my-4">
-          <ReceiptContent ticket={ticket} lotteryConfig={lotteryConfig} />
-        </div>
+        
+        <ScrollArea className="max-h-[60vh] my-4">
+            <div ref={receiptRef}>
+                <ReceiptContent tickets={tickets} lotteryConfig={lotteryConfig} />
+            </div>
+        </ScrollArea>
 
         <DialogFooter className="sm:flex-col gap-3">
           <Button type="button" onClick={handleShare} className="w-full bg-blue-600 hover:bg-blue-700 text-white">

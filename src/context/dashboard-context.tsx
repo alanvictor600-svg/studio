@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from 'react';
-import type { LotteryConfig, User } from '@/types';
+import type { LotteryConfig, User, Ticket } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { db } from '@/lib/firebase';
@@ -18,6 +18,8 @@ interface DashboardContextType {
     handlePurchaseCart: () => Promise<void>;
     isCreditsDialogOpen: boolean;
     setIsCreditsDialogOpen: Dispatch<SetStateAction<boolean>>;
+    receiptTickets: Ticket[] | null;
+    setReceiptTickets: Dispatch<SetStateAction<Ticket[] | null>>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
     const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+    const [receiptTickets, setReceiptTickets] = useState<Ticket[] | null>(null);
     const { currentUser, updateCurrentUserCredits } = useAuth();
     const { toast } = useToast();
 
@@ -51,7 +54,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         const totalCost = cart.length * lotteryConfig.ticketPrice;
         const userRef = doc(db, "users", currentUser.id);
 
-        // First, check user balance BEFORE starting the transaction
         const userDoc = await getDoc(userRef);
         if (!userDoc.exists() || (userDoc.data().saldo || 0) < totalCost) {
             setIsCreditsDialogOpen(true);
@@ -61,10 +63,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const batch = writeBatch(db);
+            const createdTickets: Ticket[] = [];
 
             cart.forEach(ticketNumbers => {
                 const newTicketRef = doc(collection(db, "tickets"));
-                const newTicketData = {
+                const newTicketData: Ticket = {
                     id: newTicketRef.id,
                     numbers: ticketNumbers.sort((a, b) => a - b),
                     status: 'active' as const,
@@ -73,15 +76,14 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                     buyerId: currentUser.id,
                 };
                 batch.set(newTicketRef, newTicketData);
+                createdTickets.push(newTicketData);
             });
             
-            // Now, run the transaction only to update the balance
             await runTransaction(db, async (transaction) => {
                 const freshUserDoc = await transaction.get(userRef);
                 if (!freshUserDoc.exists()) throw new Error("Usuário não encontrado.");
                 
                 const currentBalance = freshUserDoc.data().saldo || 0;
-                // Double-check balance inside transaction in case of race conditions
                 if (currentBalance < totalCost) throw new Error("Saldo insuficiente. A transação foi cancelada.");
 
                 const newBalance = currentBalance - totalCost;
@@ -92,14 +94,8 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
             updateCurrentUserCredits((currentUser.saldo || 0) - totalCost);
             
-            toast({
-                title: `Compra Realizada! (${cart.length} bilhete${cart.length > 1 ? 's' : ''})`,
-                description: `Boa sorte! Seus bilhetes estão em "Meus Bilhetes".`,
-                className: "bg-primary text-primary-foreground",
-                duration: 4000
-            });
-
             setCart([]);
+            setReceiptTickets(createdTickets); // Set tickets for receipt dialog
 
         } catch (e: any) {
             console.error("Transaction failed: ", e);
@@ -118,7 +114,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setLotteryConfig,
         handlePurchaseCart,
         isCreditsDialogOpen,
-        setIsCreditsDialogOpen
+        setIsCreditsDialogOpen,
+        receiptTickets,
+        setReceiptTickets,
     };
 
     return (
