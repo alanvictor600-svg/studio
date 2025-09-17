@@ -5,7 +5,6 @@ import type { FC } from 'react';
 import { useMemo } from 'react';
 import type { Ticket, Draw } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -84,7 +83,8 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
   }, [draws]);
 
   const processedTicketNumbers = useMemo(() => {
-    if (ticket.status === 'expired') {
+    // For expired, unpaid, or awaiting payment tickets, don't highlight any numbers
+    if (ticket.status === 'expired' || ticket.status === 'unpaid' || ticket.status === 'awaiting_payment') {
         return ticket.numbers.map(num => ({ numberValue: num, isMatched: false }));
     }
 
@@ -103,24 +103,36 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
   return (
      <Card className={cn(
         "shadow-lg hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-card/70 backdrop-blur-sm border-border/50",
-        ticket.status === 'winning' && 'shadow-green-500/20 hover:shadow-green-500/30'
+        ticket.status === 'winning' && 'shadow-emerald-500/20 hover:shadow-emerald-500/30'
      )}>
         {/* Glow effect for winning ticket */}
         {ticket.status === 'winning' && (
-            <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-gradient-radial from-green-500/15 via-transparent to-transparent animate-[spin_10s_linear_infinite] z-0" />
+            <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-gradient-radial from-emerald-500/15 via-transparent to-transparent animate-[spin_10s_linear_infinite] z-0" />
         )}
         
         <div className="relative z-10 flex flex-col h-full">
             {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b border-dashed">
-                <div className="flex items-center gap-2">
-                    <TicketIcon className={cn("h-5 w-5", statusProps.textColor)} />
-                    <p className="font-mono text-xs text-muted-foreground">#{ticket.id.substring(0, 8)}</p>
+            <div className="flex justify-between items-start p-4 border-b border-dashed">
+                <div className="space-y-2">
+                    <div className={cn("flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-full border-2", statusProps.bgColor, statusProps.textColor, `border-current/30`)}>
+                        <statusProps.Icon className="mr-1 h-4 w-4" />
+                        {statusProps.label}
+                    </div>
+                     <p className="font-mono text-xs text-muted-foreground pl-3">#{ticket.id.substring(0, 8)}</p>
                 </div>
-                 <Badge variant="outline" className={cn("text-xs font-semibold px-2 py-1 border-dashed", statusProps.bgColor, statusProps.textColor, `border-current/30`)}>
-                    <statusProps.Icon className="mr-1.5 h-3 w-3" />
-                    {statusProps.label}
-                </Badge>
+                
+                {(ticket.status === 'active' || ticket.status === 'winning') && draws && draws.length > 0 && (
+                    <div className={cn(
+                        "text-center p-2 rounded-lg shadow-inner",
+                        ticket.status === 'winning' ? "bg-emerald-500/20 text-emerald-500" : "bg-muted/60"
+                    )}>
+                        <div className="text-xs font-bold tracking-wider uppercase text-muted-foreground">Acertos</div>
+                        <div className="text-2xl font-black flex items-center justify-center gap-1">
+                            <CheckCircle className="h-5 w-5" />
+                            <span>{matches}</span>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Content */}
@@ -140,12 +152,6 @@ export const TicketCard: FC<TicketCardProps> = ({ ticket, draws }) => {
                         </div>
                     ))}
                 </div>
-                 {ticket.status === 'active' && draws && draws.length > 0 && (
-                    <div className={cn("flex items-center justify-center text-sm mt-5 p-2 rounded-lg", statusProps.bgColor, statusProps.textColor)}>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        <span className="font-semibold">Acertos até agora: {matches}</span>
-                    </div>
-                )}
             </CardContent>
             
             {/* Footer */}
