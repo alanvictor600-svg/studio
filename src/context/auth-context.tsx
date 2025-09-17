@@ -8,13 +8,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 
 interface AuthContextType {
   currentUser: User | null;
   login: (username: string, passwordAttempt: string, loginAs?: 'admin') => Promise<void>;
+  signInWithGoogle: (role: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<void>;
   isLoading: boolean;
@@ -54,8 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
               // This can happen if the user is deleted from Firestore but not from Auth
-              console.error("User document not found for authenticated user:", firebaseUser.uid);
-              signOut(auth); // Log out the user to prevent inconsistent state
+              console.log("User document not found for authenticated user, may be a new Google Sign-in:", firebaseUser.uid);
+              // signOut(auth); // Do not log out here, new Google user might be in process of being created.
             }
             setIsFirestoreLoading(false);
         }, (error) => {
@@ -115,6 +116,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
      }
   }, [toast, router, searchParams]);
 
+  const signInWithGoogle = useCallback(async (role: 'cliente' | 'vendedor') => {
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        let finalRole: User['role'] = role;
+
+        if (userDoc.exists()) {
+            // User already exists, log them in and redirect
+            const existingUserData = userDoc.data() as User;
+            finalRole = existingUserData.role; // Use existing role
+            toast({ title: `Bem-vindo(a) de volta, ${existingUserData.username}!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
+        } else {
+            // New user, create a document for them
+            const newUser: User = {
+                id: user.uid,
+                username: user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`,
+                role: finalRole,
+                createdAt: new Date().toISOString(),
+                saldo: 0,
+            };
+            await setDoc(userDocRef, newUser);
+            toast({ title: "Conta criada com sucesso!", description: "Bem-vindo(a) ao Bolão Potiguar!", className: "bg-primary text-primary-foreground", duration: 3000 });
+        }
+        
+        // Redirect to the correct dashboard
+        router.replace(`/dashboard/${finalRole}`);
+
+    } catch (error: any) {
+        // Handle specific errors
+        if (error.code === 'auth/account-exists-with-different-credential') {
+            toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
+        } else if (error.code === 'auth/popup-closed-by-user') {
+            toast({ title: "Login cancelado", description: "A janela de login com Google foi fechada.", variant: "default", duration: 3000 });
+        } else {
+            console.error("Google Sign-In Error:", error);
+            toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
+        }
+    }
+  }, [router, toast]);
+
+
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
@@ -145,7 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             username: originalUsername, 
             role,
             createdAt: new Date().toISOString(),
-            saldo: 0, // Initial balance is always 0
+            saldo: 0,
         };
         
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
@@ -175,7 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  const value = { currentUser, login, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
+  const value = { currentUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

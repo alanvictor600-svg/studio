@@ -32,7 +32,7 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
-  const { register, isLoading: authLoading } = useAuth();
+  const { register, signInWithGoogle, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -98,7 +98,7 @@ export default function CadastroPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full h-12 text-base" onClick={() => toast({ title: 'Indisponível', description: 'Login com Google será ativado em breve.', variant: 'default' })} disabled>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={() => signInWithGoogle(role)} disabled={authLoading}>
               <GoogleIcon />
               <span className="ml-2">Continuar com Google</span>
             </Button>
