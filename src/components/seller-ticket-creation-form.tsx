@@ -13,10 +13,9 @@ import { NumberButton } from '@/components/number-button';
 import { X, Sparkles, Trash2, TicketPlus, User, Phone, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import type { Ticket, LotteryConfig } from '@/types';
-import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
-import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
 import { createSellerTicket } from '@/lib/services/ticketService';
+import { useDashboard } from '@/context/dashboard-context';
 
 
 interface SellerTicketCreationFormProps {
@@ -37,10 +36,10 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
   const { toast } = useToast();
-  const [receiptTicket, setReceiptTicket] = useState<Ticket | null>(null);
-  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser, updateCurrentUserCredits } = useAuth();
+  const { setReceiptTickets, setIsCreditsDialogOpen } = useDashboard();
+
 
   const numberCounts = countOccurrences(currentPicks);
 
@@ -107,7 +106,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      const createdTicket = await createSellerTicket({
+      const { createdTicket, newBalance } = await createSellerTicket({
         seller: currentUser,
         lotteryConfig,
         ticketPicks: currentPicks,
@@ -116,14 +115,13 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
       });
 
       // Update local balance optimistically
-      const newBalance = (currentUser.saldo || 0) - lotteryConfig.ticketPrice;
       updateCurrentUserCredits(newBalance);
       
-      // Clear form and show receipt
+      // Clear form and show receipt using context
       setCurrentPicks([]);
       setBuyerName('');
       setBuyerPhone('');
-      setReceiptTicket(createdTicket);
+      setReceiptTickets([createdTicket]);
 
       // Notify parent about new ticket (onSnapshot will handle the rest)
       onTicketCreated(createdTicket);
@@ -237,24 +235,6 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
           </Button>
         </CardFooter>
       </Card>
-      
-      {receiptTicket && (
-        <TicketReceiptDialog
-          isOpen={!!receiptTicket}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setReceiptTicket(null);
-            }
-          }}
-          tickets={[receiptTicket]}
-          lotteryConfig={lotteryConfig}
-        />
-      )}
-
-      <InsufficientCreditsDialog
-        isOpen={isCreditsDialogOpen}
-        onOpenChange={setIsCreditsDialogOpen}
-      />
     </>
   );
 };
