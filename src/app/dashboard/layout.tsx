@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { User, LotteryConfig } from '@/types';
+import type { User, LotteryConfig, Ticket } from '@/types';
 import Link from 'next/link';
 
 import { 
@@ -21,10 +21,24 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Ticket, Home, User as UserIcon, FileText, ShoppingBag, LayoutDashboard } from 'lucide-react';
+import { LogOut, Coins, Ticket as TicketIcon, Home, User as UserIcon, FileText, ShoppingBag, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
+import { ShoppingCart } from '@/components/shopping-cart';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+
+// Props passed down from the page to the layout
+interface DashboardPageProps {
+  cart: number[][];
+  setCart: React.Dispatch<React.SetStateAction<number[][]>>;
+  currentUser: User | null;
+  lotteryConfig: LotteryConfig;
+  isSubmitting: boolean;
+  handlePurchaseCart: () => Promise<void>;
+}
 
 export default function DashboardLayout({
   children,
@@ -34,10 +48,9 @@ export default function DashboardLayout({
   const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const pageProps = children.props.children.props as DashboardPageProps;
 
   useEffect(() => {
-    // Se o carregamento terminou e o usuário não está autenticado,
-    // redireciona para a página de login.
     if (!isLoading && !isAuthenticated) {
       router.replace('/login?redirect=' + pathname);
     }
@@ -52,8 +65,6 @@ export default function DashboardLayout({
     );
   }
   
-  // Se, após o carregamento, o usuário não tiver o perfil esperado (cliente/vendedor),
-  // não renderiza nada. O useEffect acima já terá iniciado o redirecionamento.
   if (currentUser.role !== 'cliente' && currentUser.role !== 'vendedor') {
       router.replace('/login');
       return (
@@ -137,10 +148,24 @@ export default function DashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:hidden sticky top-0 z-10">
-            <SidebarTrigger />
-            <span className="font-semibold text-primary">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
-            <div/>
+        <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 sticky top-0 z-10">
+            <div className="md:hidden">
+                <SidebarTrigger />
+            </div>
+            <span className="font-semibold text-primary hidden md:block">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
+            <div className="flex items-center gap-4 ml-auto">
+                {currentUser.role === 'cliente' && (
+                    <ShoppingCart 
+                        cart={pageProps.cart}
+                        currentUser={pageProps.currentUser}
+                        lotteryConfig={pageProps.lotteryConfig}
+                        isSubmitting={pageProps.isSubmitting}
+                        onPurchase={pageProps.handlePurchaseCart}
+                        onRemoveFromCart={(index) => pageProps.setCart(pageProps.cart.filter((_, i) => i !== index))}
+                    />
+                )}
+                <ThemeToggleButton />
+            </div>
         </header>
         <div className="p-4 md:p-8">
             {children}

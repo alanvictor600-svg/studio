@@ -9,12 +9,13 @@ import type { User, LotteryConfig, Ticket, Draw } from '@/types';
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { SellerDashboard } from '@/components/seller-dashboard';
 import { TicketList } from '@/components/ticket-list';
-import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ticket as TicketIcon, ShoppingBag, Repeat } from 'lucide-react';
+import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -37,7 +38,12 @@ export default function DashboardPage() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [allDraws, setAllDraws] = useState<Draw[]>([]);
   const [activeTab, setActiveTab] = useState('aposta');
+  
+  // States for the Shopping Cart feature
+  const [cart, setCart] = useState<number[][]>([]);
   const [ticketToRebet, setTicketToRebet] = useState<number[] | null>(null);
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validate the role from the URL
   useEffect(() => {
@@ -45,6 +51,20 @@ export default function DashboardPage() {
       notFound();
     }
   }, [role]);
+  
+  // Effect to handle re-betting logic
+  useEffect(() => {
+    if (ticketToRebet) {
+      setCart(prevCart => [...prevCart, ticketToRebet]);
+      setTicketToRebet(null); // Reset after adding to cart
+      setActiveTab('aposta');
+       toast({
+        title: "Bilhete adicionado ao carrinho!",
+        description: "A aposta selecionada está pronta para ser comprada novamente.",
+        duration: 4000
+      });
+    }
+  }, [ticketToRebet, toast]);
 
   // Main data fetching and real-time listeners effect
   useEffect(() => {
@@ -133,15 +153,90 @@ export default function DashboardPage() {
 
   const handleRebet = (numbers: number[]) => {
     setTicketToRebet(numbers);
-    setActiveTab('aposta');
-    toast({
-        title: "Números Prontos para Re-aposta!",
-        description: "Os números do bilhete selecionado foram adicionados ao seu carrinho de apostas.",
-        duration: 4000
-    });
+  };
+
+  const handlePurchaseCart = async () => {
+    if (!currentUser) {
+        toast({ title: "Erro", description: "Você precisa estar logado para comprar.", variant: "destructive" });
+        return;
+    }
+    if (cart.length === 0) {
+      toast({ title: "Carrinho Vazio", description: "Adicione pelo menos um bilhete ao carrinho para comprar.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    const totalCost = cart.length * lotteryConfig.ticketPrice;
+
+    try {
+      const userRef = doc(db, "users", currentUser.id);
+      
+      const batch = writeBatch(db);
+      cart.forEach(ticketNumbers => {
+          const newTicketRef = doc(collection(db, "tickets"));
+          const newTicketData: Ticket = {
+            id: newTicketRef.id,
+            numbers: ticketNumbers.sort((a,b) => a-b),
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            buyerName: currentUser.username,
+            buyerId: currentUser.id,
+          };
+          batch.set(newTicketRef, newTicketData);
+      });
+      
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+          throw new Error("User not found.");
+        }
+        const currentBalance = userDoc.data().saldo || 0;
+        if (currentBalance < totalCost) {
+          throw new Error("Insufficient credits.");
+        }
+        const newBalance = currentBalance - totalCost;
+        transaction.update(userRef, { saldo: newBalance });
+      });
+
+      await batch.commit();
+
+      updateCurrentUserCredits((currentUser.saldo || 0) - totalCost);
+      
+      toast({ 
+          title: `Compra Realizada! (${cart.length} bilhete${cart.length > 1 ? 's' : ''})`, 
+          description: `Boa sorte! Seus bilhetes estão em "Meus Bilhetes".`, 
+          className: "bg-primary text-primary-foreground", 
+          duration: 4000 
+      });
+
+      setCart([]);
+
+    } catch (e: any) {
+      console.error("Transaction failed: ", e);
+      if (e.message === 'Insufficient credits.') {
+        setIsCreditsDialogOpen(true);
+      } else {
+        toast({ title: "Erro na Compra", description: e.message || "Não foi possível registrar seus bilhetes.", variant: "destructive" });
+      }
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const dashboardProps = {
+    cart,
+    setCart,
+    currentUser,
+    lotteryConfig,
+    isSubmitting,
+    isLotteryPaused,
+    handlePurchaseCart,
+    updateCurrentUserCredits
   };
   
   return (
+    <>
     <div className="space-y-12">
       <header>
           <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight text-center">
@@ -165,11 +260,9 @@ export default function DashboardPage() {
             <TabsContent value="aposta">
                  <TicketSelectionForm
                     isLotteryPaused={isLotteryPaused}
-                    currentUser={currentUser}
-                    updateCurrentUserCredits={updateCurrentUserCredits}
-                    lotteryConfig={lotteryConfig}
-                    initialCart={ticketToRebet ? [ticketToRebet] : []}
-                    onPurchaseComplete={() => setTicketToRebet(null)}
+                    cart={cart}
+                    onCartChange={setCart}
+                    isSubmitting={isSubmitting}
                 />
             </TabsContent>
             <TabsContent value="bilhetes">
@@ -194,5 +287,10 @@ export default function DashboardPage() {
          />
       )}
     </div>
+    <InsufficientCreditsDialog
+        isOpen={isCreditsDialogOpen}
+        onOpenChange={setIsCreditsDialogOpen}
+      />
+    </>
   );
 }
