@@ -30,7 +30,7 @@ interface TicketReceiptDialogProps {
 }
 
 const ReceiptContent: FC<{ tickets: Ticket[]; lotteryConfig: LotteryConfig }> = ({ tickets, lotteryConfig }) => (
-  <div className="bg-white text-black font-mono p-6 max-w-sm mx-auto rounded-lg shadow-lg border-2 border-dashed border-gray-400">
+  <div className="bg-white text-black font-sans p-6 max-w-sm mx-auto rounded-lg shadow-lg border-2 border-dashed border-gray-400">
     <div className="text-center mb-4">
       <Image src="/logo.png" alt="Logo" width={80} height={80} className="mx-auto" />
       <h2 className="text-2xl font-bold mt-2">Bolão Potiguar</h2>

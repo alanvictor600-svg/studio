@@ -16,8 +16,7 @@ import type { Ticket, LotteryConfig } from '@/types';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { useAuth } from '@/context/auth-context';
-import { db } from '@/lib/firebase';
-import { runTransaction, doc, collection } from 'firebase/firestore';
+import { createSellerTicket } from '@/lib/services/ticketService';
 
 
 interface SellerTicketCreationFormProps {
@@ -108,54 +107,31 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      const ticketPrice = lotteryConfig.ticketPrice;
-      const userRef = doc(db, "users", currentUser.id);
-
-      const createdTicket = await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) {
-          throw new Error("User not found.");
-        }
-
-        const currentBalance = userDoc.data().saldo || 0;
-        if (currentBalance < ticketPrice) {
-          throw new Error("Insufficient credits.");
-        }
-        
-        const newBalance = currentBalance - ticketPrice;
-
-        const newTicketRef = doc(collection(db, "tickets"));
-        const newTicketData: Omit<Ticket, 'buyerPhone'> & { buyerPhone?: string } = {
-          id: newTicketRef.id,
-          numbers: [...currentPicks].sort((a,b) => a-b),
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          buyerName: buyerName.trim(),
-          sellerId: currentUser.id,
-          sellerUsername: currentUser.username,
-        };
-
-        if (buyerPhone.trim()) {
-            newTicketData.buyerPhone = buyerPhone.trim();
-        }
-
-        transaction.set(newTicketRef, newTicketData);
-        transaction.update(userRef, { saldo: newBalance });
-        
-        return newTicketData as Ticket;
+      const createdTicket = await createSellerTicket({
+        seller: currentUser,
+        lotteryConfig,
+        ticketPicks: currentPicks,
+        buyerName: buyerName.trim(),
+        buyerPhone: buyerPhone.trim() || undefined,
       });
 
-      updateCurrentUserCredits((currentUser.saldo || 0) - ticketPrice);
+      // Update local balance optimistically
+      const newBalance = (currentUser.saldo || 0) - lotteryConfig.ticketPrice;
+      updateCurrentUserCredits(newBalance);
       
+      // Clear form and show receipt
       setCurrentPicks([]);
       setBuyerName('');
       setBuyerPhone('');
       setReceiptTicket(createdTicket);
 
+      // Notify parent about new ticket (onSnapshot will handle the rest)
+      onTicketCreated(createdTicket);
+
       toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado.", className: "bg-primary text-primary-foreground", duration: 3000 });
 
     } catch (e: any) {
-      console.error("Transaction failed: ", e);
+      console.error("Failed to create seller ticket: ", e);
        if (e.message === 'Insufficient credits.') {
           setIsCreditsDialogOpen(true);
         } else {
@@ -270,7 +246,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
               setReceiptTicket(null);
             }
           }}
-          ticket={receiptTicket}
+          tickets={[receiptTicket]}
           lotteryConfig={lotteryConfig}
         />
       )}
