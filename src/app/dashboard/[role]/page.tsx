@@ -16,31 +16,24 @@ import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ticket as TicketIcon, ShoppingBag, Repeat } from 'lucide-react';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
-import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
+import { useDashboard } from '@/context/dashboard-context';
 
-const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
-  ticketPrice: 2,
-  sellerCommissionPercentage: 10,
-  ownerCommissionPercentage: 5,
-  clientSalesCommissionToOwnerPercentage: 10,
-};
 
-// Componente Interno que usa o contexto
-function DashboardContent() {
+// O provedor foi movido para o layout.
+// Esta página agora apenas consome o contexto.
+export default function DashboardPage() {
   const params = useParams();
   const { role } = params as { role: 'cliente' | 'vendedor' };
-  const { currentUser, isLoading, isAuthenticated, updateCurrentUserCredits } = useAuth();
+  const { currentUser, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
-  // Estados agora gerenciados pelo contexto, mas inicializados aqui
   const {
       cart,
       setCart,
       isSubmitting,
-      setIsSubmitting,
-      lotteryConfig,
       setLotteryConfig,
+      lotteryConfig,
   } = useDashboard();
   
   const [userTickets, setUserTickets] = useState<Ticket[]>([]);
@@ -88,10 +81,10 @@ function DashboardContent() {
       if (doc.exists()) {
         const data = doc.data();
         setLotteryConfig({
-          ticketPrice: data.ticketPrice || DEFAULT_LOTTERY_CONFIG.ticketPrice,
-          sellerCommissionPercentage: data.sellerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.sellerCommissionPercentage,
-          ownerCommissionPercentage: data.ownerCommissionPercentage || DEFAULT_LOTTERY_CONFIG.ownerCommissionPercentage,
-          clientSalesCommissionToOwnerPercentage: data.clientSalesCommissionToOwnerPercentage || DEFAULT_LOTTERY_CONFIG.clientSalesCommissionToOwnerPercentage,
+          ticketPrice: data.ticketPrice || 2, // Default value
+          sellerCommissionPercentage: data.sellerCommissionPercentage || 10,
+          ownerCommissionPercentage: data.ownerCommissionPercentage || 5,
+          clientSalesCommissionToOwnerPercentage: data.clientSalesCommissionToOwnerPercentage || 10,
         });
       }
     }, (error) => {
@@ -219,13 +212,4 @@ function DashboardContent() {
       />
     </>
   );
-}
-
-// Componente principal que provê o contexto
-export default function DashboardPage() {
-    return (
-        <DashboardProvider>
-            <DashboardContent />
-        </DashboardProvider>
-    );
 }

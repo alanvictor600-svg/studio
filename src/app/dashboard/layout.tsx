@@ -26,13 +26,9 @@ import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from '@/components/shopping-cart';
-import { useDashboard } from '@/context/dashboard-context';
+import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -166,5 +162,14 @@ export default function DashboardLayout({
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </DashboardProvider>
   );
 }
