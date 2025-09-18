@@ -172,22 +172,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // O redirecionamento foi movido para o useEffect abaixo
+      router.replace('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
     }
-  }, [toast]);
-
-  // Este useEffect agora lida com o redirecionamento após o logout.
-  useEffect(() => {
-    // Se o usuário não está carregando e não existe mais (foi deslogado),
-    // e não estamos já na página inicial, então redireciona.
-    if (!isLoading && !firebaseUser) {
-        router.push('/');
-    }
-  }, [isLoading, firebaseUser, router]);
+  }, [toast, router]);
 
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => {
