@@ -13,8 +13,8 @@ if (!admin.apps.length) {
     );
   }
 
-  // Decodifica a chave privada do formato Base64
-  const privateKey = Buffer.from(privateKeyBase64, 'base64').toString('ascii');
+  // Decodifica a chave privada do formato Base64, garantindo que as quebras de linha sejam preservadas.
+  const privateKey = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
 
   admin.initializeApp({
     credential: admin.credential.cert({
