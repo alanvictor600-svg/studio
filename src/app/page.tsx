@@ -268,7 +268,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-              <Card className="shadow-md hover:shadow-lg transition-shadow">
+              <Card>
                 <CardHeader className="items-center">
                     <UserPlus className="h-10 w-10 text-primary mb-2" />
                     <CardTitle>1. Crie sua Conta</CardTitle>
@@ -277,7 +277,7 @@ export default function LandingPage() {
                   <p>Cadastre-se gratuitamente como cliente ou vendedor para começar.</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-md hover:shadow-lg transition-shadow">
+              <Card>
                 <CardHeader className="items-center">
                     <CheckCircle className="h-10 w-10 text-primary mb-2" />
                     <CardTitle>2. Faça sua Aposta</CardTitle>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                   <p>Adicione saldo e escolha seus 10 números da sorte no painel de apostas.</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-md hover:shadow-lg transition-shadow">
+              <Card>
                 <CardHeader className="items-center">
                     <Trophy className="h-10 w-10 text-primary mb-2" />
                     <CardTitle>3. Confira os Prêmios</CardTitle>

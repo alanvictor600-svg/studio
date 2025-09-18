@@ -38,9 +38,9 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
               <div
                 key={index}
                 className={cn(
-                  "relative h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center",
+                  "relative h-14 w-14 sm:h-20 sm:w-20 rounded-full flex items-center justify-center",
                   "bg-white/20 backdrop-blur-sm shadow-inner shadow-white/10 border border-white/30",
-                  "font-bold text-3xl sm:text-4xl text-primary-foreground",
+                  "font-bold text-2xl sm:text-4xl text-primary-foreground",
                   "transform transition-transform hover:scale-110"
                 )}
               >
