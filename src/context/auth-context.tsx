@@ -171,14 +171,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // The redirect is now explicit and should not conflict with route protection.
-      router.replace('/');
+      // Explicitly redirect to home page. This is the simplest and most robust way.
+      window.location.href = '/';
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
     }
-  }, [toast, router]);
+  }, [toast]);
 
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => {
