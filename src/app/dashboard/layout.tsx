@@ -47,12 +47,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   } = useDashboard();
 
   useEffect(() => {
+    // This effect handles redirection for users who are not authenticated
+    // after the initial authentication check is complete.
     if (!isLoading && !isAuthenticated) {
       router.replace('/login?redirect=' + pathname);
     }
   }, [isLoading, isAuthenticated, router, pathname]);
 
 
+  // While loading, or if the user is not authenticated yet, show a loading screen.
+  // This prevents content from flashing before the redirect logic in useEffect runs.
   if (isLoading || !isAuthenticated || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -61,9 +65,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
+  // If the user's role does not match the dashboard type, redirect to login.
+  // This prevents a client from accessing /dashboard/vendedor, for example.
   if (currentUser.role !== 'cliente' && currentUser.role !== 'vendedor') {
-      // Se o usuário logado não é cliente ou vendedor, o logout não foi completado
-      // ou há um estado inconsistente. Redirecionar para login.
       router.replace('/login');
       return (
          <div className="flex justify-center items-center min-h-screen bg-background">

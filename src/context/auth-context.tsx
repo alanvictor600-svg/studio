@@ -171,8 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // O onSnapshot listener irá limpar o currentUser.
-      // O redirecionamento é tratado pelos layouts de rota protegida.
+      // The redirect is now explicit and should not conflict with route protection.
       router.replace('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {

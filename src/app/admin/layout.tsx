@@ -48,14 +48,16 @@ export default function AdminLayout({
   const activeSection = searchParams.get('section') || 'configuracoes';
 
   useEffect(() => {
-    // Se o carregamento ainda está acontecendo e o usuário já se mostrou
-    // não autenticado, ou não é admin, redireciona.
+    // This effect handles redirection for users who are not authenticated admins
+    // after the initial authentication check is complete.
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
       router.replace('/login?redirect=/admin');
     }
   }, [isLoading, isAuthenticated, currentUser, router]);
 
 
+  // While loading, or if the user is not authenticated yet, show a loading screen.
+  // This prevents content from flashing before the redirect logic in useEffect runs.
   if (isLoading || !isAuthenticated || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -64,8 +66,8 @@ export default function AdminLayout({
     );
   }
 
-  // Se, após o carregamento, o papel do usuário não for admin, não renderiza nada.
-  // O useEffect acima já terá iniciado o redirecionamento.
+  // After loading, if the user is still not an admin, return null.
+  // The useEffect will handle the redirection, so we don't need to render anything.
   if (currentUser.role !== 'admin') {
     return null;
   }
