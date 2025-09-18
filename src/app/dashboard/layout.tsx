@@ -1,10 +1,9 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { User } from '@/types';
 import Link from 'next/link';
 
 import { 
@@ -21,7 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Ticket as TicketIcon, Home, User as UserIcon, FileText, ShoppingBag, LayoutDashboard } from 'lucide-react';
+import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
@@ -31,9 +30,12 @@ import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dia
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-  const { currentUser, logout, isLoading, isAuthenticated } = useAuth();
+  const { currentUser, logout, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
+  const { role } = params as { role: 'cliente' | 'vendedor' };
+
   const { 
     cart, 
     setCart, 
@@ -44,20 +46,35 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     setIsCreditsDialogOpen,
     receiptTickets,
     setReceiptTickets,
+    startDataListeners, // New function from context
+    isDataLoading
   } = useDashboard();
 
+  // Effect to start data listeners when user is authenticated
   useEffect(() => {
-    // This effect handles redirection for users who are not authenticated
-    // after the initial authentication check is complete.
-    if (!isLoading && !isAuthenticated) {
+    if (isAuthenticated && currentUser) {
+      startDataListeners(currentUser);
+    }
+  }, [isAuthenticated, currentUser, startDataListeners]);
+
+
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
       router.replace('/login?redirect=' + pathname);
     }
-  }, [isLoading, isAuthenticated, router, pathname]);
+  }, [isAuthLoading, isAuthenticated, router, pathname]);
+
+  useEffect(() => {
+    // This handles the case where a user might try to access the wrong dashboard,
+    // e.g., a client accessing /dashboard/vendedor.
+    if (!isAuthLoading && isAuthenticated && currentUser && currentUser.role !== role) {
+      // Redirect to their correct dashboard.
+      router.replace(`/dashboard/${currentUser.role}`);
+    }
+  }, [isAuthLoading, isAuthenticated, currentUser, role, router]);
 
 
-  // While loading, or if the user is not authenticated yet, show a loading screen.
-  // This prevents content from flashing before the redirect logic in useEffect runs.
-  if (isLoading || !isAuthenticated || !currentUser) {
+  if (isAuthLoading || !isAuthenticated || !currentUser) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <p className="text-foreground text-xl">Verificando sessão...</p>
@@ -65,10 +82,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If the user's role does not match the dashboard type, redirect to login.
-  // This prevents a client from accessing /dashboard/vendedor, for example.
-  if (currentUser.role !== 'cliente' && currentUser.role !== 'vendedor') {
-      router.replace('/login');
+  if (currentUser.role !== role) {
       return (
          <div className="flex justify-center items-center min-h-screen bg-background">
             <p className="text-foreground text-xl">Acesso negado. Redirecionando...</p>
@@ -170,7 +184,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
         </header>
         <div className="p-4 md:p-8">
-            {children}
+            {isDataLoading && !children ? (
+                <div className="text-center p-10">Carregando dados...</div>
+            ) : children}
         </div>
         <InsufficientCreditsDialog
             isOpen={isCreditsDialogOpen}
