@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useRef, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createClientTickets } from '@/lib/services/ticketService';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 
 interface DashboardContextType {
     cart: number[][];

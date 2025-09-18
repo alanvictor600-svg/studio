@@ -1,7 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, persistentLocalCache, memoryLocalCache } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,16 +14,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// Initialize Firestore with offline persistence, but only on the client-side.
-// This prevents server-side rendering errors.
-const db = typeof window !== 'undefined'
-  ? initializeFirestore(app, {
-      localCache: persistentLocalCache(/* No parameters needed here */)
-    })
-  : getFirestore(app); // Use a simpler initialization for the server.
-
 const auth = getAuth(app);
 
+// Firestore is initialized in firebase-client.ts or firebase-admin.ts to prevent bundling issues.
 
-export { app, auth, db };
+export { app, auth };

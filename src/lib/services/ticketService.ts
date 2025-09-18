@@ -1,6 +1,7 @@
 
+
 // src/lib/services/ticketService.ts
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { doc, runTransaction, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { Ticket, LotteryConfig, User } from '@/types';
 
