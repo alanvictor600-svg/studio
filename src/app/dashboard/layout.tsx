@@ -62,6 +62,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }
   
   if (currentUser.role !== 'cliente' && currentUser.role !== 'vendedor') {
+      // Se o usuário logado não é cliente ou vendedor, o logout não foi completado
+      // ou há um estado inconsistente. Redirecionar para login.
       router.replace('/login');
       return (
          <div className="flex justify-center items-center min-h-screen bg-background">

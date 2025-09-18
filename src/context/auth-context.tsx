@@ -54,9 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
-              // This can happen if the user is deleted from Firestore but not from Auth
-              console.log("User document not found for authenticated user, may be a new Google Sign-in:", firebaseUser.uid);
-              // signOut(auth); // Do not log out here, new Google user might be in process of being created.
+              setCurrentUser(null);
             }
             setIsFirestoreLoading(false);
         }, (error) => {
@@ -160,7 +158,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
         } else if (error.code === 'auth/popup-closed-by-user') {
-            toast({ title: "Login cancelado", description: "A janela de login com Google foi fechada.", variant: "default", duration: 3000 });
+            // This is a normal user action, no need to show an error toast.
+            // console.log("Google Sign-In popup closed by user.");
         } else {
             console.error("Google Sign-In Error:", error);
             toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
@@ -172,6 +171,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      // O onSnapshot listener irá limpar o currentUser.
+      // O redirecionamento é tratado pelos layouts de rota protegida.
       router.replace('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {

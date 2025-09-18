@@ -48,8 +48,8 @@ export default function AdminLayout({
   const activeSection = searchParams.get('section') || 'configuracoes';
 
   useEffect(() => {
-    // Se o carregamento terminou e o usuário não está autenticado como admin,
-    // redireciona para a página de login.
+    // Se o carregamento ainda está acontecendo e o usuário já se mostrou
+    // não autenticado, ou não é admin, redireciona.
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
       router.replace('/login?redirect=/admin');
     }
