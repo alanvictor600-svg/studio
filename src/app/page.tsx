@@ -169,7 +169,7 @@ export default function LandingPage() {
               </div>
             ) : (
                 <div className="flex items-center gap-2">
-                    <Button asChild variant="ghost">
+                    <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
                         <Link href="/login">
                             <LogIn className="mr-2 h-4 w-4" /> Entrar
                         </Link>
