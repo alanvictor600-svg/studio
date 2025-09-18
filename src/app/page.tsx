@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Users, ShoppingCart, ShieldCheck, ArrowRight, Settings, LogIn, UserPlus, LogOut, History, Award, Eye, EyeOff, LayoutDashboard, Rocket, Star, CheckCircle, Trophy } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
@@ -150,8 +150,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-4">
             {currentUser ? (
               <div className="flex items-center gap-2">
-                 <Button onClick={handlePainelClick}>
-                    <LayoutDashboard className="mr-0 sm:mr-2 h-4 w-4" /> <span className="hidden sm:inline">Meu Painel</span>
+                 <Button onClick={handlePainelClick} size="sm">
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Meu Painel
                 </Button>
                 <TooltipProvider>
                     <Tooltip>
@@ -169,14 +169,14 @@ export default function LandingPage() {
               </div>
             ) : (
                 <div className="flex items-center gap-2">
-                    <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+                    <Button asChild className="bg-green-600 hover:bg-green-700 text-white" size="sm">
                         <Link href="/login">
-                            <LogIn className="mr-0 sm:mr-2 h-4 w-4" /> <span className="hidden sm:inline">Entrar</span>
+                            <LogIn className="sm:mr-2 h-4 w-4" /> Entrar
                         </Link>
                     </Button>
-                    <Button asChild>
+                    <Button asChild size="sm">
                         <Link href="/cadastrar">
-                            <UserPlus className="mr-0 sm:mr-2 h-4 w-4" /> <span className="hidden sm:inline">Cadastrar</span>
+                            <UserPlus className="sm:mr-2 h-4 w-4" /> Cadastrar
                         </Link>
                     </Button>
                 </div>
@@ -208,12 +208,12 @@ export default function LandingPage() {
                     </div>
                     {!currentUser && (
                         <div className="flex flex-col sm:flex-row gap-4">
-                             <Button asChild size="lg" className="shadow-lg">
+                             <Button asChild size="lg">
                                 <Link href="/cadastrar?role=cliente">
                                     <UserPlus className="mr-2 h-5 w-5" /> Criar Conta de Cliente
                                 </Link>
                             </Button>
-                            <Button asChild size="lg" variant="secondary" className="shadow-lg">
+                            <Button asChild size="lg" variant="secondary">
                                 <Link href="/cadastrar?role=vendedor">
                                     <ShoppingCart className="mr-2 h-5 w-5" /> Virar um Vendedor
                                 </Link>
@@ -267,7 +267,7 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
+            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3">
               <Card>
                 <CardHeader className="items-center">
                     <UserPlus className="h-10 w-10 text-primary mb-2" />
