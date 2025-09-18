@@ -6,7 +6,7 @@ import type { Draw } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, Hash, Clover } from 'lucide-react';
+import { CalendarDays, Hash, Clover, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminDrawCardProps {
@@ -15,26 +15,23 @@ interface AdminDrawCardProps {
 
 export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
   return (
-    <Card className="relative overflow-hidden shadow-2xl bg-gradient-to-br from-primary via-blue-600 to-secondary text-primary-foreground border-none">
+    <Card className="relative overflow-hidden shadow-2xl bg-gradient-to-br from-primary/90 via-primary to-secondary/90 text-primary-foreground border-none h-full flex flex-col">
        <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-900/[0.04] [mask-image:linear-gradient(0deg,transparent,black)]"></div>
        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-white/10 rounded-full blur-3xl animate-pulse delay-500"></div>
 
       <CardHeader className="pb-4 relative z-10">
-        {draw.name ? (
-            <CardDescription className="text-3xl font-bold text-primary-foreground flex items-center justify-center text-center drop-shadow-lg">
-                <Clover size={28} className="mr-3 shrink-0 text-green-300" />
+         <CardTitle className="text-2xl font-bold text-primary-foreground text-center flex items-center justify-center">
+            <History className="mr-3 h-6 w-6" /> Resultados
+         </CardTitle>
+        {draw.name && (
+            <CardDescription className="text-lg font-semibold text-primary-foreground/90 flex items-center justify-center text-center drop-shadow-lg pt-2">
+                <Clover size={20} className="mr-2 shrink-0 text-green-300" />
                 <span>{draw.name}</span>
-                <Clover size={28} className="ml-3 shrink-0 text-green-300" />
             </CardDescription>
-        ) : (
-            <CardTitle className="text-3xl flex items-center font-bold justify-center drop-shadow-lg">
-                Sorteio Realizado
-            </CardTitle>
         )}
       </CardHeader>
-      <CardContent className="relative z-10">
-        <div>
+      <CardContent className="relative z-10 flex-grow flex flex-col justify-center">
           <p className="text-sm font-semibold mb-3 text-center text-primary-foreground/90 tracking-wider">Números Sorteados</p>
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center items-center">
             {draw.numbers.map((num, index) => (
@@ -52,7 +49,6 @@ export const AdminDrawCard: FC<AdminDrawCardProps> = ({ draw }) => {
               </div>
             ))}
           </div>
-        </div>
       </CardContent>
       <CardFooter className="relative z-10 pt-6 mt-4 border-t border-primary-foreground/20 flex justify-between items-center text-xs opacity-90 gap-4">
          <div className="flex items-center">

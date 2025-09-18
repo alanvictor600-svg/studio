@@ -30,10 +30,13 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
   if (draws.length === 0 || drawnNumbersFrequency.length === 0) {
     return (
       <Card className="h-full">
+        <CardHeader>
+           <CardTitle className="text-2xl font-bold text-primary text-center flex items-center justify-center">
+              <Star className="mr-3 h-6 w-6" /> Números da Sorte
+           </CardTitle>
+        </CardHeader>
         <CardContent className="flex flex-col items-center justify-center h-full p-6 text-center">
-           <Star className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Aguardando o primeiro sorteio do ciclo.</p>
-          <p className="text-sm text-muted-foreground/80">As estatísticas aparecerão aqui.</p>
+          <p className="text-muted-foreground">Aguardando o primeiro sorteio do ciclo para exibir estatísticas.</p>
         </CardContent>
       </Card>
     );
@@ -41,10 +44,15 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
 
   return (
     <Card className="h-full flex flex-col">
+       <CardHeader>
+           <CardTitle className="text-2xl font-bold text-primary text-center flex items-center justify-center">
+              <TrendingUp className="mr-3 h-6 w-6" /> Números da Sorte do Ciclo
+           </CardTitle>
+        </CardHeader>
       <CardContent className="p-4 flex-grow flex items-center justify-center">
         <div className="flex flex-wrap gap-4 justify-center">
             {drawnNumbersFrequency.map(({ number, count }, index) => (
-                <div key={number} className="relative flex flex-col items-center">
+                <div key={number} className="relative flex flex-col items-center space-y-2">
                     <Badge
                         variant="default"
                         className={cn(
@@ -59,7 +67,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
                     </Badge>
                      <Badge
                         variant="secondary"
-                        className="absolute -bottom-3 text-xs"
+                        className="text-xs"
                     >
                         {count}x
                     </Badge>
