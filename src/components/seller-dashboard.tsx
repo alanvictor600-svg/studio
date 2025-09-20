@@ -107,7 +107,7 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
 
     return (
         <Tabs defaultValue="vendas" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto mb-8 bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
+            <TabsList className="grid w-full grid-cols-3 h-auto mb-8 bg-card p-1.5 rounded-lg shadow-md">
                 <TabsTrigger value="vendas" className="py-2.5 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
                     <ShoppingBag className="mr-2 h-5 w-5" /> Vendas
                 </TabsTrigger>

@@ -159,7 +159,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
           Configurações
       </h2>
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 rounded-lg shadow-md bg-muted">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 rounded-lg shadow-md bg-card">
           <TabsTrigger value="geral" className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
               <PaletteIcon className="mr-2 h-4 w-4" /> Geral
           </TabsTrigger>
@@ -408,7 +408,3 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
 };
 
     
-
-    
-
-      

@@ -101,7 +101,7 @@ export default function DashboardPage() {
       
       {role === 'cliente' && (
         <Tabs value={clientTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-auto mb-8 bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
+            <TabsList className="grid w-full grid-cols-2 h-auto mb-8 bg-card p-1.5 rounded-lg shadow-md">
                 <TabsTrigger value="aposta" className="py-2.5 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
                     <TicketIcon className="mr-2 h-5 w-5" /> Fazer Aposta
                 </TabsTrigger>
@@ -142,3 +142,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
