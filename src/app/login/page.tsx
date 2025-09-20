@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
@@ -32,8 +32,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, signInWithGoogle, isLoading, isAuthenticated, currentUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('as') === 'admin') {
+      setIsAdminLogin(true);
+    } else {
+      setIsAdminLogin(false);
+    }
+  }, [searchParams]);
 
   // If the user is already authenticated, redirect them away from the login page.
   useEffect(() => {
@@ -46,15 +56,10 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
-      // For a generic login page, it's best to default to 'cliente' for new sign-ups.
-      // The signInWithGoogle function will handle existing users and use their saved role.
       await signInWithGoogle('cliente');
-      // On success, the context handles the redirect.
     } catch (error) {
-      // Error is handled in the context (toast displayed), so we just need to stop the loading state.
       setIsSubmitting(false);
     }
-    // No need to set isSubmitting to false on success, as the page will redirect.
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,16 +72,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     
     try {
-      // The login function now handles the redirection on success.
-      await login(username, password);
+      await login(username, password, isAdminLogin ? 'admin' : undefined);
     } catch (error) {
-       // If login fails, the user remains on the page, and the `login` function shows an error toast.
-       // We must set submitting to false to allow another attempt.
        setIsSubmitting(false);
     }
   };
   
-  // While checking auth state or if user is already logged in and waiting for redirect, show loading.
   if (isLoading || (!isLoading && isAuthenticated)) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -85,11 +86,12 @@ export default function LoginPage() {
     );
   }
   
-  // From here, we know the user is not authenticated.
+  const backLink = isAdminLogin ? "/login" : "/";
+
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center justify-center relative">
        <div className="absolute top-6 left-6 z-50">
-        <Link href="/" passHref>
+        <Link href={backLink} passHref>
           <Button variant="outline" className="h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-2 flex items-center justify-center sm:justify-start shadow-md">
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline-block sm:ml-2">Voltar</span>
@@ -102,24 +104,34 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm border-border/50">
         <CardHeader className="text-center">
-          <Image src="/logo.png" alt="Logo Bolão Potiguar" width={80} height={80} className="mx-auto mb-4" />
-          <CardTitle className="text-3xl font-bold text-primary">Bem-vindo de Volta!</CardTitle>
+          <Link href="/login?as=admin" className="mx-auto mb-4 group">
+            <Image src="/logo.png" alt="Logo Bolão Potiguar" width={80} height={80} className="group-hover:scale-110 transition-transform" />
+          </Link>
+          <CardTitle className="text-3xl font-bold text-primary">
+            {isAdminLogin ? (
+              <span className="flex items-center justify-center"><KeyRound className="mr-2 h-7 w-7"/>Acesso Restrito</span>
+            ) : "Bem-vindo de Volta!"}
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Acesse sua conta para continuar.
+             {isAdminLogin ? "Acesso exclusivo para administradores." : "Acesse sua conta para continuar."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
-              <GoogleIcon />
-              <span className="ml-2">Entrar com Google</span>
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-                <Separator className="flex-grow" />
-                <span className="text-xs text-muted-foreground">OU</span>
-                <Separator className="flex-grow" />
-            </div>
+            {!isAdminLogin && (
+              <>
+                <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+                  <GoogleIcon />
+                  <span className="ml-2">Entrar com Google</span>
+                </Button>
+                
+                <div className="flex items-center space-x-2">
+                    <Separator className="flex-grow" />
+                    <span className="text-xs text-muted-foreground">OU</span>
+                    <Separator className="flex-grow" />
+                </div>
+              </>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
@@ -162,24 +174,29 @@ export default function LoginPage() {
               </div>
               <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting}>
                 <LogIn className="mr-2 h-5 w-5" />
-                {isSubmitting ? 'Entrando...' : 'Entrar com E-mail'}
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col items-center space-y-2 pt-6">
-          <p className="text-sm text-muted-foreground">Não tem uma conta?</p>
-          <Link href="/cadastrar" passHref>
-            <Button variant="link" className="text-primary h-auto py-1 px-2">
-              <UserPlus className="mr-2 h-4 w-4" /> Cadastre-se aqui
-            </Button>
-          </Link>
-        </CardFooter>
+        {!isAdminLogin && (
+            <CardFooter className="flex flex-col items-center space-y-2 pt-6">
+            <p className="text-sm text-muted-foreground">Não tem uma conta?</p>
+            <Link href="/cadastrar" passHref>
+                <Button variant="link" className="text-primary h-auto py-1 px-2">
+                <UserPlus className="mr-2 h-4 w-4" /> Cadastre-se aqui
+                </Button>
+            </Link>
+            </CardFooter>
+        )}
       </Card>
+      
+      {!isAdminLogin && (
         <p className="mt-8 text-xs text-center text-muted-foreground max-w-md">
           Atenção: Este sistema de login é simplificado para fins de prototipagem e armazena dados localmente.
           Não utilize senhas reais ou informações sensíveis.
         </p>
+      )}
     </div>
   );
 }

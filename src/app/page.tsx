@@ -49,7 +49,7 @@ const Header = () => {
       <div className="flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
           <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
-          <span className="hidden sm:inline-block">Bolão Potiguar</span>
+          <span className="hidden sm:inline-block text-foreground">Bolão Potiguar</span>
         </Link>
         <div className="flex items-center gap-2">
             <Button asChild variant="default" className="shadow-md bg-blue-500 hover:bg-blue-600 text-white">
@@ -69,7 +69,7 @@ const HeroSection = () => (
     <div className="max-w-3xl mx-auto">
       <h1 className={cn(
           "text-4xl md:text-6xl font-extrabold tracking-tighter",
-          "bg-gradient-to-b from-white to-yellow-200/80 text-transparent bg-clip-text"
+          "bg-gradient-to-b from-white to-gray-400 text-transparent bg-clip-text"
       )}>
         A Próxima Grande Sorte Pode Ser a Sua.
       </h1>
@@ -214,5 +214,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
