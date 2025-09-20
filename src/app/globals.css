@@ -8,79 +8,79 @@ body {
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Very Light Cool Blue */
-    --foreground: 215 25% 25%; /* Dark Slate Blue/Gray */
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 215 25% 15%; /* Darker Slate Blue/Gray */
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 215 25% 15%; /* Darker Slate Blue/Gray */
-    --primary: 215 85% 60%; /* Vibrant Blue */
-    --primary-foreground: 215 85% 95%; /* Very Light Blue for contrast */
-    --secondary: 45 95% 55%; /* Bright Gold/Yellow */
-    --secondary-foreground: 45 95% 10%; /* Dark Brown/Black for contrast */
-    --muted: 210 40% 94%; /* Light Cool Gray */
-    --muted-foreground: 215 20% 45%; /* Muted Slate Gray */
-    --accent: 200 75% 55%; /* Brighter Cyan/Teal */
-    --accent-foreground: 200 75% 95%; /* Very Light Cyan for text on accent */
-    --destructive: 0 75% 55%; /* Clear Red */
-    --destructive-foreground: 0 0% 100%; /* White */
-    --border: 210 30% 88%; /* Muted Cool Gray Border */
-    --input: 210 40% 96%; /* Very Light Cool Gray for input */
-    --ring: 215 85% 65%; /* Vibrant Blue for focus rings */
+    --background: 210 40% 98%;
+    --foreground: 215 25% 25%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+    --primary: 142 71% 45%; /* Emerald Green */
+    --primary-foreground: 142 71% 95%;
+    --secondary: 45 95% 55%; /* Gold/Yellow */
+    --secondary-foreground: 45 95% 10%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 20% 45%;
+    --accent: 170 75% 45%; /* Cyan/Teal Accent */
+    --accent-foreground: 170 75% 95%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 30% 88%;
+    --input: 210 40% 96%;
+    --ring: 142 71% 50%;
     
-    --chart-1: 215 85% 60%; /* Primary Blue */
-    --chart-2: 45 95% 55%;  /* Secondary Gold */
-    --chart-3: 200 75% 55%; /* Accent Teal/Cyan */
-    --chart-4: 215 75% 75%;  /* Lighter Blue */
-    --chart-5: 45 85% 70%;  /* Lighter Gold */
+    --chart-1: 142 71% 45%;
+    --chart-2: 45 95% 55%;
+    --chart-3: 170 75% 45%;
+    --chart-4: 142 61% 65%;
+    --chart-5: 45 85% 70%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 40% 97%; /* Light Cool Blue for Sidebar */
-    --sidebar-foreground: 215 25% 15%; /* Dark Slate Blue/Gray text */
-    --sidebar-primary: 215 85% 60%;    /* Primary Blue */
-    --sidebar-primary-foreground: 215 85% 95%; /* Light Blue on Primary */
-    --sidebar-accent: 210 40% 92%;     /* Lighter Cool Gray hover */
-    --sidebar-accent-foreground: 215 25% 10%; /* Darker Slate on hover */
-    --sidebar-border: 210 30% 85%; /* Muted Cool Gray Border */
-    --sidebar-ring: 215 85% 65%; /* Blue for focus rings */
+    --sidebar-background: 210 40% 97%;
+    --sidebar-foreground: 215 25% 15%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 142 71% 95%;
+    --sidebar-accent: 210 40% 92%;
+    --sidebar-accent-foreground: 215 25% 10%;
+    --sidebar-border: 210 30% 85%;
+    --sidebar-ring: 142 71% 50%;
   }
 
   .dark {
-    --background: 220 40% 6%; /* Deep Dark Blue */
-    --foreground: 220 15% 90%; /* Light Cool Gray */
-    --card: 220 30% 12%; /* Dark Blue/Gray Card */
-    --card-foreground: 220 15% 90%; /* Light Cool Gray */
-    --popover: 220 30% 9%; /* Even Darker Popover */
-    --popover-foreground: 220 15% 90%; /* Light Cool Gray */
-    --primary: 215 85% 60%; /* Vibrant Blue */
-    --primary-foreground: 215 85% 10%; /* Very Dark Blue for contrast */
-    --secondary: 45 95% 55%; /* Bright Gold/Yellow */
-    --secondary-foreground: 45 95% 10%; /* Dark Brown/Black */
-    --muted: 220 25% 20%; /* Muted Dark Blue */
-    --muted-foreground: 220 15% 65%; /* Muted Cool Gray Text */
-    --accent: 200 75% 55%; /* Brighter Cyan/Teal */
-    --accent-foreground: 200 75% 10%; /* Very Dark Cyan/Black */
-    --destructive: 0 70% 60%; /* Bright Red */
-    --destructive-foreground: 0 0% 100%; /* White */
-    --border: 220 25% 25%; /* Dark Blue Border */
-    --input: 220 25% 18%; /* Dark Input Background */
-    --ring: 215 85% 65%; /* Brighter Blue Ring */
+    --background: 222 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222 84% 6.5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 48 96% 50%;
+    --secondary-foreground: 300 5% 5%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+    
+    --chart-1: 217 91% 60%;
+    --chart-2: 48 96% 50%;
+    --chart-3: 170 75% 45%;
+    --chart-4: 217 81% 75%;
+    --chart-5: 48 96% 70%;
 
-    --chart-1: 215 85% 60%;
-    --chart-2: 45 95% 55%;
-    --chart-3: 200 75% 55%;
-    --chart-4: 215 75% 75%;
-    --chart-5: 45 85% 70%;
-
-    --sidebar-background: 220 40% 4%;  /* Even Darker Sidebar */
-    --sidebar-foreground: 220 15% 88%; /* Light Cool Gray Text */
-    --sidebar-primary: 215 85% 60%;    /* Vibrant Blue */
-    --sidebar-primary-foreground: 215 85% 10%; /* Very Dark Blue */
-    --sidebar-accent: 220 30% 15%;     /* Dark Blue Hover */
-    --sidebar-accent-foreground: 220 15% 95%; /* Lighter Cool Gray on Hover */
-    --sidebar-border: 220 25% 22%; /* Dark Blue Border */
-    --sidebar-ring: 215 85% 65%; /* Brighter Blue Ring */
+    --sidebar-background: 222 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
