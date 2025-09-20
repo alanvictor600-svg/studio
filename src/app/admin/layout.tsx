@@ -132,7 +132,7 @@ export default function AdminLayout({
             </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="flex flex-col">
+      <SidebarInset className="flex flex-col flex-1 min-h-screen">
         <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:hidden sticky top-0 z-10">
             <SidebarTrigger />
             <span className="font-semibold text-primary">Painel do Admin</span>
@@ -147,7 +147,7 @@ export default function AdminLayout({
             </div>
             {children}
         </div>
-        <footer className="mt-20 py-8 text-center border-t border-border/50">
+        <footer className="mt-auto py-8 text-center border-t border-border/50">
             <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Bolão Potiguar - Admin.
             </p>

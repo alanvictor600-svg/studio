@@ -186,7 +186,7 @@ export default function LandingPage() {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1">
         <section className="w-full py-20 md:py-28 lg:py-32 xl:py-40 text-center">
              <div className="container px-4 md:px-6">
                  <div className="flex flex-col items-center space-y-6">

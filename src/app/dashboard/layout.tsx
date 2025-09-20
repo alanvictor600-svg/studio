@@ -163,7 +163,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="flex flex-col">
+      <SidebarInset className="flex flex-col flex-1 min-h-screen">
         <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 sticky top-0 z-10">
             <div className="md:hidden">
                 <SidebarTrigger />
