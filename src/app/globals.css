@@ -8,17 +8,17 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
-    --primary: 210 40% 98%; /* Branco/Cinza Claro */
-    --primary-foreground: 222 47% 11%; /* Texto escuro para botões claros */
+    --primary: 45 95% 55%;
+    --primary-foreground: 45 95% 10%;
     --secondary: 45 95% 55%;
     --secondary-foreground: 45 95% 10%;
-    --accent: 84 93% 54%; /* Verde Vibrante */
+    --accent: 84 93% 54%;
     --accent-foreground: 84 93% 14%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
