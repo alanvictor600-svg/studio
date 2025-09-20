@@ -172,13 +172,13 @@ export default function LandingPage() {
                     <Button asChild className="bg-green-600 hover:bg-green-700 text-white" size="sm">
                         <Link href="/login">
                             <LogIn className="sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Entrar</span>
+                            <span>Entrar</span>
                         </Link>
                     </Button>
                     <Button asChild size="sm">
                         <Link href="/cadastrar">
                             <UserPlus className="sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Cadastrar</span>
+                            <span>Cadastrar</span>
                         </Link>
                     </Button>
                 </div>
