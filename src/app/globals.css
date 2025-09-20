@@ -8,14 +8,14 @@ body {
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 120 100% 45%; /* Verde Limão Vibrante (do site de referência) */
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
-    --primary: 120 100% 45%; /* Verde Limão Vibrante (do site de referência) */
-    --primary-foreground: 120 100% 5%; /* Texto escuro para contraste no verde */
+    --primary: 224 71% 4%; /* Preto */
+    --primary-foreground: 0 0% 98%; /* Branco para texto do botão */
     --secondary: 45 95% 55%;
     --secondary-foreground: 45 95% 10%;
     --muted: 220 14% 96%;
