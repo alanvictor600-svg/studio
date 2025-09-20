@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
+              // This can happen briefly during logout or if user is deleted from Firestore but not Auth.
               setCurrentUser(null);
             }
             setIsFirestoreLoading(false);
@@ -80,28 +81,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
         const fbUser = userCredential.user;
         
+        // After signIn, the useEffect hook will run and set the currentUser.
+        // We need to fetch the document directly here to get the role for immediate redirection.
         const userDocRef = doc(db, "users", fbUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
+          const userData = { id: userDoc.id, ...userDoc.data() } as User;
           
           if(loginAs === 'admin' && userData.role !== 'admin') {
-            await signOut(auth);
+            await signOut(auth); // Sign out if trying to log in as admin without permission
             toast({ title: "Acesso Negado", description: "Este usuário não tem permissões de administrador.", variant: "destructive" });
             return;
           }
 
            toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
            
+           // Handle redirection logic inside the successful login
            const redirectPath = searchParams.get('redirect');
            
            if (redirectPath && redirectPath !== '/') {
              router.replace(redirectPath);
            } else {
+             // Default redirection based on role
              router.replace(userData.role === 'admin' ? '/admin' : `/dashboard/${userData.role}`);
            }
         } else {
+          // This case should be rare if user creation is robust
           await signOut(auth);
           toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
         }
@@ -112,6 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
              console.error("Firebase login error:", error.code, error.message);
              toast({ title: "Erro de Login", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
+        // Rethrow to allow component to stop loading state
+        throw error;
      }
   }, [toast, router, searchParams]);
 
@@ -125,17 +133,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDoc = await getDoc(userDocRef);
 
         let finalRole: User['role'] = role;
+        let finalUsername = user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`;
 
         if (userDoc.exists()) {
-            // User already exists, log them in and redirect
             const existingUserData = userDoc.data() as User;
-            finalRole = existingUserData.role; // Use existing role
-            toast({ title: `Bem-vindo(a) de volta, ${existingUserData.username}!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
+            finalRole = existingUserData.role;
+            finalUsername = existingUserData.username;
+            toast({ title: `Bem-vindo(a) de volta, ${finalUsername}!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
         } else {
-            // New user, create a document for them
             const newUser: User = {
                 id: user.uid,
-                username: user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`,
+                username: finalUsername,
                 role: finalRole,
                 createdAt: new Date().toISOString(),
                 saldo: 0,
@@ -144,28 +152,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: "Conta criada com sucesso!", description: "Bem-vindo(a) ao Bolão Potiguar!", className: "bg-primary text-primary-foreground", duration: 3000 });
         }
         
-        // Redirect logic that handles both existing and new users
         const redirectPath = searchParams.get('redirect');
         
-        // If a specific redirect is provided, use it.
         if (redirectPath && redirectPath !== '/') {
             router.replace(redirectPath);
         } else {
-            // Otherwise, redirect based on the user's role.
             router.replace(finalRole === 'admin' ? '/admin' : `/dashboard/${finalRole}`);
         }
 
     } catch (error: any) {
-        // Handle specific errors
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
         } else if (error.code === 'auth/popup-closed-by-user') {
-            // This is a normal user action, no need to show an error toast.
-            // console.log("Google Sign-In popup closed by user.");
+            // User closed popup, do nothing.
         } else {
             console.error("Google Sign-In Error:", error);
             toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
         }
+         // Rethrow to allow component to stop loading state
+        throw error;
     }
   }, [router, toast, searchParams]);
 
@@ -173,14 +178,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // Explicitly redirect to home page. This is the simplest and most robust way.
-      window.location.href = '/';
+      // Let the useEffect handle state changes, but force a redirect to be safe.
+      router.push('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
     }
-  }, [toast]);
+  }, [toast, router]);
 
 
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => {

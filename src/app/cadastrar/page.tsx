@@ -44,6 +44,8 @@ export default function CadastroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   useEffect(() => {
     const roleFromQuery = searchParams.get('role');
@@ -82,8 +84,19 @@ export default function CadastroPage() {
         return;
     }
     
+    setIsSubmitting(true);
     await register(username, password, role);
+    setIsSubmitting(false);
   };
+  
+  const handleGoogleSignIn = async (selectedRole: 'cliente' | 'vendedor') => {
+      setIsSubmitting(true);
+      try {
+          await signInWithGoogle(selectedRole);
+      } catch (e) {
+          setIsSubmitting(false);
+      }
+  }
   
   if (authLoading || (!authLoading && isAuthenticated)) {
     return (
@@ -152,7 +165,7 @@ export default function CadastroPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full h-12 text-base" onClick={() => signInWithGoogle(role)} disabled={authLoading}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={() => handleGoogleSignIn(role)} disabled={isSubmitting}>
               <GoogleIcon />
               <span className="ml-2">Continuar com Google</span>
             </Button>
@@ -174,6 +187,7 @@ export default function CadastroPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   className="bg-background/70 h-11"
+                  disabled={isSubmitting}
                 />
                 <p className="text-xs text-muted-foreground">Apenas letras (a-z, A-Z), números (0-9) e os caracteres . - _</p>
               </div>
@@ -188,6 +202,7 @@ export default function CadastroPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         className="bg-background/70 h-11 pr-10"
+                        disabled={isSubmitting}
                     />
                     <Button
                         type="button"
@@ -195,6 +210,7 @@ export default function CadastroPage() {
                         size="icon"
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={isSubmitting}
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </Button>
@@ -211,6 +227,7 @@ export default function CadastroPage() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                         className="bg-background/70 h-11 pr-10"
+                        disabled={isSubmitting}
                     />
                     <Button
                         type="button"
@@ -218,14 +235,15 @@ export default function CadastroPage() {
                         size="icon"
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        disabled={isSubmitting}
                     >
                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={authLoading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting}>
                  <UserPlus className="mr-2 h-5 w-5" />
-                {authLoading ? 'Registrando...' : 'Registrar com E-mail'}
+                {isSubmitting ? 'Registrando...' : 'Registrar com E-mail'}
               </Button>
             </form>
           </div>

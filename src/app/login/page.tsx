@@ -33,23 +33,28 @@ export default function LoginPage() {
   const { login, signInWithGoogle, isLoading, isAuthenticated, currentUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If the user is already authenticated, redirect them away from the login page.
-  // This is now the ONLY redirection logic on this page.
   useEffect(() => {
     if (!isLoading && isAuthenticated && currentUser) {
-        // Default redirect based on role if no other redirect is specified.
         const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
         router.replace(defaultRedirect);
     }
   }, [isLoading, isAuthenticated, currentUser, router]);
 
-  const handleGoogleSignIn = () => {
-    // For a generic login page, it's best to default to 'cliente' for new sign-ups.
-    // The signInWithGoogle function will handle existing users and use their saved role.
-    signInWithGoogle('cliente');
+  const handleGoogleSignIn = async () => {
+    setIsSubmitting(true);
+    try {
+      // For a generic login page, it's best to default to 'cliente' for new sign-ups.
+      // The signInWithGoogle function will handle existing users and use their saved role.
+      await signInWithGoogle('cliente');
+      // On success, the context handles the redirect.
+    } catch (error) {
+      // Error is handled in the context (toast displayed), so we just need to stop the loading state.
+      setIsSubmitting(false);
+    }
+    // No need to set isSubmitting to false on success, as the page will redirect.
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,12 +66,14 @@ export default function LoginPage() {
     
     setIsSubmitting(true);
     
-    // The login function now handles the redirection on success.
-    // We just await its completion.
-    await login(username, password);
-    
-    // If login fails, the user remains on the page, and the `login` function shows an error toast.
-    setIsSubmitting(false);
+    try {
+      // The login function now handles the redirection on success.
+      await login(username, password);
+    } catch (error) {
+       // If login fails, the user remains on the page, and the `login` function shows an error toast.
+       // We must set submitting to false to allow another attempt.
+       setIsSubmitting(false);
+    }
   };
   
   // While checking auth state or if user is already logged in and waiting for redirect, show loading.
@@ -103,7 +110,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isLoading || isSubmitting}>
+            <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
               <GoogleIcon />
               <span className="ml-2">Entrar com Google</span>
             </Button>
@@ -153,7 +160,7 @@ export default function LoginPage() {
                     </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting || isLoading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg h-12" disabled={isSubmitting}>
                 <LogIn className="mr-2 h-5 w-5" />
                 {isSubmitting ? 'Entrando...' : 'Entrar com E-mail'}
               </Button>
