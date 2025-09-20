@@ -47,40 +47,40 @@ body {
   }
 
   .dark {
-    --background: 220 15% 10%; /* Very Dark Cool Blue/Gray */
-    --foreground: 220 20% 88%; /* Light Cool Gray text */
-    --card: 220 15% 15%; /* Darker Cool Blue/Gray */
-    --card-foreground: 220 20% 88%; /* Light Cool Gray text */
-    --popover: 220 15% 12%; /* Even Darker Cool Blue/Gray */
-    --popover-foreground: 220 20% 88%; /* Light Cool Gray text */
-    --primary: 210 85% 65%; /* Brighter Blue */
-    --primary-foreground: 210 85% 10%; /* Very Dark Blue for text on Primary */
-    --secondary: 45 95% 70%; /* Brighter Gold/Yellow */
-    --secondary-foreground: 45 95% 10%; /* Very Dark Brown/Black */
-    --muted: 220 15% 25%; /* Dark Muted Cool Blue/Gray */
-    --muted-foreground: 220 20% 65%; /* Muted Cool Gray text */
-    --accent: 190 65% 55%; /* Brighter Teal */
-    --accent-foreground: 190 65% 5%; /* Very Dark Teal/Black for text on Accent */
-    --destructive: 0 70% 60%; /* Brighter Red */
+    --background: 220 40% 6%; /* Deep Dark Blue */
+    --foreground: 220 15% 90%; /* Light Cool Gray */
+    --card: 220 30% 12%; /* Dark Blue/Gray Card */
+    --card-foreground: 220 15% 90%; /* Light Cool Gray */
+    --popover: 220 30% 9%; /* Even Darker Popover */
+    --popover-foreground: 220 15% 90%; /* Light Cool Gray */
+    --primary: 215 85% 60%; /* Vibrant Blue */
+    --primary-foreground: 215 85% 10%; /* Very Dark Blue for contrast */
+    --secondary: 45 95% 55%; /* Bright Gold/Yellow */
+    --secondary-foreground: 45 95% 10%; /* Dark Brown/Black */
+    --muted: 220 25% 20%; /* Muted Dark Blue */
+    --muted-foreground: 220 15% 65%; /* Muted Cool Gray Text */
+    --accent: 200 75% 55%; /* Brighter Cyan/Teal */
+    --accent-foreground: 200 75% 10%; /* Very Dark Cyan/Black */
+    --destructive: 0 70% 60%; /* Bright Red */
     --destructive-foreground: 0 0% 100%; /* White */
-    --border: 220 15% 30%; /* Dark Cool Gray Border */
-    --input: 220 15% 20%; /* Dark Input Background */
-    --ring: 210 85% 70%; /* Brighter Blue for focus rings */
+    --border: 220 25% 25%; /* Dark Blue Border */
+    --input: 220 25% 18%; /* Dark Input Background */
+    --ring: 215 85% 65%; /* Brighter Blue Ring */
 
-    --chart-1: 210 85% 65%; 
-    --chart-2: 45 95% 70%;
-    --chart-3: 190 65% 55%;
-    --chart-4: 210 75% 80%;
-    --chart-5: 45 85% 80%;
+    --chart-1: 215 85% 60%;
+    --chart-2: 45 95% 55%;
+    --chart-3: 200 75% 55%;
+    --chart-4: 215 75% 75%;
+    --chart-5: 45 85% 70%;
 
-    --sidebar-background: 220 15% 8%;  /* Very Dark Cool Blue/Gray for Sidebar */
-    --sidebar-foreground: 220 20% 85%; /* Light Cool Gray text for Sidebar */
-    --sidebar-primary: 210 85% 65%;    /* Brighter Blue for Sidebar */
-    --sidebar-primary-foreground: 210 85% 10%; /* Very Dark Blue on Primary for Sidebar */
-    --sidebar-accent: 220 15% 20%;     /* Dark Cool Blue/Gray hover for Sidebar */
-    --sidebar-accent-foreground: 220 20% 90%; /* Light Cool Gray on hover for Sidebar */
-    --sidebar-border: 220 15% 25%; /* Dark Cool Gray Border for Sidebar */
-    --sidebar-ring: 210 85% 70%; /* Brighter Blue for Sidebar focus rings */
+    --sidebar-background: 220 40% 4%;  /* Even Darker Sidebar */
+    --sidebar-foreground: 220 15% 88%; /* Light Cool Gray Text */
+    --sidebar-primary: 215 85% 60%;    /* Vibrant Blue */
+    --sidebar-primary-foreground: 215 85% 10%; /* Very Dark Blue */
+    --sidebar-accent: 220 30% 15%;     /* Dark Blue Hover */
+    --sidebar-accent-foreground: 220 15% 95%; /* Lighter Cool Gray on Hover */
+    --sidebar-border: 220 25% 22%; /* Dark Blue Border */
+    --sidebar-ring: 215 85% 65%; /* Brighter Blue Ring */
   }
 }
 
