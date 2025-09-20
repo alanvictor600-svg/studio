@@ -8,7 +8,7 @@ body {
 
 @layer base {
   :root {
-    --background: 142 81% 15%;
+    --background: 142 81% 20%;
     --foreground: 142 10% 10%;
     --card: 0 0% 100%;
     --card-foreground: 142 10% 10%;
@@ -88,7 +88,7 @@ body {
   }
   body {
     @apply text-foreground;
-    background: linear-gradient(to top, hsl(142, 81%, 15%), hsl(142, 71%, 25%));
+    background: linear-gradient(to top, hsl(142, 81%, 20%), hsl(142, 71%, 33%));
   }
 
   .dark body {
