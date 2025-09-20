@@ -63,7 +63,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider> {/* Wrap with AuthProvider */}
-            {children}
+            <div className="flex-1 flex flex-col">{children}</div>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

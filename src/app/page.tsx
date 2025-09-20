@@ -336,16 +336,14 @@ export default function LandingPage() {
     }, [toast]);
 
     return (
-        <div className="flex flex-col flex-1">
+        <>
             <LandingHeader />
-            <main className="flex-1">
+            <main>
                 <HeroSection />
                 <ResultsSection lastDraw={lastDraw} isLoading={isLoadingDraw} />
                 <HowItWorksSection />
             </main>
             <LandingFooter />
-        </div>
+        </>
     );
 }
-
-    
