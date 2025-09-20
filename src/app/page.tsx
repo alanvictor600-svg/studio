@@ -298,8 +298,8 @@ const HowItWorksSection: FC = () => (
 
 // Sub-componente para o rodapé
 const LandingFooter: FC = () => (
-    <footer className="w-full py-8 text-center border-t border-border/50 bg-background">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 px-4 md:px-6">
+    <footer className="container text-center py-8 border-t border-border/50">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-4 md:px-6">
             <p className="text-sm text-muted-foreground">
                 &copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.
             </p>
@@ -336,7 +336,7 @@ export default function LandingPage() {
     }, [toast]);
 
     return (
-        <>
+        <div className="flex flex-col flex-1">
             <LandingHeader />
             <main>
                 <HeroSection />
@@ -344,6 +344,8 @@ export default function LandingPage() {
                 <HowItWorksSection />
             </main>
             <LandingFooter />
-        </>
+        </div>
     );
 }
+
+    
