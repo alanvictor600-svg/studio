@@ -160,7 +160,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
                 placeholder="Nome do Comprador"
-                className="bg-background/50"
+                
                 disabled={isSubmitting}
               />
             </div>
@@ -174,7 +174,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
                 value={buyerPhone}
                 onChange={(e) => setBuyerPhone(e.target.value)}
                 placeholder="(XX) XXXXX-XXXX"
-                className="bg-background/50"
+                
                 disabled={isSubmitting}
               />
             </div>
@@ -238,3 +238,5 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     </>
   );
 };
+
+    

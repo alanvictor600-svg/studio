@@ -106,7 +106,7 @@ export const AdminDrawForm: FC<AdminDrawFormProps> = ({ onAddDraw, hasWinningTic
                 value={drawName}
                 onChange={(e) => setDrawName(e.target.value)}
                 placeholder="Ex: Sorteio Especial de Natal"
-                className="bg-background/50"
+                
               />
             </div>
             <div>
@@ -145,3 +145,5 @@ export const AdminDrawForm: FC<AdminDrawFormProps> = ({ onAddDraw, hasWinningTic
     </Card>
   );
 };
+
+    

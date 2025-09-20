@@ -191,7 +191,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                             value={ticketPriceInput}
                             onChange={(e) => setTicketPriceInput(e.target.value)}
                             placeholder="Ex: 2.50"
-                            className="bg-background/70"
+                            
                             step="0.01"
                             min="0.01"
                         />
@@ -207,7 +207,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                             value={commissionInput}
                             onChange={(e) => setCommissionInput(e.target.value)}
                             placeholder="Ex: 10"
-                            className="bg-background/70"
+                            
                             min="0"
                             max="100"
                         />
@@ -223,7 +223,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                             value={ownerCommissionInput}
                             onChange={(e) => setOwnerCommissionInput(e.target.value)}
                             placeholder="Ex: 5"
-                            className="bg-background/70"
+                            
                             min="0"
                             max="100"
                         />
@@ -239,7 +239,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                             value={clientSalesCommissionInput}
                             onChange={(e) => setClientSalesCommissionInput(e.target.value)}
                             placeholder="Ex: 10"
-                            className="bg-background/70"
+                            
                             min="0"
                             max="100"
                         />
@@ -380,7 +380,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                         value={whatsappInput}
                         onChange={(e) => setWhatsappInput(e.target.value)}
                         placeholder="Ex: (84) 91234-5678"
-                        className="bg-background/70"
+                        
                     />
                 </div>
                 <div className="space-y-2">
@@ -391,7 +391,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                         value={pixKeyInput}
                         onChange={(e) => setPixKeyInput(e.target.value)}
                         placeholder="Ex: seu-email@provedor.com"
-                        className="bg-background/70"
+                        
                     />
                 </div>
             </CardContent>

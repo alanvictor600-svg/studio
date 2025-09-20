@@ -186,7 +186,7 @@ export default function CadastroPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-background/70 h-11"
+                  className="h-11"
                   disabled={isSubmitting}
                 />
                 <p className="text-xs text-muted-foreground">Apenas letras (a-z, A-Z), números (0-9) e os caracteres . - _</p>
@@ -201,7 +201,7 @@ export default function CadastroPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-background/70 h-11 pr-10"
+                        className="h-11 pr-10"
                         disabled={isSubmitting}
                     />
                     <Button
@@ -226,7 +226,7 @@ export default function CadastroPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="bg-background/70 h-11 pr-10"
+                        className="h-11 pr-10"
                         disabled={isSubmitting}
                     />
                     <Button
@@ -263,3 +263,5 @@ export default function CadastroPage() {
     </div>
   );
 }
+
+    

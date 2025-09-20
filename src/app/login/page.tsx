@@ -141,7 +141,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="bg-background/70 h-11"
+                  className="h-11"
                   disabled={isSubmitting}
                 />
               </div>
@@ -155,7 +155,7 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-background/70 h-11 pr-10"
+                        className="h-11 pr-10"
                         disabled={isSubmitting}
                     />
                     <Button
@@ -198,3 +198,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
