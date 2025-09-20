@@ -8,42 +8,42 @@ body {
 
 @layer base {
   :root {
-    --background: 220 30% 97%; /* Very Light Cool Gray */
-    --foreground: 220 25% 20%; /* Dark Slate Blue */
-    --card: 220 25% 95%; /* Light Cool Gray */
-    --card-foreground: 220 25% 20%; /* Dark Slate Blue */
-    --popover: 220 25% 94%; /* Slightly Darker Cool Gray */
-    --popover-foreground: 220 25% 20%; /* Dark Slate Blue */
-    --primary: 210 80% 55%; /* Bright, Trustworthy Blue */
-    --primary-foreground: 0 0% 100%; /* White */
+    --background: 140 50% 97%; /* Very Light Mint Green */
+    --foreground: 140 25% 20%; /* Dark Greenish Gray */
+    --card: 140 40% 99%; /* Almost White with a hint of Mint */
+    --card-foreground: 140 25% 15%; /* Dark Greenish Gray */
+    --popover: 140 40% 98%; /* Slightly darker minty white */
+    --popover-foreground: 140 25% 15%; /* Dark Greenish Gray */
+    --primary: 150 70% 40%; /* Vibrant Emerald Green */
+    --primary-foreground: 150 70% 95%; /* Very Light Green for contrast on primary */
     --secondary: 45 90% 60%; /* Optimistic Gold/Yellow */
     --secondary-foreground: 45 90% 15%; /* Dark Brown/Black for contrast on Gold */
-    --muted: 220 20% 90%; /* Lighter Cool Gray */
-    --muted-foreground: 220 15% 45%; /* Muted Slate Blue text */
-    --accent: 190 60% 50%; /* Engaging Teal */
-    --accent-foreground: 190 60% 95%; /* Very Light Cyan/White for text on Teal */
+    --muted: 140 30% 94%; /* Lighter Mint Gray */
+    --muted-foreground: 140 15% 45%; /* Muted Greenish Gray text */
+    --accent: 160 60% 50%; /* Engaging Teal/Sea Green */
+    --accent-foreground: 160 60% 95%; /* Very Light Cyan/White for text on Teal */
     --destructive: 0 75% 55%; /* Clear Red */
     --destructive-foreground: 0 0% 100%; /* White */
-    --border: 220 20% 88%; /* Muted Cool Gray Border */
-    --input: 220 25% 96%; /* Very Light Cool Gray for input backgrounds */
-    --ring: 210 80% 60%; /* Primary Blue for focus rings */
+    --border: 140 20% 88%; /* Muted Mint Gray Border */
+    --input: 140 30% 96%; /* Very Light Mint for input backgrounds */
+    --ring: 150 70% 45%; /* Primary Green for focus rings */
     
-    --chart-1: 210 80% 55%; /* Primary Blue */
+    --chart-1: 150 70% 40%; /* Primary Emerald */
     --chart-2: 45 90% 60%;  /* Secondary Gold */
-    --chart-3: 190 60% 50%; /* Accent Teal */
-    --chart-4: 210 70% 70%;  /* Lighter Primary Blue */
+    --chart-3: 160 60% 50%; /* Accent Teal/Sea Green */
+    --chart-4: 150 60% 60%;  /* Lighter Emerald */
     --chart-5: 45 80% 75%;  /* Lighter Gold */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 220 30% 96%; /* Very Light Cool Gray for Sidebar */
-    --sidebar-foreground: 220 25% 15%; /* Dark Slate Blue text for Sidebar */
-    --sidebar-primary: 210 80% 55%;    /* Primary Blue for Sidebar */
-    --sidebar-primary-foreground: 0 0% 100%; /* White on Primary for Sidebar */
-    --sidebar-accent: 220 25% 90%;     /* Lighter Cool Gray hover for Sidebar */
-    --sidebar-accent-foreground: 220 25% 10%; /* Dark Slate Blue on hover for Sidebar */
-    --sidebar-border: 220 20% 85%; /* Muted Cool Gray Border for Sidebar */
-    --sidebar-ring: 210 80% 60%; /* Primary Blue for Sidebar focus rings */
+    --sidebar-background: 140 45% 96%; /* Light Mint Green for Sidebar */
+    --sidebar-foreground: 140 25% 15%; /* Dark Greenish Gray text for Sidebar */
+    --sidebar-primary: 150 70% 40%;    /* Primary Emerald for Sidebar */
+    --sidebar-primary-foreground: 150 70% 95%; /* Light Green on Primary for Sidebar */
+    --sidebar-accent: 140 35% 92%;     /* Lighter Mint Gray hover for Sidebar */
+    --sidebar-accent-foreground: 140 25% 10%; /* Dark Greenish Gray on hover for Sidebar */
+    --sidebar-border: 140 20% 85%; /* Muted Mint Gray Border for Sidebar */
+    --sidebar-ring: 150 70% 45%; /* Primary Green for Sidebar focus rings */
   }
 
   .dark {
