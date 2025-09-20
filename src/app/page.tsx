@@ -66,10 +66,10 @@ const Header = () => {
 const HeroSection = () => (
   <section className="text-center py-16 md:py-24">
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-primary">
+      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-white">
         Sua Sorte Começa Aqui
       </h1>
-      <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+      <p className="mt-4 text-lg md:text-xl text-white/80">
         Aposte nos seus números da sorte, concorra a prêmios incríveis e divirta-se. Simples, rápido e emocionante!
       </p>
       <div className="mt-8 flex justify-center gap-4">
