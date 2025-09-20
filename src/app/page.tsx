@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { LogIn, UserPlus, LogOut, LayoutDashboard, ShieldCheck, CheckCircle, Trophy } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, LayoutDashboard, ShieldCheck, CheckCircle, Trophy, TrendingUp } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -124,7 +124,7 @@ const LandingHeader: FC = () => {
 
 const LandingFooter: FC = () => {
     return (
-        <footer className="border-t">
+        <footer className="w-full border-t">
             <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
                 <p>&copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.</p>
                 <p className="text-xs">Jogue com responsabilidade. Para maiores de 18 anos.</p>
@@ -202,7 +202,10 @@ export default function LandingPage() {
                 <section id="results" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
                     <div className="container px-4 md:px-6">
                         <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary">Confira o Último Resultado</h2>
+                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary flex items-center justify-center gap-2">
+                                <TrendingUp className="h-8 w-8" />
+                                Confira o Último Resultado
+                            </h2>
                             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
                                 Veja os números que saíram no último sorteio e os bichos mais sorteados do ciclo.
                             </p>
@@ -215,7 +218,10 @@ export default function LandingPage() {
                                 <TopTickets draws={[lastDraw]} />
                             </div>
                          ) : (
-                            <div className="text-center py-10 text-muted-foreground">Nenhum sorteio cadastrado ainda.</div>
+                            <div className="text-center py-10 text-muted-foreground bg-background/50 rounded-lg shadow-inner mt-8">
+                                <p className="font-semibold text-lg">Nenhum sorteio cadastrado ainda.</p>
+                                <p className="text-sm">Aguardando o próximo sorteio do ciclo.</p>
+                            </div>
                          )}
                     </div>
                 </section>
