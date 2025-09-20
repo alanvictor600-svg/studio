@@ -50,7 +50,6 @@ const LandingHeader = () => {
           <span className="hidden sm:inline-block">Bolão Potiguar</span>
         </Link>
         <div className="flex items-center gap-2">
-            <ThemeToggleButton />
             <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link>
             </Button>
@@ -187,9 +186,10 @@ const LandingFooter = () => (
   <footer className="w-full bg-muted/50 border-t">
     <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.</p>
-        <div className="flex gap-4 mt-4 sm:mt-0">
+        <div className="flex items-center gap-4 mt-4 sm:mt-0">
             <Link href="#" className="hover:text-primary">Termos de Serviço</Link>
             <Link href="#" className="hover:text-primary">Política de Privacidade</Link>
+            <ThemeToggleButton />
         </div>
     </div>
   </footer>
