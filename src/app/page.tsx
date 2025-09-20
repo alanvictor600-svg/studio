@@ -188,8 +188,8 @@ export default function LandingPage() {
         </div>
       </header>
       
-      <main className="flex-1">
-        <section className="text-center py-20 md:py-28 lg:py-32 xl:py-40">
+      <main className="flex-1 flex flex-col items-center">
+        <section className="text-center py-20 md:py-28 lg:py-32 xl:py-40 w-full">
              <div className="container px-4 md:px-6">
                  <div className="flex flex-col items-center space-y-6">
                     <Image
@@ -227,11 +227,11 @@ export default function LandingPage() {
         </section>
 
         {isLoadingDraw ? (
-            <div className="text-center py-20">
+            <div className="text-center py-20 w-full">
                 <p className="text-muted-foreground animate-pulse text-lg">Carregando informações do sorteio...</p>
             </div>
         ) : lastDraw ? (
-             <section id="results" className="py-12 md:py-24 lg:py-32 bg-muted/50">
+             <section id="results" className="py-12 md:py-24 lg:py-32 bg-muted/50 w-full">
                 <div className="container px-4 md:px-6 space-y-12">
                     <div className="flex flex-col items-center justify-center space-y-4 text-center">
                         <div className="space-y-2">
@@ -248,7 +248,7 @@ export default function LandingPage() {
                 </div>
             </section>
         ) : (
-             <section id="welcome" className="py-12 md:py-24 lg:py-32 bg-muted/50">
+             <section id="welcome" className="py-12 md:py-24 lg:py-32 bg-muted/50 w-full">
                  <div className="container px-4 md:px-6 text-center">
                     <Rocket className="h-16 w-16 text-primary mx-auto mb-6" />
                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Nenhum Sorteio Ativo no Momento</h2>
@@ -259,7 +259,7 @@ export default function LandingPage() {
             </section>
         )}
         
-         <section id="how-it-works" className="py-12 md:py-24 lg:py-32">
+         <section id="how-it-works" className="py-12 md:py-24 lg:py-32 w-full">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -303,7 +303,7 @@ export default function LandingPage() {
 
       </main>
 
-      <footer className="py-8 text-center border-t border-border/50 bg-background">
+      <footer className="py-8 text-center border-t border-border/50 bg-background w-full">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
              <p className="text-sm text-muted-foreground">
                 &copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.
