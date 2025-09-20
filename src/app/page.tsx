@@ -171,12 +171,14 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                     <Button asChild className="bg-green-600 hover:bg-green-700 text-white" size="sm">
                         <Link href="/login">
-                            <LogIn className="sm:mr-2 h-4 w-4" /> Entrar
+                            <LogIn className="sm:mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Entrar</span>
                         </Link>
                     </Button>
                     <Button asChild size="sm">
                         <Link href="/cadastrar">
-                            <UserPlus className="sm:mr-2 h-4 w-4" /> Cadastrar
+                            <UserPlus className="sm:mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Cadastrar</span>
                         </Link>
                     </Button>
                 </div>
@@ -313,6 +315,5 @@ export default function LandingPage() {
       </footer>
     </div>
   );
-}
 
     
