@@ -169,16 +169,16 @@ export default function LandingPage() {
               </div>
             ) : (
                 <div className="flex items-center gap-2">
-                    <Button asChild className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                    <Button asChild className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-3 sm:px-4" size="sm">
                         <Link href="/login">
                             <LogIn className="sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Entrar</span>
+                            <span className="inline">Entrar</span>
                         </Link>
                     </Button>
-                    <Button asChild size="sm">
+                    <Button asChild size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
                         <Link href="/cadastrar">
                             <UserPlus className="sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Cadastrar</span>
+                            <span className="inline">Cadastrar</span>
                         </Link>
                     </Button>
                 </div>
