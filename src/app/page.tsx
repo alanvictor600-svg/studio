@@ -16,6 +16,7 @@ import { TopTickets } from '@/components/TopTickets';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { History, Gamepad2, Gift } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 
 const Header = () => {
@@ -66,11 +67,14 @@ const Header = () => {
 const HeroSection = () => (
   <section className="text-center py-16 md:py-24">
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-white">
-        Sua Sorte Começa Aqui
+      <h1 className={cn(
+          "text-4xl md:text-6xl font-extrabold tracking-tighter",
+          "bg-gradient-to-b from-white to-yellow-200/80 text-transparent bg-clip-text"
+      )}>
+        A Próxima Grande Sorte Pode Ser a Sua.
       </h1>
       <p className="mt-4 text-lg md:text-xl text-white/80">
-        Aposte nos seus números da sorte, concorra a prêmios incríveis e divirta-se. Simples, rápido e emocionante!
+        Escolha seus números, sinta a emoção e transforme um simples palpite em prêmios incríveis. A aposta é fácil, a diversão é garantida.
       </p>
       <div className="mt-8 flex justify-center gap-4">
         <Button asChild size="lg" className="text-lg shadow-lg">
