@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
        <head />
-      <body className={`${GeistSans.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

@@ -163,7 +163,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 sticky top-0 z-10">
             <div className="md:hidden">
                 <SidebarTrigger />
@@ -183,11 +183,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <ThemeToggleButton />
             </div>
         </header>
-        <div className="p-4 md:p-8">
+        <main className="p-4 md:p-8 flex-1">
             {isDataLoading && !children ? (
                 <div className="text-center p-10">Carregando dados...</div>
             ) : children}
-        </div>
+        </main>
         <InsufficientCreditsDialog
             isOpen={isCreditsDialogOpen}
             onOpenChange={setIsCreditsDialogOpen}

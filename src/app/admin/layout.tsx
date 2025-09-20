@@ -132,13 +132,13 @@ export default function AdminLayout({
             </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         <header className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:hidden sticky top-0 z-10">
             <SidebarTrigger />
             <span className="font-semibold text-primary">Painel do Admin</span>
             <div/>
         </header>
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 flex-1">
             <div className="mb-6">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight text-center">
                     Área Administrativa
