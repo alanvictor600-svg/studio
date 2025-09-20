@@ -35,8 +35,8 @@ export const TopTickets: FC<TopTicketsProps> = ({ draws }) => {
               <Star className="mr-3 h-6 w-6" /> Números da Sorte
            </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center h-full p-6 text-center">
-          <p className="text-muted-foreground">Aguardando o primeiro sorteio do ciclo para exibir estatísticas.</p>
+        <CardContent className="flex flex-col items-center justify-center h-full p-6">
+          <p className="text-muted-foreground text-center">Aguardando o primeiro sorteio do ciclo para exibir estatísticas.</p>
         </CardContent>
       </Card>
     );
