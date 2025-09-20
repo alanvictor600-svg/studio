@@ -159,14 +159,14 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
           Configurações
       </h2>
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger value="geral" className="py-2.5">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 rounded-lg shadow-md bg-muted">
+          <TabsTrigger value="geral" className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
               <PaletteIcon className="mr-2 h-4 w-4" /> Geral
           </TabsTrigger>
-          <TabsTrigger value="contas" className="py-2.5">
+          <TabsTrigger value="contas" className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
               <Users className="mr-2 h-4 w-4" /> Contas
           </TabsTrigger>
-          <TabsTrigger value="contato" className="py-2.5">
+          <TabsTrigger value="contato" className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
               <Contact className="mr-2 h-4 w-4" /> Contato
           </TabsTrigger>
         </TabsList>
@@ -410,3 +410,5 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
     
 
     
+
+      
