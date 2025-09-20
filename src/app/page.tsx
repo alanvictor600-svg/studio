@@ -124,7 +124,7 @@ const LandingHeader: FC = () => {
                 <div className="flex items-center gap-2 sm:gap-4">
                     {currentUser ? (
                         <div className="flex items-center gap-2">
-                            <Button onClick={handlePainelClick} size="sm">
+                            <Button onClick={handlePainelClick} size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
                                 <LayoutDashboard className="mr-2 h-4 w-4" /> Meu Painel
                             </Button>
                             <TooltipProvider>
@@ -145,14 +145,14 @@ const LandingHeader: FC = () => {
                         <div className="flex items-center gap-2">
                             <Button asChild size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
                                 <Link href="/login">
-                                    <LogIn className="sm:mr-2 h-4 w-4" />
-                                    <span className="hidden sm:inline">Entrar</span>
+                                    <LogIn className="mr-2 h-4 w-4" />
+                                    <span>Entrar</span>
                                 </Link>
                             </Button>
                             <Button asChild size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
                                 <Link href="/cadastrar">
-                                    <UserPlus className="sm:mr-2 h-4 w-4" />
-                                    <span className="hidden sm:inline">Cadastrar</span>
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    <span>Cadastrar</span>
                                 </Link>
                             </Button>
                         </div>
@@ -347,3 +347,5 @@ export default function LandingPage() {
         </div>
     );
 }
+
+    
