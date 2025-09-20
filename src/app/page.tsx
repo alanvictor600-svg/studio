@@ -5,7 +5,7 @@ import { useState, useEffect, type FC } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; 
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LogIn, UserPlus, LogOut, LayoutDashboard, ShieldCheck, CheckCircle, Trophy, TrendingUp } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { useAuth } from '@/context/auth-context';
@@ -122,16 +122,116 @@ const LandingHeader: FC = () => {
     );
 };
 
-const LandingFooter: FC = () => {
-    return (
-        <footer className="w-full border-t">
-            <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                <p>&copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.</p>
-                <p className="text-xs">Jogue com responsabilidade. Para maiores de 18 anos.</p>
+const HeroSection: FC<{ currentUser: User | null }> = ({ currentUser }) => (
+    <section className="w-full py-20 md:py-28 lg:py-32 xl:py-40 text-center">
+        <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center space-y-6">
+                <Image
+                    src="/logo.png"
+                    alt="Logo Bolão Potiguar"
+                    width={150}
+                    height={150}
+                    priority
+                    className="mx-auto"
+                />
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                    Bolão Potiguar
+                </h1>
+                <p className="max-w-[600px] mx-auto text-muted-foreground md:text-xl">
+                    Sua sorte começa aqui! Escolha seus números, faça sua aposta e concorra a prêmios.
+                </p>
+                {!currentUser && (
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Button asChild size="lg">
+                            <Link href="/cadastrar?role=cliente">
+                                <UserPlus className="mr-2 h-5 w-5" /> Criar Conta de Cliente
+                            </Link>
+                        </Button>
+                        <Button asChild size="lg" variant="secondary">
+                            <Link href="/cadastrar?role=vendedor">
+                                Virar um Vendedor
+                            </Link>
+                        </Button>
+                    </div>
+                )}
             </div>
-        </footer>
-    );
-};
+        </div>
+    </section>
+);
+
+const ResultsSection: FC<{ lastDraw: Draw | null; isLoading: boolean }> = ({ lastDraw, isLoading }) => (
+    <section id="results" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+        <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary flex items-center justify-center gap-2">
+                    <TrendingUp className="h-8 w-8" />
+                    Confira o Último Resultado
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                    Veja os números que saíram no último sorteio e os bichos mais sorteados do ciclo.
+                </p>
+            </div>
+             {isLoading ? (
+                 <div className="text-center py-10 text-muted-foreground">Carregando...</div>
+             ) : lastDraw ? (
+                <div className="mx-auto grid items-start gap-8 sm:max-w-4xl md:gap-12 lg:max-w-5xl lg:grid-cols-2 pt-12">
+                    <AdminDrawCard draw={lastDraw} />
+                    <TopTickets draws={[lastDraw]} />
+                </div>
+             ) : (
+                <div className="text-center py-10 text-muted-foreground bg-background/50 rounded-lg shadow-inner mt-8">
+                    <p className="font-semibold text-lg">Nenhum sorteio cadastrado ainda.</p>
+                    <p className="text-sm">Aguardando o próximo sorteio do ciclo.</p>
+                </div>
+             )}
+        </div>
+    </section>
+);
+
+const HowItWorksSection: FC = () => (
+    <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32">
+        <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Como Funciona?</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                    Participar é simples, rápido e divertido. Siga os passos abaixo.
+                </p>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3">
+                <Card>
+                    <CardHeader className="items-center text-center">
+                        <UserPlus className="h-10 w-10 text-primary mb-2" />
+                        <CardTitle>1. Crie sua Conta</CardTitle>
+                        <CardDescription>Cadastre-se gratuitamente como cliente ou vendedor.</CardDescription>
+                    </CardHeader>
+                </Card>
+                 <Card>
+                    <CardHeader className="items-center text-center">
+                        <CheckCircle className="h-10 w-10 text-primary mb-2" />
+                        <CardTitle>2. Faça sua Aposta</CardTitle>
+                        <CardDescription>Escolha seus números e confirme sua aposta no painel.</CardDescription>
+                    </CardHeader>
+                </Card>
+                 <Card>
+                    <CardHeader className="items-center text-center">
+                        <Trophy className="h-10 w-10 text-primary mb-2" />
+                        <CardTitle>3. Confira os Prêmios</CardTitle>
+                        <CardDescription>Acompanhe os resultados e veja se você ganhou.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        </div>
+    </section>
+);
+
+const LandingFooter: FC = () => (
+    <footer className="w-full border-t">
+        <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Bolão Potiguar. Todos os direitos reservados.</p>
+            <p className="text-xs">Jogue com responsabilidade. Para maiores de 18 anos.</p>
+        </div>
+    </footer>
+);
 
 export default function LandingPage() {
     const [lastDraw, setLastDraw] = useState<Draw | null>(null);
@@ -161,105 +261,10 @@ export default function LandingPage() {
     return (
         <div className="flex flex-col flex-1">
             <LandingHeader />
-            <main className="flex-1">
-                {/* Hero Section */}
-                <section className="w-full py-20 md:py-28 lg:py-32 xl:py-40 text-center">
-                    <div className="container px-4 md:px-6">
-                        <div className="flex flex-col items-center space-y-6">
-                            <Image
-                                src="/logo.png"
-                                alt="Logo Bolão Potiguar"
-                                width={150}
-                                height={150}
-                                priority
-                                className="mx-auto"
-                            />
-                            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                                Bolão Potiguar
-                            </h1>
-                            <p className="max-w-[600px] mx-auto text-muted-foreground md:text-xl">
-                                Sua sorte começa aqui! Escolha seus números, faça sua aposta e concorra a prêmios.
-                            </p>
-                            {!currentUser && (
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <Button asChild size="lg">
-                                        <Link href="/cadastrar?role=cliente">
-                                            <UserPlus className="mr-2 h-5 w-5" /> Criar Conta de Cliente
-                                        </Link>
-                                    </Button>
-                                    <Button asChild size="lg" variant="secondary">
-                                        <Link href="/cadastrar?role=vendedor">
-                                            Virar um Vendedor
-                                        </Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Results Section */}
-                <section id="results" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-                    <div className="container px-4 md:px-6">
-                        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary flex items-center justify-center gap-2">
-                                <TrendingUp className="h-8 w-8" />
-                                Confira o Último Resultado
-                            </h2>
-                            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-                                Veja os números que saíram no último sorteio e os bichos mais sorteados do ciclo.
-                            </p>
-                        </div>
-                         {isLoadingDraw ? (
-                             <div className="text-center py-10 text-muted-foreground">Carregando...</div>
-                         ) : lastDraw ? (
-                            <div className="mx-auto grid items-start gap-8 sm:max-w-4xl md:gap-12 lg:max-w-5xl lg:grid-cols-2 pt-12">
-                                <AdminDrawCard draw={lastDraw} />
-                                <TopTickets draws={[lastDraw]} />
-                            </div>
-                         ) : (
-                            <div className="text-center py-10 text-muted-foreground bg-background/50 rounded-lg shadow-inner mt-8">
-                                <p className="font-semibold text-lg">Nenhum sorteio cadastrado ainda.</p>
-                                <p className="text-sm">Aguardando o próximo sorteio do ciclo.</p>
-                            </div>
-                         )}
-                    </div>
-                </section>
-
-                {/* How It Works Section */}
-                <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32">
-                    <div className="container px-4 md:px-6">
-                        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Como Funciona?</h2>
-                            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-                                Participar é simples, rápido e divertido. Siga os passos abaixo.
-                            </p>
-                        </div>
-                        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3">
-                            <Card>
-                                <CardHeader className="items-center text-center">
-                                    <UserPlus className="h-10 w-10 text-primary mb-2" />
-                                    <CardTitle>1. Crie sua Conta</CardTitle>
-                                    <CardDescription>Cadastre-se gratuitamente como cliente ou vendedor.</CardDescription>
-                                </CardHeader>
-                            </Card>
-                             <Card>
-                                <CardHeader className="items-center text-center">
-                                    <CheckCircle className="h-10 w-10 text-primary mb-2" />
-                                    <CardTitle>2. Faça sua Aposta</CardTitle>
-                                    <CardDescription>Escolha seus números e confirme sua aposta no painel.</CardDescription>
-                                </CardHeader>
-                            </Card>
-                             <Card>
-                                <CardHeader className="items-center text-center">
-                                    <Trophy className="h-10 w-10 text-primary mb-2" />
-                                    <CardTitle>3. Confira os Prêmios</CardTitle>
-                                    <CardDescription>Acompanhe os resultados e veja se você ganhou.</CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </div>
-                    </div>
-                </section>
+            <main>
+                <HeroSection currentUser={currentUser} />
+                <ResultsSection lastDraw={lastDraw} isLoading={isLoadingDraw} />
+                <HowItWorksSection />
             </main>
             <LandingFooter />
         </div>
