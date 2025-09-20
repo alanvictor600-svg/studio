@@ -144,14 +144,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: "Conta criada com sucesso!", description: "Bem-vindo(a) ao Bolão Potiguar!", className: "bg-primary text-primary-foreground", duration: 3000 });
         }
         
-        // Redirect to the correct dashboard based on the FINAL role (either existing or new)
+        // Redirect logic that handles both existing and new users
         const redirectPath = searchParams.get('redirect');
-        if (redirectPath && redirectPath.includes('/dashboard/')) {
-            router.replace(`/dashboard/${finalRole}`);
-        } else if (redirectPath && redirectPath !== '/') {
+        
+        // If a specific redirect is provided, use it.
+        if (redirectPath && redirectPath !== '/') {
             router.replace(redirectPath);
         } else {
-            router.replace(`/dashboard/${finalRole}`);
+            // Otherwise, redirect based on the user's role.
+            router.replace(finalRole === 'admin' ? '/admin' : `/dashboard/${finalRole}`);
         }
 
     } catch (error: any) {

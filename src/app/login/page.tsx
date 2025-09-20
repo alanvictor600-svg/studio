@@ -47,9 +47,9 @@ export default function LoginPage() {
   }, [isLoading, isAuthenticated, currentUser, router]);
 
   const handleGoogleSignIn = () => {
-    const roleFromQuery = searchParams.get('role');
-    const role = roleFromQuery === 'vendedor' ? 'vendedor' : 'cliente';
-    signInWithGoogle(role);
+    // For a generic login page, it's best to default to 'cliente' for new sign-ups.
+    // The signInWithGoogle function will handle existing users and use their saved role.
+    signInWithGoogle('cliente');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,5 +176,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
