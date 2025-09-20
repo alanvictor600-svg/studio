@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LogIn, UserPlus, Star, Gamepad2, Gift } from 'lucide-react';
+import { LogIn, UserPlus, Gift, Gamepad2 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -30,7 +30,7 @@ const LandingHeader = () => {
 
   if (isLoading || isAuthenticated) {
     return (
-       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg">
                 <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
@@ -82,7 +82,6 @@ const HeroSection = () => (
   </section>
 );
 
-
 // Sub-component for the Results Section
 const ResultsSection = () => {
     const [lastDraw, setLastDraw] = useState<Draw | null>(null);
@@ -105,7 +104,7 @@ const ResultsSection = () => {
     }, []);
 
     return (
-        <section className="bg-muted/50 py-12 md:py-20">
+        <section className="w-full bg-muted/50 py-12 md:py-20">
             <div className="container px-4 md:px-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
                     <div className="space-y-4 text-center lg:text-left">
@@ -141,37 +140,34 @@ const ResultsSection = () => {
     );
 };
 
-
 // Sub-component for "How it Works"
 const HowItWorksSection = () => (
-  <section className="py-12 md:py-24">
-    <div className="container px-4 md:px-6">
-      <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-primary">Como Funciona?</h2>
-        <p className="mt-3 text-lg text-muted-foreground">É fácil participar. Siga os três passos abaixo:</p>
+  <section className="container px-4 md:px-6 py-12 md:py-24">
+    <div className="text-center max-w-2xl mx-auto">
+      <h2 className="text-3xl md:text-4xl font-bold text-primary">Como Funciona?</h2>
+      <p className="mt-3 text-lg text-muted-foreground">É fácil participar. Siga os três passos abaixo:</p>
+    </div>
+    <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
+          <UserPlus size={32} />
+        </div>
+        <h3 className="text-xl font-bold">1. Cadastre-se</h3>
+        <p className="text-muted-foreground mt-2">Crie sua conta de cliente de forma rápida e segura.</p>
       </div>
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-        <div className="flex flex-col items-center">
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
-            <UserPlus size={32} />
-          </div>
-          <h3 className="text-xl font-bold">1. Cadastre-se</h3>
-          <p className="text-muted-foreground mt-2">Crie sua conta de cliente de forma rápida e segura.</p>
+      <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
+          <Gamepad2 size={32} />
         </div>
-        <div className="flex flex-col items-center">
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
-            <Gamepad2 size={32} />
-          </div>
-          <h3 className="text-xl font-bold">2. Faça sua Aposta</h3>
-          <p className="text-muted-foreground mt-2">Escolha seus 10 números da sorte, de 1 a 25. Pode repetir!</p>
+        <h3 className="text-xl font-bold">2. Faça sua Aposta</h3>
+        <p className="text-muted-foreground mt-2">Escolha seus 10 números da sorte, de 1 a 25. Pode repetir!</p>
+      </div>
+      <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
+          <Gift size={32} />
         </div>
-        <div className="flex flex-col items-center">
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground mb-4 shadow-lg">
-            <Gift size={32} />
-          </div>
-          <h3 className="text-xl font-bold">3. Concorra aos Prêmios</h3>
-          <p className="text-muted-foreground mt-2">Aguarde o sorteio. Se seus 10 números forem sorteados, você ganha!</p>
-        </div>
+        <h3 className="text-xl font-bold">3. Concorra aos Prêmios</h3>
+        <p className="text-muted-foreground mt-2">Aguarde o sorteio. Se seus 10 números forem sorteados, você ganha!</p>
       </div>
     </div>
   </section>
@@ -204,5 +200,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
