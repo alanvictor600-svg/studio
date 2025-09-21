@@ -35,9 +35,9 @@ body {
     --radius: 0.5rem;
 
     --sidebar-background: 210 20% 99%;
-    --sidebar-foreground: 224 71% 4%;
-    --sidebar-primary: 120 100% 45%;
-    --sidebar-primary-foreground: 120 100% 5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 180 98% 45%;
+    --sidebar-primary-foreground: 220 13% 11%;
     --sidebar-accent: 210 20% 94%;
     --sidebar-accent-foreground: 224 71% 4%;
     --sidebar-border: 220 13% 91%;
@@ -52,7 +52,7 @@ body {
     --popover: 220 13% 11%;
     --popover-foreground: 210 20% 98%;
     --primary: 210 20% 98%;
-    --primary-foreground: 220 13% 11%;
+    --primary-foreground: 0 0% 0%;
     --secondary: 220 14% 25%;
     --secondary-foreground: 210 20% 98%;
     --muted: 220 9% 17%;
