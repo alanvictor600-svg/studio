@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, type FC } from 'react';
@@ -238,5 +239,3 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
     </>
   );
 };
-
-    
