@@ -84,7 +84,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
         // 2. Draws Listener
         const drawsQuery = query(collection(db, 'draws'));
-        unsubscribes.push(onSnapshot(drawsQuery, (drawsSnapshot) => {
+        unsubscribes.push(onSnapshot(drawsSnapshot, (drawsSnapshot) => {
             const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
             setAllDraws(drawsData);
             setIsLotteryPaused(drawsData.length > 0);
