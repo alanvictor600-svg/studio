@@ -65,12 +65,12 @@ const Header = () => {
 };
 
 const HeroSection = () => (
-  <section className="text-center py-16 md:py-24 bg-gradient-to-b from-green-100 to-teal-200">
+  <section className="text-center py-16 md:py-24 bg-gradient-to-b from-emerald-700 to-emerald-900">
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-black">
+      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-white">
         A Próxima Grande Sorte Pode Ser a Sua.
       </h1>
-      <p className="mt-4 text-lg md:text-xl text-foreground">
+      <p className="mt-4 text-lg md:text-xl text-white/80">
         Escolha seus números, sinta a emoção e transforme um simples palpite em prêmios incríveis. A aposta é fácil, a diversão é garantida.
       </p>
       <div className="mt-8 flex justify-center gap-4">
