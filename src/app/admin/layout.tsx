@@ -138,7 +138,7 @@ export default function AdminLayout({
             <span className="font-semibold text-primary">Painel do Admin</span>
             <div/>
         </header>
-        <div className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-800 to-emerald-950">
+        <div className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900">
             <div className="mb-6">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight text-center">
                     Área Administrativa
