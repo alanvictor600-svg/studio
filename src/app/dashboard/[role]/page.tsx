@@ -91,7 +91,7 @@ export default function DashboardPage() {
     <>
     <div className="space-y-12">
       <header>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 text-transparent bg-clip-text">
             {role === 'cliente' ? 'Bem-vindo, Apostador!' : 'Painel do Vendedor'}
           </h1>
           <p className="text-lg text-white/80 mt-2 text-center">
@@ -142,5 +142,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
