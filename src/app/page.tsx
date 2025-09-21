@@ -73,7 +73,7 @@ const HeroSection = () => (
       )}>
         A Próxima Grande Sorte Pode Ser a Sua.
       </h1>
-      <p className="mt-4 text-lg md:text-xl text-white/80">
+      <p className="mt-4 text-lg md:text-xl text-white">
         Escolha seus números, sinta a emoção e transforme um simples palpite em prêmios incríveis. A aposta é fácil, a diversão é garantida.
       </p>
       <div className="mt-8 flex justify-center gap-4">
