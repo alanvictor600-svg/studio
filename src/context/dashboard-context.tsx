@@ -72,6 +72,14 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setIsCreditsDialogOpen(true);
     }, []);
 
+    // This effect will run whenever draws or tickets change to re-evaluate the lottery pause state.
+    useEffect(() => {
+        const winningTicketsExist = userTickets.some(t => t.status === 'winning');
+        const drawsExist = allDraws.length > 0;
+        setIsLotteryPaused(drawsExist || winningTicketsExist);
+    }, [userTickets, allDraws]);
+
+
     const startDataListeners = useCallback((user: User): () => void => {
         if (listenersActive.current) {
             // If called again, return a no-op cleanup function
@@ -103,9 +111,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         unsubscribes.push(onSnapshot(drawsQuery, (drawsSnapshot) => {
             const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
             setAllDraws(drawsData);
-            // Any draw means the lottery is "paused" for new bets
-            const winningTicketsExist = userTickets.some(t => t.status === 'winning');
-            setIsLotteryPaused(drawsData.length > 0 || winningTicketsExist);
         }, (error) => {
             console.error("Error fetching draws: ", error);
         }));
@@ -121,10 +126,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setUserTickets(userTicketsData);
-             // Re-evaluate if lottery is paused based on winning tickets
-            const winningTicketsExist = userTicketsData.some(t => t.status === 'winning');
-            setIsLotteryPaused(allDraws.length > 0 || winningTicketsExist);
-            setIsDataLoading(false);
+            setIsDataLoading(false); // Data is considered loaded after tickets arrive
         }, (error) => {
             console.error("Error fetching user tickets: ", error);
             setIsDataLoading(false);
@@ -135,9 +137,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             unsubscribes.forEach(unsub => unsub());
             listenersActive.current = false;
         };
-    }, [toast, allDraws.length, userTickets]); // Dependencies to re-evaluate pause state
+    }, []); // This useCallback has no dependencies as it's a setup function
 
      useEffect(() => {
+        // Ensure listeners are always cleaned up on component unmount
         return () => {
             listenersActive.current = false;
         };
