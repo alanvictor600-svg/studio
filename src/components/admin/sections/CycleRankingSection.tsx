@@ -66,15 +66,16 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       startY: tableStartY,
       head: head,
       body: body,
+      theme: 'grid',
       headStyles: { fillColor: [22, 163, 74] }, // Emerald-600
       didDrawCell: (data) => {
-        if (data.cell.section === 'body') {
-           const ticket = rankedTickets[data.row.index];
-           const globalDrawnFreq = countOccurrences(draws.flatMap(d => d.numbers));
+        if (data.cell.section === 'body' && data.row.index < rankedTickets.length) {
+            const ticket = rankedTickets[data.row.index];
+            const tempDrawnFrequencyForRow = { ...drawnNumbersFrequency };
 
-            // Style "Acertos" column
+            // Logic to style the 'Acertos' column
             if (data.column.index === head[0].length - 1) {
-                const matches = parseInt(data.cell.text[0] || '0', 10);
+                const matches = ticket.matches;
                 let topMatches: number[] = [];
                 if (rankedTickets.length > 0) topMatches.push(rankedTickets[0].matches);
                 if (rankedTickets.length > 1) topMatches.push(rankedTickets[1].matches);
@@ -89,34 +90,13 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                     doc.setFillColor(...color);
                     doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
                 }
-                 // Ensure text is drawn over the fill color
-                doc.setTextColor(0, 0, 0);
-                doc.text(data.cell.text[0], data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, {
-                    halign: 'center',
-                    valign: 'middle'
-                });
             }
 
-             // Style number columns
+            // Logic to style the individual number columns
             if (data.column.index >= 2 && data.column.index <= 11) {
-                const num = parseInt(data.cell.text[0] || '0');
-                // Create a temporary frequency map for this row's logic
-                const tempRowDrawnFreq = {...globalDrawnFreq};
+                 const num = parseInt(data.cell.text[0] || '0');
+                 const isMatched = getIsNumberMatched(num, tempDrawnFrequencyForRow);
                 
-                let isMatched = false;
-                // Account for duplicates in the ticket itself before this cell
-                const ticketNumbersBeforeThis = ticket.numbers.slice(0, data.column.index - 2);
-                ticketNumbersBeforeThis.forEach(n => {
-                    if (tempRowDrawnFreq[n] > 0) {
-                        tempRowDrawnFreq[n]--;
-                    }
-                });
-                
-                // Check if the current number is a match
-                if (tempRowDrawnFreq[num] > 0) {
-                   isMatched = true;
-                }
-
                 if (isMatched) {
                     doc.setTextColor(34, 197, 94); // Green-500
                     doc.setFont(doc.getFont().fontName, 'bold');
@@ -127,16 +107,10 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
             }
         }
       },
-      willDrawCell: (data) => {
-        // Prevent default text rendering for the "Acertos" column, as we handle it customly
-        if (data.cell.section === 'body' && data.column.index === head[0].length - 1) {
-          return false; // Prevents jspdf from drawing the text, we'll draw it in didDrawCell
-        }
-      },
       columnStyles: {
         0: { cellWidth: 'auto' },
         1: { cellWidth: 'auto' },
-        12: { halign: 'center', cellWidth: 15 },
+        12: { halign: 'center', cellWidth: 15, fontStyle: 'bold' },
          2: { halign: 'center', cellWidth: 10 },
          3: { halign: 'center', cellWidth: 10 },
          4: { halign: 'center', cellWidth: 10 },
