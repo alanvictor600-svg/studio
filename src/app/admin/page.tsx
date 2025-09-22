@@ -370,7 +370,7 @@ export default function AdminPage() {
         );
       case 'ranking-ciclo':
         return (
-          <CycleRankingSection rankedTickets={cycleRanking} />
+          <CycleRankingSection rankedTickets={cycleRanking} draws={draws} />
         );
       default:
         return null;
