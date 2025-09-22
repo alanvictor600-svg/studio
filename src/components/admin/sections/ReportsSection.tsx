@@ -53,9 +53,9 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
                   <p className="text-xs text-muted-foreground">{financialReport.clientTicketCount + financialReport.sellerTicketCount} bilhetes</p>
               </div>
               <div className="p-4 rounded-lg bg-background/70 shadow-inner lg:col-span-1">
-                  <Percent className="h-10 w-10 text-secondary mx-auto mb-2" />
+                  <Percent className="h-10 w-10 text-orange-500 mx-auto mb-2" />
                   <p className="text-sm font-medium text-muted-foreground">Comissão (Vendedores)</p>
-                  <p className="text-3xl font-bold text-secondary">
+                  <p className="text-3xl font-bold text-orange-500">
                       R$ {financialReport.sellerCommission.toFixed(2).replace('.', ',')}
                   </p>
               </div>
