@@ -3,19 +3,22 @@
 
 import { useState } from 'react';
 import type { FC } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Rocket, AlertTriangle, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Rocket, AlertTriangle, KeyRound, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface ControlsSectionProps {
   onStartNewLottery: () => Promise<void>;
+  onUpdateRanking: () => Promise<void>; // Nova propriedade
+  isUpdatingRanking: boolean; // Nova propriedade
 }
 
-export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery }) => {
+export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery, onUpdateRanking, isUpdatingRanking }) => {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [startLotteryPassword, setStartLotteryPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,67 +43,83 @@ export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery })
         <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
         Controles da Loteria
       </h2>
-      <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm border-destructive/50">
+      <Card className="w-full max-w-lg mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-xl text-center font-semibold">
             Gerenciar Ciclo da Loteria
           </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
-            Esta ação reinicia a loteria, cria um histórico de vendas e expira bilhetes ativos.
+           <CardDescription className="text-center text-muted-foreground">
+            Ações importantes para o ciclo de apostas e ranking.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
-          <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
+        <CardContent className="flex flex-col items-center justify-center gap-6">
+
+           <div className="text-center w-full">
+             <h3 className="font-semibold text-foreground mb-2">Ranking Público</h3>
+             <p className="text-sm text-muted-foreground mb-3">Após cadastrar novos sorteios, clique aqui para recalcular e atualizar o ranking visível para todos os jogadores.</p>
+              <Button onClick={onUpdateRanking} disabled={isUpdatingRanking} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <RefreshCw className={`mr-2 h-4 w-4 ${isUpdatingRanking ? 'animate-spin' : ''}`} />
+                {isUpdatingRanking ? 'Atualizando...' : 'Atualizar Ranking Público'}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center">
-                  <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
-                  Confirmar Nova Loteria?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação irá salvar um resumo do ciclo de vendas atual, limpar todos os sorteios existentes e marcar todos os bilhetes ativos, premiados e aguardando pagamento como 'expirados'. Esta ação não pode ser desfeita.
-                  <br/><br/>
-                  <span className="font-bold text-foreground">Digite a senha de controle para confirmar.</span>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-2 py-2">
-                  <Label htmlFor="control-password" className="sr-only">
-                    Senha de Controle
-                  </Label>
-                  <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                      id="control-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Senha de Controle"
-                      value={startLotteryPassword}
-                      onChange={(e) => setStartLotteryPassword(e.target.value)}
-                      className="pl-9 pr-10"
-                      />
-                      <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                      >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </Button>
-                  </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setStartLotteryPassword('')}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleStartLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                  Confirmar e Iniciar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+           </div>
+           
+           <Separator className="w-3/4 mx-auto" />
+            
+           <div className="text-center w-full">
+                <h3 className="font-semibold text-destructive mb-2">Iniciar Nova Loteria</h3>
+                 <p className="text-sm text-muted-foreground mb-3">Esta ação reinicia a loteria, cria um histórico e expira bilhetes ativos. Use com cuidado.</p>
+                <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center">
+                        <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
+                        Confirmar Nova Loteria?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação irá salvar um resumo do ciclo de vendas atual, limpar todos os sorteios existentes e marcar todos os bilhetes ativos, premiados e aguardando pagamento como 'expirados'. Esta ação não pode ser desfeita.
+                        <br/><br/>
+                        <span className="font-bold text-foreground">Digite a senha de controle para confirmar.</span>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="control-password" className="sr-only">
+                          Senha de Controle
+                        </Label>
+                        <div className="relative">
+                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                            id="control-password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Senha de Controle"
+                            value={startLotteryPassword}
+                            onChange={(e) => setStartLotteryPassword(e.target.value)}
+                            className="pl-9 pr-10"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </Button>
+                        </div>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setStartLotteryPassword('')}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleStartLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        Confirmar e Iniciar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+           </div>
         </CardContent>
       </Card>
     </section>
