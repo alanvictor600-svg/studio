@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -93,7 +94,7 @@ export const PublicRankingDisplay: FC<PublicRankingDisplayProps> = ({ ranking })
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 justify-center">
-                            {ticket.numbers.map((num, i) => (
+                            {ticket.numbers && ticket.numbers.map((num, i) => (
                                 <Badge key={i} variant="outline" className="font-mono text-xs w-7 h-7 flex items-center justify-center">{num}</Badge>
                             ))}
                         </div>

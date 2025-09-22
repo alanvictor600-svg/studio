@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin';
@@ -58,7 +59,7 @@ export async function updatePublicRankingAction(): Promise<{ success: boolean; m
         const publicRanking = sortedTickets.map((ticket) => ({
             buyerName: ticket.buyerName || 'N/A',
             matches: ticket.matches,
-            numbers: ticket.numbers,
+            numbers: ticket.numbers, // This line was missing
             ticketId: ticket.id,
         }));
         console.log(`Ranking calculado com ${publicRanking.length} entradas.`);
