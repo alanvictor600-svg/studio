@@ -54,7 +54,7 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
         const row = [
             ticket.buyerName || 'N/A',
             ticket.sellerUsername || '-',
-            ...ticket.numbers,
+            ...ticket.numbers.map(n => n.toString()),
             ticket.matches.toString()
         ];
         return row;
@@ -118,7 +118,17 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       columnStyles: {
         0: { cellWidth: 'auto' },
         1: { cellWidth: 'auto' },
-        12: { halign: 'center' },
+        12: { halign: 'center', cellWidth: 15 },
+         2: { halign: 'center', cellWidth: 10 },
+         3: { halign: 'center', cellWidth: 10 },
+         4: { halign: 'center', cellWidth: 10 },
+         5: { halign: 'center', cellWidth: 10 },
+         6: { halign: 'center', cellWidth: 10 },
+         7: { halign: 'center', cellWidth: 10 },
+         8: { halign: 'center', cellWidth: 10 },
+         9: { halign: 'center', cellWidth: 10 },
+        10: { halign: 'center', cellWidth: 10 },
+        11: { halign: 'center', cellWidth: 10 },
       }
     });
     
