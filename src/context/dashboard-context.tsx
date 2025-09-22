@@ -10,6 +10,12 @@ import { createClientTickets } from '@/lib/services/ticketService';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+interface PublicRankingEntry {
+  initials: string;
+  matches: number;
+  ticketId: string;
+}
+
 interface DashboardContextType {
     cart: number[][];
     setCart: Dispatch<SetStateAction<number[][]>>;
@@ -30,6 +36,7 @@ interface DashboardContextType {
     // New properties for centralized data
     userTickets: Ticket[];
     allDraws: Draw[];
+    publicRanking: PublicRankingEntry[];
     isLotteryPaused: boolean;
     isDataLoading: boolean;
     startDataListeners: (user: User) => void;
@@ -56,6 +63,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     // New state for centralized data
     const [userTickets, setUserTickets] = useState<Ticket[]>([]);
     const [allDraws, setAllDraws] = useState<Draw[]>([]);
+    const [publicRanking, setPublicRanking] = useState<PublicRankingEntry[]>([]);
     const [isLotteryPaused, setIsLotteryPaused] = useState(false);
     const [isDataLoading, setIsDataLoading] = useState(true);
     
@@ -118,6 +126,18 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: "Erro ao Carregar Bilhetes", description: "Não foi possível carregar seus bilhetes.", variant: "destructive" });
             setIsDataLoading(false);
         }));
+
+        // 4. Public Ranking Listener
+        const publicRankingDocRef = doc(db, 'configs', 'publicRanking');
+        unsubscribes.push(onSnapshot(publicRankingDocRef, (doc) => {
+          if (doc.exists()) {
+            setPublicRanking(doc.data().ranking || []);
+          }
+        }, (error) => {
+           console.error("Error fetching public ranking: ", error);
+           toast({ title: "Erro de Ranking", description: "Não foi possível carregar o ranking.", variant: "destructive" });
+        }));
+
 
         // Return a cleanup function that calls all unsubscribes
         return () => {
@@ -186,6 +206,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         // Pass new data and functions
         userTickets,
         allDraws,
+        publicRanking,
         isLotteryPaused,
         isDataLoading,
         startDataListeners,

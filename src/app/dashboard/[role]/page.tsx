@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -17,6 +18,7 @@ import { useDashboard } from '@/context/dashboard-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { PauseCircle } from 'lucide-react';
+import { PublicRankingDisplay } from '@/components/public-ranking-display';
 
 
 export default function DashboardPage() {
@@ -33,6 +35,7 @@ export default function DashboardPage() {
       lotteryConfig,
       userTickets,
       allDraws,
+      publicRanking,
       isLotteryPaused,
       isDataLoading,
   } = useDashboard();
@@ -114,17 +117,7 @@ export default function DashboardPage() {
             </TabsList>
             <TabsContent value="aposta">
                 {isLotteryPaused ? (
-                    <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="text-2xl text-center font-bold text-primary">Ciclo de Sorteios Ativo!</CardTitle>
-                            <CardDescription className="text-center text-muted-foreground">
-                                As compras estão pausadas. Acompanhe abaixo o desempenho dos seus bilhetes em tempo real.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <TicketList tickets={processedUserTickets} draws={allDraws} onRebet={handleRebet} />
-                        </CardContent>
-                    </Card>
+                    <PublicRankingDisplay ranking={publicRanking} />
                 ) : (
                     <TicketSelectionForm
                         cart={cart}
