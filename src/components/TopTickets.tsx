@@ -4,7 +4,7 @@
 import type { FC } from 'react';
 import type { Ticket } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Star, TrendingUp, Medal, User } from 'lucide-react';
+import { TrendingUp, Medal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -34,7 +34,7 @@ export const TopTickets: FC<TopTicketsProps> = ({ rankedTickets }) => {
       <Card className="h-full flex flex-col">
         <CardHeader>
            <CardTitle className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
-              <Star className="h-6 w-6" /> Ranking de Acertos
+              <TrendingUp className="h-6 w-6" /> Ranking de Acertos
            </CardTitle>
             <CardDescription className="text-center">
               Os bilhetes com mais acertos aparecerão aqui.
@@ -108,5 +108,3 @@ export const TopTickets: FC<TopTicketsProps> = ({ rankedTickets }) => {
     </Card>
   );
 };
-
-    

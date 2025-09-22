@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, ArrowLeft } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -88,53 +88,48 @@ const ResultsSection = () => {
             return;
         }
 
-        if (isAuthenticated) {
-            setIsLoading(true);
-            
-            // Listener for draws (all authenticated users can see this)
-            const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-            const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
-                const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
-                setAllDraws(drawsData);
-                setLastDraw(drawsData[0] || null);
-            }, (error) => {
-                console.error("Error fetching draws: ", error);
-            });
-
-            let unsubscribeTickets = () => {};
-
-            // Listener for active tickets (ONLY for admins)
-            if (currentUser?.role === 'admin') {
-                const ticketsQuery = query(collection(db, 'tickets'), where('status', '==', 'active'));
-                unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-                    const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-                    setActiveTickets(ticketsData);
-                    setIsLoading(false);
-                }, (error) => {
-                    console.error("Error fetching active tickets: ", error);
-                    setIsLoading(false);
-                });
-            } else {
-                // If not an admin, don't fetch all active tickets.
-                setActiveTickets([]);
+        setIsLoading(true);
+        // Listener for draws (all authenticated users can see this)
+        const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
+        const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
+            const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
+            setAllDraws(drawsData);
+            setLastDraw(drawsData[0] || null);
+            // We set loading to false here, so non-admins don't wait for the (non-existent) ticket listener
+            if (currentUser?.role !== 'admin') {
                 setIsLoading(false);
             }
+        }, (error) => {
+            console.error("Error fetching draws: ", error);
+             setIsLoading(false);
+        });
 
-            return () => {
-                unsubscribeDraws();
-                unsubscribeTickets();
-            };
+        let unsubscribeTickets = () => {};
+
+        // Listener for active tickets (ONLY for admins)
+        if (isAuthenticated && currentUser?.role === 'admin') {
+            const ticketsQuery = query(collection(db, 'tickets'), where('status', '==', 'active'));
+            unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+                const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+                setActiveTickets(ticketsData);
+                setIsLoading(false); // Admin loading finishes when tickets arrive
+            }, (error) => {
+                console.error("Error fetching active tickets: ", error);
+                setIsLoading(false);
+            });
         } else {
-            // Not authenticated, clear all data and stop loading.
-            setIsLoading(false);
-            setAllDraws([]);
+            // Not an admin or not authenticated, clear active tickets.
             setActiveTickets([]);
-            setLastDraw(null);
         }
+
+        return () => {
+            unsubscribeDraws();
+            unsubscribeTickets();
+        };
     }, [isAuthenticated, authLoading, currentUser]);
 
     const rankedTickets = useMemo(() => {
-        if (currentUser?.role !== 'admin' || !allDraws.length || !activeTickets.length) return [];
+        if (!isAuthenticated || currentUser?.role !== 'admin' || !allDraws.length || !activeTickets.length) return [];
         
         return activeTickets
             .map(ticket => ({
@@ -144,7 +139,7 @@ const ResultsSection = () => {
             .filter(ticket => ticket.matches > 0)
             .sort((a, b) => b.matches - a.matches)
             .slice(0, 5); // Top 5 tickets
-    }, [activeTickets, allDraws, currentUser]);
+    }, [activeTickets, allDraws, currentUser, isAuthenticated]);
 
 
     const renderContent = () => {
@@ -176,7 +171,7 @@ const ResultsSection = () => {
 
         return (
             <>
-                <div>
+                <div className={cn(currentUser?.role === 'admin' ? 'lg:col-span-1' : 'lg:col-span-2')}>
                      {lastDraw ? (
                        <AdminDrawCard draw={lastDraw} />
                     ) : (
@@ -190,8 +185,8 @@ const ResultsSection = () => {
                         </Card>
                     )}
                 </div>
-                 {currentUser?.role === 'admin' && (
-                    <div className="h-full">
+                 {isAuthenticated && currentUser?.role === 'admin' && (
+                    <div className="h-full lg:col-span-1">
                         <TopTickets rankedTickets={rankedTickets} />
                     </div>
                  )}
@@ -208,12 +203,12 @@ const ResultsSection = () => {
                         Resultados e Ranking
                     </h2>
                     <p className="text-muted-foreground text-lg">
-                        Confira o resultado do último sorteio e veja os bilhetes com mais acertos!
+                        Confira o resultado do último sorteio e {currentUser?.role === 'admin' ? 'veja os bilhetes com mais acertos!' : 'acompanhe os resultados.'}
                     </p>
                 </div>
                 <div className={cn(
                     "grid grid-cols-1 gap-8 md:gap-12 items-start mt-12 max-w-6xl mx-auto",
-                    currentUser?.role === 'admin' ? "lg:grid-cols-2" : "lg:grid-cols-1"
+                    isAuthenticated && currentUser?.role === 'admin' ? "lg:grid-cols-2" : "lg:grid-cols-1"
                 )}>
                     {renderContent()}
                 </div>
