@@ -44,6 +44,7 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
   
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
+    const tableStartY = 35;
 
     doc.setFontSize(18);
     doc.text("Ranking do Ciclo - Bolão Potiguar", 14, 22);
@@ -52,15 +53,65 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
     const date = format(new Date(), "'Gerado em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     doc.text(date, 14, 30);
     
+    const body = rankedTickets.map(ticket => ({
+      buyer: ticket.buyerName || 'N/A',
+      numbers: getProcessedTicketNumbers(ticket), // Pass processed numbers
+      matches: ticket.matches.toString(),
+    }));
+
     autoTable(doc, {
-      startY: 35,
-      head: [['Comprador', 'Acertos', 'Números']],
-      body: rankedTickets.map(ticket => [
-        ticket.buyerName || 'N/A',
-        ticket.matches.toString(),
-        ticket.numbers.join(', ')
-      ]),
+      startY: tableStartY,
+      head: [['Comprador', 'Números do Bilhete', 'Acertos']],
+      body: body.map(row => [row.buyer, row.numbers.map(n => n.numberValue).join(', '), row.matches]),
       headStyles: { fillColor: [22, 163, 74] }, // Emerald-600
+      didDrawCell: (data) => {
+        // Style "Acertos" column
+        if (data.column.index === 2 && data.cell.section === 'body') {
+            const matches = parseInt(data.cell.text[0] || '0', 10);
+            let topMatches: number[] = [];
+            if (rankedTickets.length > 0) topMatches.push(rankedTickets[0].matches);
+            if (rankedTickets.length > 1) topMatches.push(rankedTickets[1].matches);
+            if (rankedTickets.length > 2) topMatches.push(rankedTickets[2].matches);
+            
+            let color: [number, number, number] | undefined;
+            if (matches === topMatches[0] && matches > 0) color = [255, 215, 0]; // Gold
+            else if (matches === topMatches[1] && matches > 0) color = [192, 192, 192]; // Silver
+            else if (matches === topMatches[2] && matches > 0) color = [205, 127, 50]; // Bronze
+            
+            if(color) {
+                 doc.setFillColor(...color);
+                 doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+            }
+        }
+        
+        // Custom draw for "Números do Bilhete" column
+        if (data.column.index === 1 && data.cell.section === 'body') {
+          const ticketData = body[data.row.index];
+          if (ticketData) {
+            const processedNumbers = ticketData.numbers;
+            const cellPadding = 2;
+            let currentX = data.cell.x + cellPadding;
+            const currentY = data.cell.y + data.cell.height / 2 + 3; // Vertically center
+
+            processedNumbers.forEach((num, index) => {
+              const text = num.numberValue.toString() + (index < processedNumbers.length - 1 ? ', ' : '');
+              
+              if (num.isMatched) {
+                doc.setTextColor(34, 197, 94); // Green-500
+              } else {
+                doc.setTextColor(0, 0, 0); // Black
+              }
+              
+              doc.text(text, currentX, currentY);
+              currentX += doc.getStringUnitWidth(text) * (doc.getFontSize() / doc.internal.scaleFactor);
+            });
+            doc.setTextColor(0, 0, 0); // Reset text color
+          }
+        }
+      },
+      columnStyles: {
+        2: { halign: 'center' },
+      }
     });
     
     doc.save(`ranking-ciclo-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
