@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestor
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { TopTickets } from '@/components/TopTickets';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { History, Gamepad2, Gift } from 'lucide-react';
+import { History, Gamepad2, Gift, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -24,29 +25,9 @@ const Header = () => {
   const router = useRouter();
 
 
-  if (isLoading || isAuthenticated) {
-    const dashboardPath = currentUser?.role === 'admin' 
-        ? '/admin' 
-        : (currentUser ? `/dashboard/${currentUser.role}` : '/');
-
-    return (
-      <header className="sticky top-0 z-40 w-full border-b bg-secondary">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-                <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
-                <span className="hidden sm:inline-block">Bolão Potiguar</span>
-            </Link>
-            {isLoading ? (
-                 <div className="text-sm text-muted-foreground">Verificando sessão...</div>
-            ) : (
-                <Button asChild>
-                    <Link href={dashboardPath}>Acessar Painel</Link>
-                </Button>
-            )}
-        </div>
-      </header>
-    );
-  }
+  const dashboardPath = currentUser?.role === 'admin' 
+      ? '/admin' 
+      : (currentUser ? `/dashboard/${currentUser.role}` : '/login');
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-secondary">
@@ -56,12 +37,22 @@ const Header = () => {
           <span className="hidden sm:inline-block text-foreground">Bolão Potiguar</span>
         </Link>
         <div className="flex items-center gap-2">
-            <Button asChild variant="default" className="shadow-md bg-blue-500 hover:bg-blue-600 text-white">
-                <Link href="/login"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link>
-            </Button>
-            <Button asChild className="shadow-md bg-green-500 hover:bg-green-600 text-white">
-                <Link href="/cadastrar"><UserPlus className="mr-2 h-4 w-4" /> Cadastrar</Link>
-            </Button>
+            {isLoading ? (
+                <div className="text-sm text-muted-foreground">Carregando...</div>
+            ) : isAuthenticated ? (
+                <Button asChild>
+                    <Link href={dashboardPath}>Acessar Painel</Link>
+                </Button>
+            ) : (
+                <>
+                    <Button asChild variant="default" className="shadow-md bg-blue-500 hover:bg-blue-600 text-white">
+                        <Link href="/login"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link>
+                    </Button>
+                    <Button asChild className="shadow-md bg-green-500 hover:bg-green-600 text-white">
+                        <Link href="/cadastrar"><UserPlus className="mr-2 h-4 w-4" /> Cadastrar</Link>
+                    </Button>
+                </>
+            )}
         </div>
       </div>
     </header>
@@ -87,24 +78,90 @@ const HeroSection = () => (
 );
 
 const ResultsSection = () => {
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
     const [lastDraw, setLastDraw] = useState<Draw | null>(null);
     const [allDraws, setAllDraws] = useState<Draw[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const q = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
-            setAllDraws(drawsData);
-            setLastDraw(drawsData[0] || null);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching draws: ", error);
-            setIsLoading(false);
-        });
+        // Only fetch data if the user is authenticated
+        if (isAuthenticated) {
+            setIsLoading(true);
+            const q = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
+                setAllDraws(drawsData);
+                setLastDraw(drawsData[0] || null);
+                setIsLoading(false);
+            }, (error) => {
+                console.error("Error fetching draws: ", error);
+                setIsLoading(false);
+            });
 
-        return () => unsubscribe();
-    }, []);
+            return () => unsubscribe();
+        } else {
+            // If not authenticated, stop loading and clear data
+            setIsLoading(false);
+            setAllDraws([]);
+            setLastDraw(null);
+        }
+    }, [isAuthenticated]);
+
+    const renderContent = () => {
+        if (authLoading) {
+            return (
+                <Card className="h-full">
+                    <CardContent className="flex items-center justify-center h-full min-h-[300px]">
+                        <p className="text-muted-foreground">Verificando autenticação...</p>
+                    </CardContent>
+                </Card>
+            );
+        }
+        
+        if (!isAuthenticated) {
+            return (
+                <Card className="h-full col-span-1 lg:col-span-2 flex flex-col items-center justify-center text-center p-8 bg-card/80 backdrop-blur-sm shadow-xl">
+                    <Lock className="h-12 w-12 text-primary mb-4" />
+                    <h3 className="text-2xl font-bold">Conteúdo Exclusivo para Membros</h3>
+                    <p className="text-muted-foreground mt-2 max-w-sm">
+                        Faça login ou cadastre-se para ver os resultados dos últimos sorteios e as estatísticas dos números mais quentes.
+                    </p>
+                    <div className="flex gap-4 mt-6">
+                        <Button asChild><Link href="/login">Entrar</Link></Button>
+                        <Button asChild variant="secondary"><Link href="/cadastrar">Cadastrar</Link></Button>
+                    </div>
+                </Card>
+            );
+        }
+
+        return (
+            <>
+                <div>
+                     {isLoading ? (
+                        <Card className="h-full">
+                            <CardContent className="flex items-center justify-center h-full min-h-[300px]">
+                                <p className="text-muted-foreground">Carregando resultados...</p>
+                            </CardContent>
+                        </Card>
+                    ) : lastDraw ? (
+                       <AdminDrawCard draw={lastDraw} />
+                    ) : (
+                       <Card className="h-full">
+                            <CardHeader>
+                                <CardTitle className="text-xl text-center">Nenhum Sorteio Ativo</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex items-center justify-center h-full min-h-[300px]">
+                                <p className="text-center text-muted-foreground">Ainda não houve sorteios neste ciclo. Volte em breve!</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+                 <div className="h-full">
+                     <TopTickets draws={allDraws} />
+                </div>
+            </>
+        );
+    };
 
     return (
         <section className="bg-muted/50 py-16 md:py-24">
@@ -119,29 +176,7 @@ const ResultsSection = () => {
                     </p>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start mt-12 max-w-6xl mx-auto">
-                    <div>
-                         {isLoading ? (
-                            <Card className="h-full">
-                                <CardContent className="flex items-center justify-center h-full min-h-[300px]">
-                                    <p className="text-muted-foreground">Carregando resultados...</p>
-                                </CardContent>
-                            </Card>
-                        ) : lastDraw ? (
-                           <AdminDrawCard draw={lastDraw} />
-                        ) : (
-                           <Card className="h-full">
-                                <CardHeader>
-                                    <CardTitle className="text-xl text-center">Nenhum Sorteio Ativo</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex items-center justify-center h-full min-h-[300px]">
-                                    <p className="text-center text-muted-foreground">Ainda não houve sorteios neste ciclo. Volte em breve!</p>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                     <div className="h-full">
-                         <TopTickets draws={allDraws} />
-                    </div>
+                    {renderContent()}
                 </div>
             </div>
         </section>
@@ -215,3 +250,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
