@@ -14,6 +14,9 @@ import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Ticket as TicketIcon, ShoppingBag } from 'lucide-react';
 import { useDashboard } from '@/context/dashboard-context';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { PauseCircle } from 'lucide-react';
 
 
 export default function DashboardPage() {
@@ -110,12 +113,25 @@ export default function DashboardPage() {
                 </TabsTrigger>
             </TabsList>
             <TabsContent value="aposta">
-                 <TicketSelectionForm
-                    isLotteryPaused={isLotteryPaused}
-                    cart={cart}
-                    onCartChange={setCart}
-                    isSubmitting={isSubmitting}
-                />
+                {isLotteryPaused ? (
+                    <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-center font-bold text-primary">Ciclo de Sorteios Ativo!</CardTitle>
+                            <CardDescription className="text-center text-muted-foreground">
+                                As compras estão pausadas. Acompanhe abaixo o desempenho dos seus bilhetes em tempo real.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <TicketList tickets={processedUserTickets} draws={allDraws} onRebet={handleRebet} />
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <TicketSelectionForm
+                        cart={cart}
+                        onCartChange={setCart}
+                        isSubmitting={isSubmitting}
+                    />
+                )}
             </TabsContent>
             <TabsContent value="bilhetes">
                  <section>
