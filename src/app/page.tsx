@@ -23,14 +23,12 @@ const Header = () => {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && currentUser) {
-      const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
-      router.replace(defaultRedirect);
-    }
-  }, [isLoading, isAuthenticated, currentUser, router]);
 
   if (isLoading || isAuthenticated) {
+    const dashboardPath = currentUser?.role === 'admin' 
+        ? '/admin' 
+        : (currentUser ? `/dashboard/${currentUser.role}` : '/');
+
     return (
       <header className="sticky top-0 z-40 w-full border-b bg-secondary">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
@@ -38,7 +36,13 @@ const Header = () => {
                 <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
                 <span className="hidden sm:inline-block">Bolão Potiguar</span>
             </Link>
-            <div className="text-sm text-muted-foreground">Verificando sessão...</div>
+            {isLoading ? (
+                 <div className="text-sm text-muted-foreground">Verificando sessão...</div>
+            ) : (
+                <Button asChild>
+                    <Link href={dashboardPath}>Acessar Painel</Link>
+                </Button>
+            )}
         </div>
       </header>
     );
@@ -47,7 +51,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-secondary">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+        <Link href="/" className="flex items-center gap-2 text-lg">
           <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
           <span className="hidden sm:inline-block text-foreground">Bolão Potiguar</span>
         </Link>
