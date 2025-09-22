@@ -69,7 +69,10 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       headStyles: { fillColor: [22, 163, 74] }, // Emerald-600
       didDrawCell: (data) => {
         if (data.cell.section === 'body') {
-           // Style "Acertos" column
+           const ticket = rankedTickets[data.row.index];
+           const globalDrawnFreq = countOccurrences(draws.flatMap(d => d.numbers));
+
+            // Style "Acertos" column
             if (data.column.index === head[0].length - 1) {
                 const matches = parseInt(data.cell.text[0] || '0', 10);
                 let topMatches: number[] = [];
@@ -78,30 +81,39 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                 if (rankedTickets.length > 2) topMatches.push(rankedTickets[2].matches);
                 
                 let color: [number, number, number] | undefined;
-                if (matches === topMatches[0] && matches > 0) color = [255, 215, 0]; // Gold
-                else if (matches === topMatches[1] && matches > 0) color = [192, 192, 192]; // Silver
-                else if (matches === topMatches[2] && matches > 0) color = [205, 127, 50]; // Bronze
+                if (matches > 0 && matches === topMatches[0]) color = [255, 215, 0]; // Gold
+                else if (matches > 0 && matches === topMatches[1]) color = [192, 192, 192]; // Silver
+                else if (matches > 0 && matches === topMatches[2]) color = [205, 127, 50]; // Bronze
                 
                 if(color) {
                     doc.setFillColor(...color);
                     doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
                 }
+                 // Ensure text is drawn over the fill color
+                doc.setTextColor(0, 0, 0);
+                doc.text(data.cell.text[0], data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, {
+                    halign: 'center',
+                    valign: 'middle'
+                });
             }
+
              // Style number columns
             if (data.column.index >= 2 && data.column.index <= 11) {
                 const num = parseInt(data.cell.text[0] || '0');
-                const ticket = rankedTickets[data.row.index];
-                const tempDrawnFreq = countOccurrences(draws.flatMap(draw => draw.numbers));
+                // Create a temporary frequency map for this row's logic
+                const tempRowDrawnFreq = {...globalDrawnFreq};
                 
                 let isMatched = false;
+                // Account for duplicates in the ticket itself before this cell
                 const ticketNumbersBeforeThis = ticket.numbers.slice(0, data.column.index - 2);
-                
-                // Adjust frequency based on numbers already checked in the same row
                 ticketNumbersBeforeThis.forEach(n => {
-                    if (tempDrawnFreq[n] > 0) tempDrawnFreq[n]--;
+                    if (tempRowDrawnFreq[n] > 0) {
+                        tempRowDrawnFreq[n]--;
+                    }
                 });
-
-                if (tempDrawnFreq[num] > 0) {
+                
+                // Check if the current number is a match
+                if (tempRowDrawnFreq[num] > 0) {
                    isMatched = true;
                 }
 
@@ -113,6 +125,12 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                      doc.setFont(doc.getFont().fontName, 'normal');
                 }
             }
+        }
+      },
+      willDrawCell: (data) => {
+        // Prevent default text rendering for the "Acertos" column, as we handle it customly
+        if (data.cell.section === 'body' && data.column.index === head[0].length - 1) {
+          return false; // Prevents jspdf from drawing the text, we'll draw it in didDrawCell
         }
       },
       columnStyles: {
@@ -152,7 +170,7 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                 Todos os bilhetes ativos ordenados pela quantidade de acertos.
               </CardDescription>
             </div>
-            <Button onClick={handleDownloadPdf} variant="outline" size="sm">
+            <Button onClick={handleDownloadPdf} variant="outline" size="sm" disabled={rankedTickets.length === 0}>
               <FileDown className="mr-2 h-4 w-4" /> Baixar PDF
             </Button>
           </div>
