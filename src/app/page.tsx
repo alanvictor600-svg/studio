@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -83,11 +84,6 @@ const ResultsSection = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (authLoading) {
-            setIsLoading(true);
-            return;
-        }
-
         setIsLoading(true);
         // Listener for draws (all authenticated users can see this)
         const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
@@ -95,13 +91,12 @@ const ResultsSection = () => {
             const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
             setAllDraws(drawsData);
             setLastDraw(drawsData[0] || null);
-            // We set loading to false here, so non-admins don't wait for the (non-existent) ticket listener
-            if (currentUser?.role !== 'admin') {
+            if (!currentUser || currentUser.role !== 'admin') {
                 setIsLoading(false);
             }
         }, (error) => {
             console.error("Error fetching draws: ", error);
-             setIsLoading(false);
+            setIsLoading(false);
         });
 
         let unsubscribeTickets = () => {};
@@ -118,18 +113,18 @@ const ResultsSection = () => {
                 setIsLoading(false);
             });
         } else {
-            // Not an admin or not authenticated, clear active tickets.
             setActiveTickets([]);
+            // Non-admins loading state is handled by the draws listener
         }
 
         return () => {
             unsubscribeDraws();
             unsubscribeTickets();
         };
-    }, [isAuthenticated, authLoading, currentUser]);
+    }, [isAuthenticated, currentUser]);
 
     const rankedTickets = useMemo(() => {
-        if (!isAuthenticated || currentUser?.role !== 'admin' || !allDraws.length || !activeTickets.length) return [];
+        if (currentUser?.role !== 'admin' || !allDraws.length || !activeTickets.length) return [];
         
         return activeTickets
             .map(ticket => ({
@@ -139,7 +134,7 @@ const ResultsSection = () => {
             .filter(ticket => ticket.matches > 0)
             .sort((a, b) => b.matches - a.matches)
             .slice(0, 5); // Top 5 tickets
-    }, [activeTickets, allDraws, currentUser, isAuthenticated]);
+    }, [activeTickets, allDraws, currentUser]);
 
 
     return (
@@ -156,7 +151,7 @@ const ResultsSection = () => {
                 </div>
                 <div className={cn(
                     "grid grid-cols-1 gap-8 md:gap-12 items-start mt-12 max-w-6xl mx-auto",
-                    isAuthenticated && currentUser?.role === 'admin' ? "lg:grid-cols-2" : ""
+                    currentUser?.role === 'admin' && "lg:grid-cols-2"
                 )}>
                    {isLoading ? (
                         <Card className="h-full col-span-1 lg:col-span-2">
