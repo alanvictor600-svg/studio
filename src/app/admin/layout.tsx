@@ -76,7 +76,7 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
              <div className="flex flex-col">
                 <span className="text-lg font-semibold text-sidebar-primary">Bolão Potiguar</span>
@@ -84,7 +84,7 @@ export default function AdminLayout({
                   Painel de Administrador
                 </span>
              </div>
-          </div>
+          </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
             <div className="mb-4 p-3 rounded-lg bg-sidebar-accent/50 text-sidebar-accent-foreground">
