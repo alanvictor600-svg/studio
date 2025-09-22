@@ -17,8 +17,6 @@ import { collection, onSnapshot, doc, query, orderBy } from 'firebase/firestore'
 import { addDraw as addDrawService, startNewLottery as startNewLotteryService } from '@/lib/services/lotteryService';
 import { saveLotteryConfig, saveCreditRequestConfig } from '@/lib/services/configService';
 import { updateUserCredits, deleteUserAccount } from '@/lib/services/userService';
-import { updatePublicRankingAction } from '@/app/actions/ranking'; 
-
 
 // Import section components
 import { SettingsSection } from '@/components/admin/sections/SettingsSection';
@@ -68,9 +66,6 @@ export default function AdminPage() {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // New state for ranking update button
-  const [isUpdatingRanking, setIsUpdatingRanking] = useState(false);
 
   // Read section from URL on load
   useEffect(() => {
@@ -319,32 +314,6 @@ export default function AdminPage() {
     setIsDeleteConfirmOpen(false);
     setUserToDelete(null);
   };
-
-  // Nova função para chamar a Server Action
-  const handleUpdateRanking = async () => {
-    setIsUpdatingRanking(true);
-    try {
-      const result = await updatePublicRankingAction();
-      if (result.success) {
-        toast({
-          title: 'Ranking Atualizado!',
-          description: `O ranking público foi atualizado com ${result.rankingCount} apostadores.`,
-          className: 'bg-primary text-primary-foreground',
-        });
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error: any) {
-      console.error('Erro ao atualizar ranking:', error);
-      toast({
-        title: 'Erro ao Atualizar Ranking',
-        description: error.message || 'Ocorreu um erro inesperado.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUpdatingRanking(false);
-    }
-  };
   
   if (!isClient || isLoading || !isAuthenticated || !currentUser || currentUser.role !== 'admin') {
     return (
@@ -379,8 +348,6 @@ export default function AdminPage() {
         return (
           <ControlsSection 
             onStartNewLottery={handleStartNewLottery}
-            onUpdateRanking={handleUpdateRanking}
-            isUpdatingRanking={isUpdatingRanking}
           />
         );
        case 'relatorios':
