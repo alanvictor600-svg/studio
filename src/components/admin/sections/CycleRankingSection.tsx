@@ -5,11 +5,16 @@ import { useMemo, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, FileDown } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RankedTicket, Draw } from '@/types';
 import { cn } from '@/lib/utils';
 import { countOccurrences } from '@/lib/lottery-utils';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface CycleRankingSectionProps {
   rankedTickets: RankedTicket[];
@@ -36,6 +41,30 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       return { numberValue: num, isMatched };
     });
   };
+  
+  const handleDownloadPdf = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Ranking do Ciclo - Bolão Potiguar", 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    const date = format(new Date(), "'Gerado em' dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    doc.text(date, 14, 30);
+    
+    autoTable(doc, {
+      startY: 35,
+      head: [['Comprador', 'Acertos', 'Números']],
+      body: rankedTickets.map(ticket => [
+        ticket.buyerName || 'N/A',
+        ticket.matches.toString(),
+        ticket.numbers.join(', ')
+      ]),
+      headStyles: { fillColor: [22, 163, 74] }, // Emerald-600
+    });
+    
+    doc.save(`ranking-ciclo-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
 
   return (
     <section aria-labelledby="cycle-ranking-heading">
@@ -45,12 +74,19 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       </h2>
       <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-xl text-center font-semibold">
-            Placar Geral de Acertos
-          </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
-            Todos os bilhetes ativos ordenados pela quantidade de acertos.
-          </CardDescription>
+           <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl font-semibold">
+                Placar Geral de Acertos
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Todos os bilhetes ativos ordenados pela quantidade de acertos.
+              </CardDescription>
+            </div>
+            <Button onClick={handleDownloadPdf} variant="outline" size="sm">
+              <FileDown className="mr-2 h-4 w-4" /> Baixar PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[60vh]">
