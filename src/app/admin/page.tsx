@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig } from '@/types';
+import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig, RankedTicket } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { CreditManagementDialog } from '@/components/credit-management-dialog';
@@ -17,7 +17,7 @@ import { collection, onSnapshot, doc, query, orderBy } from 'firebase/firestore'
 import { addDraw as addDrawService, startNewLottery as startNewLotteryService } from '@/lib/services/lotteryService';
 import { saveLotteryConfig, saveCreditRequestConfig } from '@/lib/services/configService';
 import { updateUserCredits, deleteUserAccount } from '@/lib/services/userService';
-import { updatePublicRankingAction } from '@/app/actions/ranking'; // Nova Ação
+import { updatePublicRankingAction } from '@/app/actions/ranking'; 
 
 
 // Import section components
@@ -27,7 +27,8 @@ import { ControlsSection } from '@/components/admin/sections/ControlsSection';
 import { ReportsSection } from '@/components/admin/sections/ReportsSection';
 import { DrawHistorySection } from '@/components/admin/sections/DrawHistorySection';
 import { WinningTicketsSection } from '@/components/admin/sections/WinningTicketsSection';
-import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
+import { CycleRankingSection } from '@/components/admin/sections/CycleRankingSection';
+import { updateTicketStatusesBasedOnDraws, calculateTicketMatches } from '@/lib/lottery-utils';
 import { generateFinancialReport } from '@/lib/reports';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -42,7 +43,7 @@ const DEFAULT_CREDIT_CONFIG: CreditRequestConfig = {
     pixKey: '',
 };
 
-export type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios';
+export type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios' | 'ranking-ciclo';
 
 
 export default function AdminPage() {
@@ -180,6 +181,16 @@ export default function AdminPage() {
     generateFinancialReport(allTickets, lotteryConfig), 
     [allTickets, lotteryConfig]
   );
+  
+  const cycleRanking = useMemo(() => {
+    const activeTickets = processedTickets.filter(t => t.status === 'active' || t.status === 'winning');
+    return activeTickets
+      .map(ticket => ({
+        ...ticket,
+        matches: calculateTicketMatches(ticket, draws),
+      }))
+      .sort((a, b) => b.matches - a.matches);
+  }, [processedTickets, draws]);
 
 
   const handleAddDraw = async (newNumbers: number[], name?: string) => {
@@ -390,6 +401,10 @@ export default function AdminPage() {
             draws={draws} 
           />
         );
+      case 'ranking-ciclo':
+        return (
+          <CycleRankingSection rankedTickets={cycleRanking} />
+        );
       default:
         return null;
     }
@@ -447,7 +462,3 @@ export default function AdminPage() {
     </>
   );
 }
-
-    
-
-    

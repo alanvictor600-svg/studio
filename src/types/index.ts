@@ -60,4 +60,6 @@ export interface AdminHistoryEntry {
   sellerTicketCount: number;
 }
 
-    
+export interface RankedTicket extends Ticket {
+  matches: number;
+}

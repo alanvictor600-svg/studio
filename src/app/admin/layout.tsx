@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Ticket, Home, User as UserIcon, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, LayoutDashboard } from 'lucide-react';
+import { LogOut, Coins, Ticket, Home, User as UserIcon, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +32,7 @@ const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
+  { id: 'ranking-ciclo', label: 'Ranking do Ciclo', Icon: TrendingUp },
   { id: 'relatorios', label: 'Relatórios', Icon: PieChart },
   { id: 'historico-sorteios', label: 'Resultados', Icon: History },
   { id: 'bilhetes-premiados', label: 'Bilhetes Premiados', Icon: Trophy },
