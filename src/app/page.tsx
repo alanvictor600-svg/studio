@@ -76,7 +76,7 @@ const HeroSection = () => (
 );
 
 const ResultsSection = () => {
-    const { isAuthenticated, authLoading } = useAuth();
+    const { currentUser, isAuthenticated, isLoading: authLoading } = useAuth();
     const [lastDraw, setLastDraw] = useState<Draw | null>(null);
     const [allDraws, setAllDraws] = useState<Draw[]>([]);
     const [activeTickets, setActiveTickets] = useState<Ticket[]>([]);
@@ -91,7 +91,7 @@ const ResultsSection = () => {
         if (isAuthenticated) {
             setIsLoading(true);
             
-            // Listener for draws
+            // Listener for draws (all authenticated users can see this)
             const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
             const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
                 const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
@@ -101,31 +101,40 @@ const ResultsSection = () => {
                 console.error("Error fetching draws: ", error);
             });
 
-            // Listener for active tickets
-            const ticketsQuery = query(collection(db, 'tickets'), where('status', '==', 'active'));
-            const unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
-                const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-                setActiveTickets(ticketsData);
-                setIsLoading(false); // Consider loading finished when both are fetched at least once
-            }, (error) => {
-                console.error("Error fetching active tickets: ", error);
+            let unsubscribeTickets = () => {};
+
+            // Listener for active tickets (ONLY for admins)
+            if (currentUser?.role === 'admin') {
+                const ticketsQuery = query(collection(db, 'tickets'), where('status', '==', 'active'));
+                unsubscribeTickets = onSnapshot(ticketsQuery, (querySnapshot) => {
+                    const ticketsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+                    setActiveTickets(ticketsData);
+                    setIsLoading(false);
+                }, (error) => {
+                    console.error("Error fetching active tickets: ", error);
+                    setIsLoading(false);
+                });
+            } else {
+                // If not an admin, don't fetch all active tickets.
+                setActiveTickets([]);
                 setIsLoading(false);
-            });
+            }
 
             return () => {
                 unsubscribeDraws();
                 unsubscribeTickets();
             };
         } else {
+            // Not authenticated, clear all data and stop loading.
             setIsLoading(false);
             setAllDraws([]);
             setActiveTickets([]);
             setLastDraw(null);
         }
-    }, [isAuthenticated, authLoading]);
+    }, [isAuthenticated, authLoading, currentUser]);
 
     const rankedTickets = useMemo(() => {
-        if (!allDraws.length || !activeTickets.length) return [];
+        if (currentUser?.role !== 'admin' || !allDraws.length || !activeTickets.length) return [];
         
         return activeTickets
             .map(ticket => ({
@@ -135,7 +144,7 @@ const ResultsSection = () => {
             .filter(ticket => ticket.matches > 0)
             .sort((a, b) => b.matches - a.matches)
             .slice(0, 5); // Top 5 tickets
-    }, [activeTickets, allDraws]);
+    }, [activeTickets, allDraws, currentUser]);
 
 
     const renderContent = () => {
@@ -155,7 +164,7 @@ const ResultsSection = () => {
                     <Lock className="h-12 w-12 text-primary mb-4" />
                     <h3 className="text-2xl font-bold">Conteúdo Exclusivo para Membros</h3>
                     <p className="text-muted-foreground mt-2 max-w-sm">
-                        Faça login ou cadastre-se para ver os resultados dos últimos sorteios e o ranking de acertos.
+                        Faça login ou cadastre-se para ver os resultados dos últimos sorteios.
                     </p>
                     <div className="flex gap-4 mt-6">
                         <Button asChild><Link href="/login">Entrar</Link></Button>
@@ -181,9 +190,11 @@ const ResultsSection = () => {
                         </Card>
                     )}
                 </div>
-                 <div className="h-full">
-                     <TopTickets rankedTickets={rankedTickets} />
-                </div>
+                 {currentUser?.role === 'admin' && (
+                    <div className="h-full">
+                        <TopTickets rankedTickets={rankedTickets} />
+                    </div>
+                 )}
             </>
         );
     };
@@ -200,7 +211,10 @@ const ResultsSection = () => {
                         Confira o resultado do último sorteio e veja os bilhetes com mais acertos!
                     </p>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start mt-12 max-w-6xl mx-auto">
+                <div className={cn(
+                    "grid grid-cols-1 gap-8 md:gap-12 items-start mt-12 max-w-6xl mx-auto",
+                    currentUser?.role === 'admin' ? "lg:grid-cols-2" : "lg:grid-cols-1"
+                )}>
                     {renderContent()}
                 </div>
             </div>
@@ -275,5 +289,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
