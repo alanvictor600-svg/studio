@@ -39,9 +39,10 @@ export const updatePublicRanking = functions.region("southamerica-east1").firest
           functions.logger.info("No draws found, public ranking cleared.");
           return;
         }
-        const allDraws = drawsSnapshot.docs.map((doc) => doc.data());
+        
+        // Create a mutable frequency map of all drawn numbers
         const drawnNumbersFrequency = countOccurrences(
-            allDraws.flatMap((draw) => draw.numbers)
+            drawsSnapshot.docs.flatMap((doc) => doc.data().numbers)
         );
 
         // 2. Get all active tickets
@@ -49,16 +50,21 @@ export const updatePublicRanking = functions.region("southamerica-east1").firest
             .where("status", "==", "active").get();
         const activeTickets = ticketsSnapshot.docs.map((doc) => doc.data());
 
-        // 3. Calculate matches for each ticket
+        // 3. Calculate matches for each ticket using the correct logic
         const ticketsWithMatches = activeTickets.map((ticket) => {
-          const ticketNumbersFrequency = countOccurrences(ticket.numbers);
           let matches = 0;
-          for (const numStr in ticketNumbersFrequency) {
-            const num = parseInt(numStr, 10);
-            const countInTicket = ticketNumbersFrequency[num];
-            const countInDraws = drawnNumbersFrequency[num] || 0;
-            matches += Math.min(countInTicket, countInDraws);
+          // Create a copy of the drawn numbers frequency map for each ticket calculation
+          const availableDraws = {...drawnNumbersFrequency};
+          
+          // Iterate through each number in the ticket
+          for (const num of ticket.numbers) {
+            // If the number exists in the available draws and its count is > 0
+            if (availableDraws[num] && availableDraws[num] > 0) {
+              matches++; // We have a match
+              availableDraws[num]--; // Decrement the count for this number
+            }
           }
+          
           return {
             ...ticket,
             matches,
