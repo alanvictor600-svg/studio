@@ -18,7 +18,6 @@ import { useDashboard } from '@/context/dashboard-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { PauseCircle } from 'lucide-react';
-import { PublicRankingDisplay } from '@/components/public-ranking-display';
 
 
 export default function DashboardPage() {
@@ -35,7 +34,6 @@ export default function DashboardPage() {
       lotteryConfig,
       userTickets,
       allDraws,
-      publicRanking,
       isLotteryPaused,
       isDataLoading,
   } = useDashboard();
@@ -117,7 +115,14 @@ export default function DashboardPage() {
             </TabsList>
             <TabsContent value="aposta">
                 {isLotteryPaused ? (
-                    <PublicRankingDisplay ranking={publicRanking} />
+                    <Alert variant="default" className="border-primary/50 bg-card/90 text-foreground max-w-2xl mx-auto">
+                        <PauseCircle className="h-5 w-5 text-primary" />
+                        <AlertTitle className="text-primary font-bold">Apostas Pausadas</AlertTitle>
+                        <AlertDescription className="text-muted-foreground">
+                        O registro de novas apostas está suspenso, pois o ciclo atual já começou ou há um bilhete premiado.
+                        Aguarde o administrador iniciar um novo ciclo para continuar apostando.
+                        </AlertDescription>
+                    </Alert>
                 ) : (
                     <TicketSelectionForm
                         cart={cart}
