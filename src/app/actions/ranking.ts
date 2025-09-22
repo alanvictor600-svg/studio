@@ -11,22 +11,6 @@ const countOccurrences = (arr: number[]): Record<number, number> => {
   }, {} as Record<number, number>);
 };
 
-// Helper to get initials from a name
-const getInitials = (name?: string): string => {
-  if (!name) {
-    return '?';
-  }
-  const parts = name.trim().split(' ');
-  if (parts.length > 1 && parts[parts.length-1]) {
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  }
-  if (name.length > 1) {
-    return name.substring(0, 2).toUpperCase();
-  }
-  return name.toUpperCase();
-};
-
-
 export async function updatePublicRankingAction(): Promise<{ success: boolean; message: string; rankingCount: number }> {
     try {
         console.log('Iniciando a atualização do ranking público...');
@@ -67,17 +51,15 @@ export async function updatePublicRankingAction(): Promise<{ success: boolean; m
             };
         });
 
-        // 4. Sort and get top 5
-        const topTickets = ticketsWithMatches
-            .filter((ticket) => ticket.matches > 0)
-            .sort((a, b) => b.matches - a.matches)
-            .slice(0, 5);
+        // 4. Sort all tickets by matches
+        const sortedTickets = ticketsWithMatches.sort((a, b) => b.matches - a.matches);
 
-        // 5. Anonymize data for public consumption
-        const publicRanking = topTickets.map((ticket) => ({
-            initials: getInitials(ticket.buyerName),
+        // 5. Create transparent data for public consumption
+        const publicRanking = sortedTickets.map((ticket) => ({
+            buyerName: ticket.buyerName || 'N/A',
             matches: ticket.matches,
-            ticketId: ticket.id.substring(0, 4), // Obfuscated ID
+            numbers: ticket.numbers,
+            ticketId: ticket.id,
         }));
         console.log(`Ranking calculado com ${publicRanking.length} entradas.`);
 

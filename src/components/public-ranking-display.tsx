@@ -1,17 +1,19 @@
-
 "use client";
 
 import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingUp, Medal } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { TrendingUp, Award } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from './ui/avatar';
+
 
 interface PublicRankingEntry {
-  initials: string;
+  buyerName: string;
   matches: number;
   ticketId: string;
+  numbers: number[];
 }
 
 interface PublicRankingDisplayProps {
@@ -41,60 +43,66 @@ export const PublicRankingDisplay: FC<PublicRankingDisplayProps> = ({ ranking })
 
   return (
     <Card className="h-full flex flex-col shadow-xl bg-card/80 backdrop-blur-sm">
-       <CardHeader>
+      <CardHeader>
            <CardTitle className="text-2xl font-bold text-primary text-center flex items-center justify-center gap-2">
-              <TrendingUp className="h-6 w-6" /> Ranking Geral
+              <TrendingUp className="h-6 w-6" /> Ranking Geral de Acertos
            </CardTitle>
            <CardDescription className="text-center">
-              Top 5 bilhetes com mais números sorteados no ciclo atual.
+              Placar de todos os bilhetes ativos no ciclo atual, ordenado por acertos.
            </CardDescription>
         </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <div className="space-y-4">
-            {ranking.map((ticket, index) => (
-                <div key={ticket.ticketId} className={cn(
-                    "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-all",
-                     index === 0 && "bg-yellow-400/20 border-2 border-yellow-500",
-                     index === 1 && "bg-gray-400/20 border border-gray-500",
-                     index === 2 && "bg-orange-600/20 border border-orange-700",
-                     index > 2 && "bg-muted/50"
-                )}>
-                    <Medal className={cn(
-                        "h-8 w-8",
-                        index === 0 && "text-yellow-500",
-                        index === 1 && "text-gray-500",
-                        index === 2 && "text-orange-700",
-                        index > 2 && "text-muted-foreground"
-                    )} />
-                    <Avatar className="h-10 w-10 border">
-                        <AvatarFallback className={cn(
-                             index === 0 && "bg-yellow-500/80 text-white",
-                             index === 1 && "bg-gray-500/80 text-white",
-                             index === 2 && "bg-orange-700/80 text-white",
-                        )}>
-                            {ticket.initials}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <p className="font-bold text-foreground truncate">
-                           Apostador
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                            ID: #{ticket.ticketId}..
-                        </p>
-                    </div>
-                     <Badge
-                        variant="default"
-                        className={cn(
-                            "font-mono text-lg font-bold h-10 w-10 flex items-center justify-center rounded-full shadow-lg border-2",
-                            "bg-primary text-primary-foreground"
-                        )}
-                    >
-                        {ticket.matches}
-                    </Badge>
-                </div>
-            ))}
-        </div>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader className="sticky top-0 bg-secondary/95 z-10">
+                <TableRow>
+                  <TableHead className="w-[80px] text-center">Pos.</TableHead>
+                  <TableHead>Comprador</TableHead>
+                  <TableHead className="w-[100px] text-center">Acertos</TableHead>
+                  <TableHead className="text-center">Números do Bilhete</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {ranking.map((ticket, index) => (
+                    <TableRow key={ticket.ticketId} className={cn(
+                        index === 0 && "bg-yellow-500/10 hover:bg-yellow-500/20",
+                        index === 1 && "bg-gray-500/10 hover:bg-gray-500/20",
+                        index === 2 && "bg-orange-600/10 hover:bg-orange-600/20",
+                    )}>
+                      <TableCell className="text-center font-bold">
+                        <div className="flex items-center justify-center gap-2">
+                           {index < 3 && (
+                             <Award className={cn(
+                                "h-5 w-5",
+                                index === 0 && "text-yellow-500",
+                                index === 1 && "text-gray-500",
+                                index === 2 && "text-orange-700",
+                             )}/>
+                           )}
+                           {index + 1}º
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{ticket.buyerName}</TableCell>
+                      <TableCell className="text-center">
+                         <Badge
+                            variant="default"
+                            className="font-mono text-lg font-bold h-8 w-8 flex items-center justify-center rounded-full shadow-lg"
+                        >
+                            {ticket.matches}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                            {ticket.numbers.map((num, i) => (
+                                <Badge key={i} variant="outline" className="font-mono text-xs w-7 h-7 flex items-center justify-center">{num}</Badge>
+                            ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
       </CardContent>
     </Card>
   );
