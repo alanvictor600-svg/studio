@@ -101,8 +101,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-3">
              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
              <div className="flex flex-col">
-                <span className="text-lg font-semibold text-sidebar-primary">Bolão Potiguar</span>
-                <span className="text-xs text-sidebar-foreground/80 -mt-1">
+                <span className="text-lg font-semibold text-black dark:text-white">Bolão Potiguar</span>
+                <span className="text-xs text-black/80 dark:text-white/80 -mt-1">
                   Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
                 </span>
              </div>
