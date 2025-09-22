@@ -63,12 +63,8 @@ export const PublicRankingDisplay: FC<PublicRankingDisplayProps> = ({ ranking })
                 </TableRow>
               </TableHeader>
               <TableBody>
-                  {ranking.map((ticket, index) => (
-                    <TableRow key={ticket.ticketId} className={cn(
-                        index === 0 && "bg-yellow-500/10 hover:bg-yellow-500/20",
-                        index === 1 && "bg-gray-500/10 hover:bg-gray-500/20",
-                        index === 2 && "bg-orange-600/10 hover:bg-orange-600/20",
-                    )}>
+                  {ranking.map((ticket) => (
+                    <TableRow key={ticket.ticketId}>
                       <TableCell className="font-medium">{ticket.buyerName}</TableCell>
                       <TableCell className="text-center">
                          <Badge

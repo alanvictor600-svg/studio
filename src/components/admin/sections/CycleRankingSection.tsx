@@ -42,12 +42,8 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
               </TableHeader>
               <TableBody>
                 {rankedTickets.length > 0 ? (
-                  rankedTickets.map((ticket, index) => (
-                    <TableRow key={ticket.id} className={cn(
-                        index === 0 && "bg-yellow-500/10 hover:bg-yellow-500/20",
-                        index === 1 && "bg-gray-500/10 hover:bg-gray-500/20",
-                        index === 2 && "bg-orange-600/10 hover:bg-orange-600/20",
-                    )}>
+                  rankedTickets.map((ticket) => (
+                    <TableRow key={ticket.id}>
                       <TableCell className="font-medium">{ticket.buyerName}</TableCell>
                       <TableCell className="text-center">
                          <Badge
