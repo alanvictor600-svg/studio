@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Download } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
 // Define a interface para o evento 'beforeinstallprompt'
@@ -19,7 +18,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallPwaButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const isMobile = useIsMobile();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,8 +63,8 @@ export function InstallPwaButton() {
     setDeferredPrompt(null);
   };
 
-  // Só mostra o botão se o prompt foi capturado e estiver em um dispositivo móvel
-  if (!deferredPrompt || !isMobile) {
+  // Só mostra o botão se o prompt foi capturado.
+  if (!deferredPrompt) {
     return null;
   }
 

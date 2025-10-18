@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, LogIn, ArrowLeft, Eye, EyeOff, User as UserIcon, ShoppingCart as SellerIcon } from 'lucide-react';
+import { UserPlus, LogIn, ArrowLeft, Eye, EyeOff, User as UserIcon, ShoppingCart as SellerIcon, RefreshCw } from 'lucide-react';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -67,7 +67,7 @@ export default function CadastroPage() {
       toast({ title: "Erro de Cadastro", description: "O tipo de conta não foi definido.", variant: "destructive" });
       return;
     }
-    if (/^[a-zA-Z0-9_.-]+$/.test(username)) {
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
          toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras (a-z, A-Z), números (0-9) e os caracteres: . - _", variant: "destructive" });
          return;
     }
@@ -248,13 +248,21 @@ export default function CadastroPage() {
             </form>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col items-center space-y-2 pt-6">
-          <p className="text-sm text-muted-foreground">Já tem uma conta?</p>
-          <Link href="/login" passHref>
-            <Button variant="link" className="text-primary h-auto py-1 px-2">
-              <LogIn className="mr-2 h-4 w-4" /> Faça login aqui
-            </Button>
-          </Link>
+        <CardFooter className="flex flex-col items-center space-y-4 pt-6">
+           <div className="flex items-center space-x-1">
+                <p className="text-sm text-muted-foreground">Quer trocar de perfil?</p>
+                 <Button variant="link" className="text-primary h-auto py-1 px-2" onClick={() => handleSelectRole(role === 'cliente' ? 'vendedor' : 'cliente')}>
+                   <RefreshCw className="mr-2 h-4 w-4" /> Mudar para {role === 'cliente' ? 'Vendedor' : 'Cliente'}
+                </Button>
+           </div>
+           <div className="flex items-center space-x-1">
+                <p className="text-sm text-muted-foreground">Já tem uma conta?</p>
+                <Link href="/login" passHref>
+                    <Button variant="link" className="text-primary h-auto py-1 px-2">
+                    <LogIn className="mr-2 h-4 w-4" /> Faça login aqui
+                    </Button>
+                </Link>
+           </div>
         </CardFooter>
       </Card>
       <p className="mt-8 text-xs text-center text-muted-foreground max-w-md">
@@ -263,7 +271,3 @@ export default function CadastroPage() {
     </div>
   );
 }
-
-    
-
-    
