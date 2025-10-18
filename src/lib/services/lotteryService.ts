@@ -19,7 +19,8 @@ export const addDraw = async (newNumbers: number[], name?: string): Promise<void
     const newDrawData = {
         numbers: newNumbers,
         createdAt: new Date().toISOString(),
-        name: name || undefined,
+        // Only include the name if it's a non-empty string
+        ...(name && { name }),
     };
     
     await addDoc(collection(db, 'draws'), newDrawData);
@@ -66,15 +67,16 @@ export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfi
     }
 
     // 2. Capture Admin History
-    if (financialReport && financialReport.totalRevenue > 0) {
+    // Ensure financialReport and its properties are valid before creating an entry.
+    if (financialReport && (financialReport.totalRevenue > 0 || financialReport.clientTicketCount > 0 || financialReport.sellerTicketCount > 0)) {
         const newHistoryEntry: Omit<AdminHistoryEntry, 'id'> = {
             endDate: new Date().toISOString(),
-            totalRevenue: financialReport.totalRevenue,
-            totalSellerCommission: financialReport.sellerCommission,
-            totalOwnerCommission: financialReport.ownerCommission,
-            totalPrizePool: financialReport.prizePool,
-            clientTicketCount: financialReport.clientTicketCount,
-            sellerTicketCount: financialReport.sellerTicketCount,
+            totalRevenue: financialReport.totalRevenue || 0,
+            totalSellerCommission: financialReport.sellerCommission || 0,
+            totalOwnerCommission: financialReport.ownerCommission || 0,
+            totalPrizePool: financialReport.prizePool || 0,
+            clientTicketCount: financialReport.clientTicketCount || 0,
+            sellerTicketCount: financialReport.sellerTicketCount || 0,
         };
         const newAdminHistoryDocRef = doc(collection(db, 'adminHistory'));
         batch.set(newAdminHistoryDocRef, newHistoryEntry);
@@ -96,3 +98,5 @@ export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfi
     // Commit all operations at once
     await batch.commit();
 };
+
+    

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -34,6 +35,15 @@ export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery })
     setIsConfirmDialogOpen(false); 
   };
   
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      // Reset state when dialog closes
+      setStartLotteryPassword('');
+      setShowPassword(false);
+    }
+    setIsConfirmDialogOpen(open);
+  }
+
   return (
     <section aria-labelledby="lottery-controls-heading">
       <h2 id="lottery-controls-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
@@ -50,7 +60,7 @@ export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery })
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center">
-          <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+          <AlertDialog open={isConfirmDialogOpen} onOpenChange={handleDialogChange}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="text-base py-3 px-6 shadow-lg hover:shadow-xl bg-accent hover:bg-accent/90 text-accent-foreground">
                 <Rocket className="mr-2 h-5 w-5" /> Iniciar Nova Loteria
@@ -94,7 +104,7 @@ export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery })
                   </div>
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setStartLotteryPassword('')}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={handleStartLottery} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
                   Confirmar e Iniciar
                 </AlertDialogAction>
@@ -106,3 +116,5 @@ export const ControlsSection: FC<ControlsSectionProps> = ({ onStartNewLottery })
     </section>
   );
 };
+
+    

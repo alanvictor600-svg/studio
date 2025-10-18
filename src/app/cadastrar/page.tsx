@@ -67,7 +67,7 @@ export default function CadastroPage() {
       toast({ title: "Erro de Cadastro", description: "O tipo de conta não foi definido.", variant: "destructive" });
       return;
     }
-    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+    if (/^[a-zA-Z0-9_.-]+$/.test(username)) {
          toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras (a-z, A-Z), números (0-9) e os caracteres: . - _", variant: "destructive" });
          return;
     }
@@ -263,5 +263,7 @@ export default function CadastroPage() {
     </div>
   );
 }
+
+    
 
     

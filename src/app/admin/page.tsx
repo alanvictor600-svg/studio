@@ -26,7 +26,7 @@ import { ReportsSection } from '@/components/admin/sections/ReportsSection';
 import { DrawHistorySection } from '@/components/admin/sections/DrawHistorySection';
 import { WinningTicketsSection } from '@/components/admin/sections/WinningTicketsSection';
 import { CycleRankingSection } from '@/components/admin/sections/CycleRankingSection';
-import { updateTicketStatusesBasedOnDraws, calculateTicketMatches } from '@/lib/lottery-utils';
+import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { generateFinancialReport } from '@/lib/reports';
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -180,13 +180,30 @@ export default function AdminPage() {
   
   const cycleRanking = useMemo(() => {
     const activeTickets = processedTickets.filter(t => t.status === 'active' || t.status === 'winning');
-    return activeTickets
-      .map(ticket => ({
-        ...ticket,
-        matches: calculateTicketMatches(ticket, draws),
-      }))
-      .sort((a, b) => b.matches - a.matches);
-  }, [processedTickets, draws]);
+    
+    // We need user data to calculate matches correctly based on draws, so we do it here.
+    const ticketsWithMatches = activeTickets.map(ticket => {
+        const ticketNumbersFrequency = ticket.numbers.reduce((acc, num) => {
+            acc[num] = (acc[num] || 0) + 1;
+            return acc;
+        }, {} as Record<number, number>);
+
+        const allDrawnNumbers = draws.flatMap(d => d.numbers);
+        const drawnNumbersFrequency = allDrawnNumbers.reduce((acc, num) => {
+            acc[num] = (acc[num] || 0) + 1;
+            return acc;
+        }, {} as Record<number, number>);
+
+        let matches = 0;
+        for (const numStr in ticketNumbersFrequency) {
+            const num = parseInt(numStr, 10);
+            matches += Math.min(ticketNumbersFrequency[num] || 0, drawnNumbersFrequency[num] || 0);
+        }
+        return { ...ticket, matches };
+    });
+
+    return ticketsWithMatches.sort((a, b) => b.matches - a.matches);
+}, [processedTickets, draws]);
 
 
   const handleAddDraw = async (newNumbers: number[], name?: string) => {
@@ -434,3 +451,5 @@ export default function AdminPage() {
     </>
   );
 }
+
+    

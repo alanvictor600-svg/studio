@@ -2,21 +2,19 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, ArrowLeft, TrendingUp } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
 import type { Draw } from '@/types';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { History, Gamepad2, Gift, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 
 const Header = () => {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
@@ -79,25 +77,28 @@ const ResultsSection = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            setIsLoading(false);
-            setLastDraw(null);
-            return;
+        let unsubscribe: Unsubscribe | null = null;
+        
+        if (isAuthenticated) {
+            setIsLoading(true);
+            const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
+            unsubscribe = onSnapshot(drawsQuery, (querySnapshot) => {
+                const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
+                setLastDraw(drawsData[0] || null);
+                setIsLoading(false);
+            }, (error) => {
+                console.error("Error fetching draws: ", error);
+                setIsLoading(false);
+            });
+        } else {
+             setIsLoading(false);
+             setLastDraw(null);
         }
 
-        setIsLoading(true);
-        const drawsQuery = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-        const unsubscribeDraws = onSnapshot(drawsQuery, (querySnapshot) => {
-            const drawsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Draw));
-            setLastDraw(drawsData[0] || null);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching draws: ", error);
-            setIsLoading(false);
-        });
-
         return () => {
-            unsubscribeDraws();
+            if (unsubscribe) {
+                unsubscribe();
+            }
         };
     }, [isAuthenticated]);
 
@@ -223,5 +224,7 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
 
     
