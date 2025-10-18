@@ -23,4 +23,5 @@ const nextConfig = {
   },
 };
 
+// Forçando a atualização do cache
 module.exports = nextConfig;
