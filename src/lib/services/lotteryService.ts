@@ -8,12 +8,12 @@ import type { FinancialReport } from '@/lib/reports';
 
 /**
  * Adds a new draw to the 'draws' collection.
- * @param newNumbers - An array of 5 numbers for the draw.
+ * @param newNumbers - An array of 10 numbers for the draw.
  * @param name - An optional name for the draw.
  */
 export const addDraw = async (newNumbers: number[], name?: string): Promise<void> => {
-    if (newNumbers.length !== 5) {
-        throw new Error("O sorteio deve conter exatamente 5 números.");
+    if (newNumbers.length !== 10) {
+        throw new Error("O sorteio deve conter exatamente 10 números.");
     }
 
     const newDrawData = {
@@ -98,5 +98,3 @@ export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfi
     // Commit all operations at once
     await batch.commit();
 };
-
-    

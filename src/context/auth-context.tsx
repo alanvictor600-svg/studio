@@ -176,10 +176,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   const logout = useCallback(async () => {
+    // Immediately redirect to prevent components from trying to render with a null user.
+    router.push('/');
     try {
       await signOut(auth);
-      // Let the useEffect handle state changes, but force a redirect to be safe.
-      router.push('/');
+      // The onSnapshot listener will handle clearing currentUser.
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);

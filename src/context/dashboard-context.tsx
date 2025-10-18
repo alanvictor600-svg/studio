@@ -56,7 +56,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
     const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
     const [receiptTickets, setReceiptTickets] = useState<Ticket[] | null>(null);
-    const { currentUser, updateCurrentUserCredits } = useAuth();
+    const { currentUser, isAuthenticated, updateCurrentUserCredits } = useAuth();
     const { toast } = useToast();
 
     // New state for centralized data
@@ -68,16 +68,27 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     // To prevent setting up multiple listeners
     const listenersActive = useRef(false);
 
+    // This effect handles cleaning up state when the user logs out.
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setUserTickets([]);
+            setAllDraws([]);
+            setCart([]);
+            setIsDataLoading(true);
+            listenersActive.current = false;
+        }
+    }, [isAuthenticated]);
+
     const showCreditsDialog = useCallback(() => {
         setIsCreditsDialogOpen(true);
     }, []);
 
     // This effect will run whenever draws or tickets change to re-evaluate the lottery pause state.
     useEffect(() => {
-        const winningTicketsExist = userTickets.some(t => t.status === 'winning');
+        // A lottery is considered "paused" for new entries if any draws have been made in the current cycle.
         const drawsExist = allDraws.length > 0;
-        setIsLotteryPaused(drawsExist || winningTicketsExist);
-    }, [userTickets, allDraws]);
+        setIsLotteryPaused(drawsExist);
+    }, [allDraws]);
 
 
     const startDataListeners = useCallback((user: User): () => void => {

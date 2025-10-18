@@ -17,7 +17,7 @@ interface AdminDrawFormProps {
   hasWinningTickets?: boolean;
 }
 
-const NUM_OF_PICKS = 5;
+const NUM_OF_PICKS = 10;
 const MIN_NUMBER = 1;
 const MAX_NUMBER = 25;
 
@@ -146,5 +146,3 @@ export const AdminDrawForm: FC<AdminDrawFormProps> = ({ onAddDraw, hasWinningTic
     </Card>
   );
 };
-
-    
