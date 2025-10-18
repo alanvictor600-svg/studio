@@ -135,7 +135,10 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                             <TableCell className="text-center">
                                 <Badge
                                     variant="default"
-                                    className="font-mono text-lg font-bold h-8 w-8 flex items-center justify-center rounded-full shadow-lg"
+                                    className={cn(
+                                        "font-mono text-lg font-bold h-8 w-8 flex items-center justify-center rounded-full shadow-lg",
+                                        ticket.matches === Math.max(...rankedTickets.map(t => t.matches)) && ticket.matches > 0 && "bg-yellow-500 text-black",
+                                    )}
                                 >
                                     {ticket.matches}
                                 </Badge>
