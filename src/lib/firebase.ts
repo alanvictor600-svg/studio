@@ -3,6 +3,11 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
+// Carrega as variáveis de ambiente do arquivo .env
+// Isso adiciona uma camada extra de garantia que as variáveis serão carregadas.
+require('dotenv').config({ path: './.env' });
+
+
 // Your web app's Firebase configuration is now loaded from environment variables.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,9 +20,9 @@ const firebaseConfig = {
 
 // This function ensures Firebase is initialized only once.
 const initializeFirebase = (): { app: FirebaseApp; auth: Auth; db: Firestore } => {
+  // Esta verificação agora é mais crítica. Se aqui for falso, o .env não foi lido.
   if (!firebaseConfig.apiKey) {
-      // This error will now be much more direct if the .env file is not read.
-      throw new Error("CONFIGURAÇÃO DO FIREBASE AUSENTE. Verifique o arquivo .env e reinicie o servidor.");
+      throw new Error("CONFIGURAÇÃO DO FIREBASE AUSENTE. Verifique se o arquivo .env existe, está na raiz do projeto e foi preenchido corretamente.");
   }
 
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
