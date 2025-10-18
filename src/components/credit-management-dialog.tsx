@@ -33,7 +33,7 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
   onSave,
   onClose,
 }) => {
-  const [creditsToAdd, setCreditsToAdd] = useState<number | ''>('');
+  const [creditsToAdd, setCreditsToAdd] = useState<number | '' | '-'>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
 
   const handleSave = () => {
     const creditsChange = Number(creditsToAdd);
-    if(isNaN(creditsChange) || creditsToAdd === '') {
+    if(isNaN(creditsChange) || creditsToAdd === '' || creditsToAdd === '-') {
       toast({ title: 'Erro de Validação', description: 'O valor do saldo é inválido ou está vazio.', variant: 'destructive' });
       return;
     }
@@ -124,5 +124,3 @@ export const CreditManagementDialog: FC<CreditManagementDialogProps> = ({
     </Dialog>
   );
 };
-
-    
