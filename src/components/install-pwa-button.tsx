@@ -22,7 +22,7 @@ export function InstallPwaButton() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Previne o mini-infobar do Chrome em dispositivos móveis
+      // Previne o comportamento padrão do navegador
       e.preventDefault();
       // Guarda o evento para que possa ser acionado depois.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -31,7 +31,7 @@ export function InstallPwaButton() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     const handleAppInstalled = () => {
-      // Limpa o prompt para que não possa ser acionado novamente.
+      // Limpa o prompt após a instalação bem-sucedida.
       setDeferredPrompt(null);
       toast({
         title: "App Instalado!",
@@ -49,23 +49,23 @@ export function InstallPwaButton() {
   }, [toast]);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      // Este caso não deveria acontecer se o botão não for renderizado.
-      return;
+    // Se o prompt de instalação estiver disponível, mostre-o.
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      // A lógica para limpar o prompt está no evento 'appinstalled'.
+    } else {
+      // Se o prompt não estiver disponível (ex: no iPhone ou se já foi dispensado),
+      // não fazemos nada. O botão fica visível, mas o clique não tem efeito
+      // para evitar confusão com mensagens de erro ou tutoriais.
+       toast({
+        title: "Instalação não disponível",
+        description: "Seu navegador não suporta a instalação direta ou o app já foi instalado/ignorado. No iPhone, use 'Adicionar à Tela de Início' no menu de compartilhamento.",
+        duration: 8000
+      });
     }
-    // Mostra o prompt de instalação
-    deferredPrompt.prompt();
-    // Espera o usuário responder ao prompt
-    await deferredPrompt.userChoice;
-    // O evento appinstalled cuidará de limpar o deferredPrompt.
   };
   
-  // Só renderiza o botão se o prompt de instalação estiver disponível.
-  // Isso esconde o botão no iOS e outros navegadores não compatíveis.
-  if (!deferredPrompt) {
-    return null;
-  }
-  
+  // O botão agora é sempre renderizado. A lógica está no clique.
   return (
     <Button
       variant="secondary"
