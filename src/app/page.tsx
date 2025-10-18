@@ -40,7 +40,6 @@ const Header = () => {
                 </Button>
             ) : (
                 <>
-                    <InstallPwaButton />
                     <Button asChild variant="outline">
                         <Link href="/login"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link>
                     </Button>
@@ -64,10 +63,14 @@ const HeroSection = () => (
       <p className="mt-4 text-lg md:text-xl text-white">
         Escolha seus números, sinta a emoção e transforme um simples palpite em prêmios incríveis. A aposta é fácil, a diversão é garantida.
       </p>
-      <div className="mt-8 flex justify-center gap-4">
+      <div className="mt-8 flex flex-col items-center justify-center gap-4">
         <Button asChild size="lg" className="text-lg shadow-lg">
           <Link href="/cadastrar">Comece a Apostar Agora</Link>
         </Button>
+        <div className="mt-4">
+            <InstallPwaButton />
+            <p className="text-xs text-white/70 mt-2">Clique acima para instalar o app no seu celular!</p>
+        </div>
       </div>
     </div>
   </section>
