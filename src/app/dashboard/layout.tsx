@@ -156,14 +156,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
             <SidebarMenu>
                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild variant="ghost" onClick={() => setOpenMobile(false)}>
+                    <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                         <Link href="/">
                             <Home /> Página Inicial
                         </Link>
                     </SidebarMenuButton>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                         <LogOut /> Sair da Conta
                     </SidebarMenuButton>
                  </SidebarMenuItem>
