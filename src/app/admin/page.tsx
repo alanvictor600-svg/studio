@@ -54,7 +54,7 @@ export default function AdminPage() {
 
   const [activeSection, setActiveSection] = useState<AdminSection>('configuracoes');
   
-  const [allUsers, setAllUsers] = useState<User[]>([]); // Used for StartNewLottery & Credit Dialog
+  const [allUsers, setAllUsers] = useState<User[]>([]); // Now primarily used for `startNewLottery`
   const [userToView, setUserToView] = useState<User | null>(null);
   const [isUserViewDialogOpen, setIsUserViewDialogOpen] = useState(false);
   const [userToManageCredits, setUserToManageCredits] = useState<User | null>(null);
@@ -138,18 +138,6 @@ export default function AdminPage() {
         toast({ title: "Erro ao Carregar Sorteios", description: "Não foi possível carregar os dados dos sorteios.", variant: "destructive" });
     });
 
-    // Users - This listener fetches ALL users for the "start new lottery" service.
-    // It is separate from the paginated fetch inside the SettingsSection component.
-    const usersQuery = query(collection(db, 'users'));
-    const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
-        const usersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        setAllUsers(usersData);
-    }, (error) => {
-        console.error("Error fetching users: ", error);
-        toast({ title: "Erro ao Carregar Usuários", description: "Não foi possível carregar os dados dos usuários.", variant: "destructive" });
-    });
-
-
     // Admin History
     const adminHistoryQuery = query(collection(db, 'adminHistory'), orderBy('endDate', 'desc'));
     const unsubscribeAdminHistory = onSnapshot(adminHistoryQuery, (querySnapshot) => {
@@ -164,7 +152,6 @@ export default function AdminPage() {
         unsubscribeConfig();
         unsubscribeTickets();
         unsubscribeDraws();
-        unsubscribeUsers();
         unsubscribeAdminHistory();
     };
   }, [currentUser, isAuthenticated, toast]);
@@ -281,18 +268,19 @@ export default function AdminPage() {
     try {
         const newBalance = await updateUserCredits(user.id, amount);
         
-        // --- The onSnapshot for allUsers will handle this update automatically ---
-        
-        // Update the user in the dialog if it's open for immediate feedback
+        // --- Optimistically update the user in the dialog for immediate feedback ---
         if (userToManageCredits && userToManageCredits.id === user.id) {
             setUserToManageCredits(prev => prev ? { ...prev, saldo: newBalance } : null);
+        }
+        if (userToView && userToView.id === user.id) {
+            setUserToView(prev => prev ? { ...prev, saldo: newBalance } : null);
         }
 
         toast({
             title: "Saldo Atualizado!",
-            description: `O saldo de ${user.username} agora é R$ ${newBalance.toFixed(2).replace('.', ',')}.`,
+            description: `O saldo de ${user.username} agora é R$ ${newBalance.toFixed(2).replace('.', ',')}. A lista será atualizada.`,
             className: "bg-primary text-primary-foreground",
-            duration: 3000
+            duration: 4000
         });
         
     } catch(e) {
@@ -451,5 +439,3 @@ export default function AdminPage() {
     </>
   );
 }
-
-    
