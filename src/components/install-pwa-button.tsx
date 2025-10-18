@@ -54,18 +54,13 @@ export function InstallPwaButton() {
       deferredPrompt.prompt();
       // A lógica para limpar o prompt está no evento 'appinstalled'.
     } else {
-      // Se o prompt não estiver disponível (ex: no iPhone ou se já foi dispensado),
-      // não fazemos nada. O botão fica visível, mas o clique não tem efeito
-      // para evitar confusão com mensagens de erro ou tutoriais.
-       toast({
-        title: "Instalação não disponível",
-        description: "Seu navegador não suporta a instalação direta ou o app já foi instalado/ignorado. No iPhone, use 'Adicionar à Tela de Início' no menu de compartilhamento.",
-        duration: 8000
-      });
+      // Se o prompt não estiver disponível, não fazemos nada.
+      // O botão está visível, mas o clique não tem efeito para evitar confusão.
+      // A maioria dos casos será o iPhone, onde o usuário precisa usar o menu do Safari.
+      // No ambiente de desenvolvimento, o prompt pode não ser acionado.
     }
   };
   
-  // O botão agora é sempre renderizado. A lógica está no clique.
   return (
     <Button
       variant="secondary"
