@@ -1,6 +1,7 @@
-// Import the functions you need from the SDKs you need
+
+// src/lib/firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration is now loaded from environment variables.
@@ -13,28 +14,27 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
 let app: FirebaseApp;
+let auth: Auth;
 let db: Firestore;
 
-if (!firebaseConfig.apiKey) {
-    console.error("Firebase config is missing. Make sure to set up your .env.local file.");
-}
-
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-try {
+// This function ensures Firebase is initialized only once.
+function initializeFirebase() {
+  if (getApps().length === 0) {
+    if (!firebaseConfig.apiKey) {
+      console.error("Firebase config is missing. Make sure to set up your .env file and restart the server.");
+      // Throw an error to prevent the app from running with invalid config
+      throw new Error("Missing Firebase configuration. Check your environment variables.");
+    }
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  auth = getAuth(app);
   db = getFirestore(app);
-} catch (e) {
-  console.error("Firestore could not be initialized (likely server-side):", e);
-  // Assign a dummy object or handle as needed for server-side rendering
 }
 
-
-const auth = getAuth(app);
+// Initialize Firebase immediately when this module is loaded.
+initializeFirebase();
 
 export { app, auth, db };
