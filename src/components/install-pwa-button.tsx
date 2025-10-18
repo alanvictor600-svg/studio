@@ -70,10 +70,10 @@ export function InstallPwaButton() {
 
   return (
     <Button
-      variant="ghost"
+      variant="secondary"
       onClick={handleInstallClick}
-      className="text-primary hover:text-primary/90"
       aria-label="Instalar aplicativo"
+      className="hidden sm:inline-flex"
     >
       <Download className="mr-2 h-4 w-4" />
       Instalar App

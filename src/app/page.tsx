@@ -40,10 +40,11 @@ const Header = () => {
                 </Button>
             ) : (
                 <>
-                    <Button asChild variant="default" className="shadow-md bg-blue-500 hover:bg-blue-600 text-white">
+                    <InstallPwaButton />
+                    <Button asChild variant="outline">
                         <Link href="/login"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link>
                     </Button>
-                    <Button asChild className="shadow-md bg-green-500 hover:bg-green-600 text-white">
+                    <Button asChild>
                         <Link href="/cadastrar"><UserPlus className="mr-2 h-4 w-4" /> Cadastrar</Link>
                     </Button>
                 </>
@@ -204,7 +205,6 @@ const Footer = () => (
     <div className="container mx-auto px-4 md:px-6 py-8 flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} <Link href="/login?as=admin" className="hover:text-primary">Bolão Potiguar</Link>. Todos os direitos reservados.</p>
         <div className="flex items-center gap-4 mt-4 sm:mt-0">
-            <InstallPwaButton />
             <Link href="#" className="hover:text-primary">Termos de Serviço</Link>
             <Link href="#" className="hover:text-primary">Política de Privacidade</Link>
             <ThemeToggleButton />
