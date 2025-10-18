@@ -56,6 +56,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
        <head>
          <meta name="theme-color" content="#10B981" />
+         <link rel="manifest" href="/manifest.json" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <ThemeProvider

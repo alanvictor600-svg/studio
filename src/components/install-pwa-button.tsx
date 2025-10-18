@@ -61,34 +61,40 @@ export function InstallPwaButton() {
   }, [toast]);
 
   const handleInstallClick = async () => {
+    // Se for iOS, sempre mostra as instruções
     if (isIos) {
       setShowIosInstructions(true);
       return;
     }
 
-    if (!deferredPrompt) {
-        toast({
-            title: "Instalação não suportada",
-            description: "Seu navegador não suporta a instalação direta. No iOS, use o botão de compartilhar para adicionar à tela de início.",
-            variant: "destructive"
-        });
+    // Se o prompt de instalação nativo estiver disponível, use-o
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      // O evento 'appinstalled' vai cuidar do resto.
+      setDeferredPrompt(null);
       return;
     }
-    
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    setDeferredPrompt(null);
+
+    // Fallback para outros dispositivos (ex: desktop sem prompt, navegadores não-chromium)
+    // Para iOS, este caso já foi tratado acima, mas é um bom fallback.
+    if (isIos) {
+      setShowIosInstructions(true);
+    } else {
+        toast({
+            title: "Instalação Manual",
+            description: "Para instalar, procure a opção 'Adicionar à tela de início' ou 'Instalar App' no menu do seu navegador.",
+            duration: 5000
+        });
+    }
   };
   
-  // O botão agora é sempre visível, e a lógica de clique decide o que fazer.
   return (
     <>
       <Button
         variant="secondary"
         onClick={handleInstallClick}
         aria-label="Instalar aplicativo"
-        className="hidden sm:inline-flex"
       >
         <Download className="mr-2 h-4 w-4" />
         Instalar App
