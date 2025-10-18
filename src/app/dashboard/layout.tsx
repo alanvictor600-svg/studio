@@ -145,7 +145,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  </SidebarMenuItem>
                  
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild variant="secondary" className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
+                    <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
                          <Link href="/solicitar-saldo">
                             <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
                         </Link>
