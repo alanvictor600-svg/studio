@@ -1,52 +1,73 @@
-// self.addEventListener('install', (event) => {
-//   console.log('Service worker installing...');
-//   // Add a call to skipWaiting here
-// });
+// This is the "Offline page" service worker
 
-// self.addEventListener('activate', (event) => {
-//   console.log('Service worker activating...');
-// });
+const CACHE = "bolao-potiguar-pwa";
+const OFFLINE_URL = "offline.html";
 
-self.addEventListener('fetch', (event) => {
-  // Check if the request is for a chrome-extension. If so, do not handle it.
-  if (event.request.url.startsWith('chrome-extension://')) {
-    return;
-  }
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.add(OFFLINE_URL))
+  );
+  self.skipWaiting();
+});
 
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache hit - return response
-      if (response) {
-        return response;
-      }
-
-      // IMPORTANT: Clone the request. A request is a stream and
-      // can only be consumed once. Since we are consuming this
-      // once by cache and once by the browser for fetch, we need
-      // to clone the response.
-      const fetchRequest = event.request.clone();
-
-      return fetch(fetchRequest).then((response) => {
-        // Check if we received a valid response
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        // IMPORTANT: Clone the response. A response is a stream
-        // and because we want the browser to consume the response
-        // as well as the cache consuming the response, we need
-        // to clone it so we have two streams.
-        const responseToCache = response.clone();
-
-        caches.open('bolao-potiguar-cache-v1').then((cache) => {
-           // We only want to cache GET requests
-          if (event.request.method === 'GET') {
-            cache.put(event.request, responseToCache);
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE) {
+            return caches.delete(cacheName);
           }
-        });
-
-        return response;
-      });
+        })
+      );
     })
   );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        try {
+          const preloadResponse = await event.preloadResponse;
+          if (preloadResponse) {
+            return preloadResponse;
+          }
+
+          const networkResponse = await fetch(event.request);
+          return networkResponse;
+        } catch (error) {
+          console.log("Fetch failed; returning offline page instead.", error);
+
+          const cache = await caches.open(CACHE);
+          const cachedResponse = await cache.match(OFFLINE_URL);
+          return cachedResponse;
+        }
+      })()
+    );
+  } else if (event.request.method === 'GET' && (event.request.url.startsWith('http') || event.request.url.startsWith('https'))) {
+    // Cache other assets (CSS, JS, images) using a cache-first strategy
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return fetch(event.request).then((networkResponse) => {
+          // Only cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE).then((cache) => {
+              // Ensure we are not trying to cache chrome-extension:// URLs or other invalid schemes
+              if (event.request.url.startsWith('http')) {
+                cache.put(event.request, responseToCache);
+              }
+            });
+          }
+          return networkResponse;
+        });
+      })
+    );
+  }
 });

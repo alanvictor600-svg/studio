@@ -57,7 +57,6 @@ export default function RootLayout({
        <head>
          <meta name="theme-color" content="#228B22" />
          <link rel="manifest" href="/manifest.json" />
-         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <Providers>
