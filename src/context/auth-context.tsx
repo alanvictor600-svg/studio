@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, Suspense } from 'react';
 import type { User } from '@/types';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -29,13 +28,38 @@ const sanitizeUsernameForEmail = (username: string) => {
     return username.trim().toLowerCase();
 };
 
+// Componente filho para lidar com a lógica de redirecionamento.
+// Ele usa os hooks de navegação e será envolto em Suspense.
+function AuthRedirectHandler() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { isLoading, isAuthenticated, currentUser } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) {
+      return; // Do nothing while loading
+    }
+    
+    if (isAuthenticated && currentUser) {
+      const isAuthPage = pathname === '/login' || pathname === '/cadastrar';
+      if (isAuthPage) {
+        const redirectPath = searchParams.get('redirect');
+        const targetDashboardPath = redirectPath || (currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
+        router.replace(targetDashboardPath);
+      }
+    }
+  }, [isLoading, isAuthenticated, currentUser, pathname, router, searchParams]);
+
+  return null; // Este componente não renderiza nada na UI.
+}
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
   const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
@@ -67,28 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [firebaseUser]);
 
-  // Centralized redirect logic
-  useEffect(() => {
-    if (isLoading) {
-      return; // Do nothing while loading
-    }
-    
-    if (isAuthenticated && currentUser) {
-      const isAuthPage = pathname === '/login' || pathname === '/cadastrar';
-      if (isAuthPage) {
-        const redirectPath = searchParams.get('redirect');
-        const targetDashboardPath = redirectPath || (currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
-        router.replace(targetDashboardPath);
-      }
-    }
-  }, [isLoading, isAuthenticated, currentUser, pathname, router, searchParams]);
-
   const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
      try {
         await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
-        // Redirection is now handled by the central useEffect
+        // Redirection is now handled by the AuthRedirectHandler component
      } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
@@ -119,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             await setDoc(userDocRef, newUser);
         }
-        // Redirection is now handled by the central useEffect
+        // Redirection is now handled by the AuthRedirectHandler component
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
@@ -191,6 +199,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
+      <Suspense>
+        <AuthRedirectHandler />
+      </Suspense>
       {children}
     </AuthContext.Provider>
   );
