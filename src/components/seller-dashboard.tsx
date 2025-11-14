@@ -41,6 +41,7 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
     const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [activeTab, setActiveTab] = useState('vendas');
 
     const fetchHistory = useCallback(async (loadMore = false) => {
         if (!currentUser || currentUser.role !== 'vendedor') {
@@ -89,11 +90,11 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
     }, [currentUser, toast, lastVisible]);
 
     useEffect(() => {
-        if (currentUser) {
+        if (currentUser && activeTab === 'relatorios') {
             fetchHistory(false);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser]);
+    }, [currentUser, activeTab]);
 
     const currentCycleSummary = useMemo(() => {
         const activeTickets = userTickets.filter(t => t.status === 'active' || t.status === 'winning');
@@ -104,14 +105,44 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
         return { ticketCount, totalRevenue, estimatedCommission };
     }, [userTickets, lotteryConfig]);
     
+    const TABS_CONFIG = [
+        { value: 'vendas', label: 'Registrar Venda', Icon: ShoppingBag },
+        { value: 'bilhetes', label: 'Bilhetes Vendidos', Icon: TicketIcon },
+        { value: 'relatorios', label: 'Meus Relatórios', Icon: FileText },
+    ];
+
     return (
-        <Tabs defaultValue="vendas" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 h-auto mb-8 bg-card p-1.5 rounded-lg shadow-md">
+                {TABS_CONFIG.map(tab => (
+                    <TabsTrigger 
+                        key={tab.value} 
+                        value={tab.value} 
+                        className="py-2.5 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                    >
+                        <tab.Icon className="mr-2 h-5 w-5" /> {tab.label}
+                    </TabsTrigger>
+                ))}
+            </TabsList>
+
             <TabsContent value="vendas">
                 <SellerTicketCreationForm
                     isLotteryPaused={isLotteryPaused}
                     onTicketCreated={onTicketCreated}
                     lotteryConfig={lotteryConfig}
                 />
+            </TabsContent>
+            
+            <TabsContent value="bilhetes">
+                 <section>
+                    <h2 className="text-2xl font-bold text-center text-white mb-6">
+                        Bilhetes Vendidos no Ciclo Atual
+                    </h2>
+                    <TicketList 
+                      tickets={userTickets} 
+                      draws={allDraws} 
+                    />
+                </section>
             </TabsContent>
 
             <TabsContent value="relatorios">
