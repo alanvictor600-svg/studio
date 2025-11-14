@@ -126,21 +126,29 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         }));
 
         // 3. User Tickets Listener
-        const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
-        const ticketsQuery = query(
-            collection(db, 'tickets'),
-            where(idField, '==', user.id),
-        );
-        unsubscribes.push(onSnapshot(ticketsQuery, (ticketSnapshot) => {
-            const userTicketsData = ticketSnapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setUserTickets(userTicketsData);
-            setIsDataLoading(false); // Data is considered loaded after tickets arrive
-        }, (error) => {
-            console.error("Error fetching user tickets: ", error);
+        let ticketsQuery;
+        if (user.role === 'cliente') {
+            ticketsQuery = query(collection(db, 'tickets'), where('buyerId', '==', user.id));
+        } else if (user.role === 'vendedor') {
+            ticketsQuery = query(collection(db, 'tickets'), where('sellerId', '==', user.id));
+        }
+        
+        if (ticketsQuery) {
+            unsubscribes.push(onSnapshot(ticketsQuery, (ticketSnapshot) => {
+                const userTicketsData = ticketSnapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setUserTickets(userTicketsData);
+                setIsDataLoading(false); // Data is considered loaded after tickets arrive
+            }, (error) => {
+                console.error("Error fetching user tickets: ", error);
+                setIsDataLoading(false);
+            }));
+        } else {
+            // If no query is applicable (e.g., for an admin role on this dashboard)
+            setUserTickets([]);
             setIsDataLoading(false);
-        }));
+        }
 
         // Return a cleanup function that calls all unsubscribes
         return () => {
