@@ -14,9 +14,10 @@ import { db } from '@/lib/firebase-client';
 import { collection, onSnapshot, doc, query, orderBy, getDocs } from 'firebase/firestore';
 
 // Import Services
-import { addDraw as addDrawService, startNewLottery as startNewLotteryService } from '@/lib/services/lotteryService';
+import { addDrawAction, startNewLotteryAction } from '@/app/actions/lottery';
 import { saveLotteryConfig, saveCreditRequestConfig } from '@/lib/services/configService';
-import { updateUserCredits, deleteUserAccount } from '@/lib/services/userService';
+import { updateUserCredits } from '@/lib/services/userService';
+import { deleteUserAction } from '@/app/actions/user';
 
 // Import section components
 import { SettingsSection } from '@/components/admin/sections/SettingsSection';
@@ -201,7 +202,7 @@ function AdminPageContent() {
       return;
     }
     try {
-        await addDrawService(newNumbers, name);
+        await addDrawAction(newNumbers, name);
         toast({ title: "Sorteio Cadastrado!", description: "O novo sorteio foi registrado e os bilhetes atualizados.", className: "bg-primary text-primary-foreground", duration: 3000 });
     } catch (e) {
         console.error("Error adding draw: ", e);
@@ -219,7 +220,7 @@ function AdminPageContent() {
     const allUsersForLottery = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 
     try {
-        await startNewLotteryService({ allUsers: allUsersForLottery, processedTickets, lotteryConfig, financialReport });
+        await startNewLotteryAction({ allUsers: allUsersForLottery, processedTickets, lotteryConfig, financialReport });
         toast({
           title: "Nova Loteria Iniciada!",
           description: "Históricos foram salvos e o ciclo foi resetado com sucesso.",
@@ -310,7 +311,7 @@ function AdminPageContent() {
     }
     
     try {
-        await deleteUserAccount(userToDelete.id);
+        await deleteUserAction(userToDelete.id);
         
         if (userToView && userToView.id === userToDelete.id) {
             setIsUserViewDialogOpen(false);

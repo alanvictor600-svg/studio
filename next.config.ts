@@ -18,6 +18,13 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    esmExternals: 'loose',
+  },
+  webpack: (config) => {
+    config.experiments = { ...config.experiments, asyncWebAssembly: true, topLevelAwait: true, layers: true };
+    return config;
+  },
 };
 
 module.exports = nextConfig;

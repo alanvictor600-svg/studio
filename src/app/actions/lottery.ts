@@ -1,16 +1,17 @@
-// src/lib/services/lotteryService.ts
-import { db } from '@/lib/firebase-client';
-import { collection, addDoc, writeBatch, getDocs, query, where, doc } from 'firebase/firestore';
+'use server';
+
+import { adminDb } from '@/lib/firebase-admin';
+import { collection, writeBatch, getDocs, query, where, doc } from 'firebase/firestore';
 import type { User, Ticket, LotteryConfig, AdminHistoryEntry, SellerHistoryEntry } from '@/types';
 import type { FinancialReport } from '@/lib/reports';
 
 /**
- * Adds a new draw to the 'draws' collection.
- * This can be called from the client as it does not use the admin SDK.
+ * Adds a new draw to the 'draws' collection using the admin SDK.
+ * This is a server action and must be called from the client.
  * @param newNumbers - An array of 10 numbers for the draw.
  * @param name - An optional name for the draw.
  */
-export const addDraw = async (newNumbers: number[], name?: string): Promise<void> => {
+export const addDrawAction = async (newNumbers: number[], name?: string): Promise<void> => {
     if (newNumbers.length !== 10) {
         throw new Error("O sorteio deve conter exatamente 10 números.");
     }
@@ -18,11 +19,10 @@ export const addDraw = async (newNumbers: number[], name?: string): Promise<void
     const newDrawData = {
         numbers: newNumbers,
         createdAt: new Date().toISOString(),
-        // Only include the name if it's a non-empty string
         ...(name && { name }),
     };
     
-    await addDoc(collection(db, 'draws'), newDrawData);
+    await adminDb.collection('draws').add(newDrawData);
 };
 
 
@@ -33,17 +33,11 @@ interface StartNewLotteryParams {
     financialReport: FinancialReport;
 }
 /**
- * Starts a new lottery cycle. This involves:
- * 1. Saving a history entry for each active seller.
- * 2. Saving a history entry for the admin financial summary.
- * 3. Deleting all current draws.
- * 4. Expiring all active, winning, and unpaid tickets.
- * 
- * NOTE: This function is now a CLIENT-SIDE function that prepares data for a server action.
- * The actual database operations that require admin privileges should be in a server action.
+ * Starts a new lottery cycle using the admin SDK.
+ * This is a server action that performs all database writes in a single batch.
  */
-export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfig, financialReport }: StartNewLotteryParams): Promise<void> => {
-    const batch = writeBatch(db);
+export const startNewLotteryAction = async ({ allUsers, processedTickets, lotteryConfig, financialReport }: StartNewLotteryParams): Promise<void> => {
+    const batch = adminDb.batch();
 
     // 1. Capture Seller History
     const sellers = allUsers.filter(u => u.role === 'vendedor');
@@ -63,7 +57,7 @@ export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfi
                 totalRevenue: totalRevenueFromActiveTickets,
                 totalCommission: commissionEarned,
             };
-            const newHistoryDocRef = doc(collection(db, 'sellerHistory'));
+            const newHistoryDocRef = adminDb.collection('sellerHistory').doc();
             batch.set(newHistoryDocRef, newEntry);
         }
     }
@@ -79,22 +73,22 @@ export const startNewLottery = async ({ allUsers, processedTickets, lotteryConfi
             clientTicketCount: financialReport.clientTicketCount || 0,
             sellerTicketCount: financialReport.sellerTicketCount || 0,
         };
-        const newAdminHistoryDocRef = doc(collection(db, 'adminHistory'));
+        const newAdminHistoryDocRef = adminDb.collection('adminHistory').doc();
         batch.set(newAdminHistoryDocRef, newHistoryEntry);
     }
 
-
     // 3. Reset Draws
-    const drawsSnapshot = await getDocs(query(collection(db, 'draws')));
+    const drawsSnapshot = await adminDb.collection('draws').get();
     drawsSnapshot.forEach(drawDoc => {
         batch.delete(drawDoc.ref);
     });
 
     // 4. Reset Tickets
-    const ticketsSnapshot = await getDocs(query(collection(db, 'tickets'), where('status', 'in', ['active', 'winning', 'unpaid'])));
+    const ticketsSnapshot = await adminDb.collection('tickets').where('status', 'in', ['active', 'winning', 'unpaid']).get();
     ticketsSnapshot.forEach(ticketDoc => {
         batch.update(ticketDoc.ref, { status: 'expired' });
     });
 
+    // Commit all operations at once
     await batch.commit();
 };
