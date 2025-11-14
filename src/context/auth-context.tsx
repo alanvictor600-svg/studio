@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, Suspense } from 'react';
 import type { User } from '@/types';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
@@ -12,7 +12,8 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: User | null; // This will hold Firestore data
+  firebaseUser: any; // Firebase user object from useAuthState
   login: (username: string, passwordAttempt: string, loginAs?: 'admin') => Promise<void>;
   signInWithGoogle: (role: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
@@ -56,8 +57,8 @@ function useAuthContextValue(): AuthContextType {
   const router = useRouter();
   const { toast } = useToast();
   
-  const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
-  const isLoading = authLoading || (!!firebaseUser && isFirestoreLoading);
+  const isAuthenticated = !authLoading && !!firebaseUser;
+  const isLoading = authLoading || (isAuthenticated && isFirestoreLoading);
 
   useEffect(() => {
     if (authError) {
@@ -85,7 +86,7 @@ function useAuthContextValue(): AuthContextType {
             setIsFirestoreLoading(false);
         });
     } else {
-        // No firebase user
+        // No firebase user, so not loading anything from firestore
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
@@ -95,23 +96,14 @@ function useAuthContextValue(): AuthContextType {
     };
   }, [firebaseUser, toast]);
 
-  // This effect handles redirection after login
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && currentUser) {
-      const targetDashboardPath = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
-      // Use replace to avoid adding login to history
-      router.replace(targetDashboardPath);
-    }
-  }, [isLoading, isAuthenticated, currentUser, router]);
 
-
-  const login = useCallback(async (username: string, passwordAttempt: string, loginAs?: 'admin') => {
+  const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
      try {
-        // Just sign in. The useEffect above will handle the redirection.
         await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
+        // NO REDIRECT HERE. The redirection logic is now in the layouts.
         
      } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -145,7 +137,7 @@ function useAuthContextValue(): AuthContextType {
             };
             await setDoc(userDocRef, newUser);
         }
-        // Redirection will be handled by the main useEffect
+        // Redirection will be handled by the layout's useEffect
 
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
@@ -222,7 +214,7 @@ function useAuthContextValue(): AuthContextType {
     });
   };
   
-  return { currentUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
+  return { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
 }
 
 export const useAuth = (): AuthContextType => {

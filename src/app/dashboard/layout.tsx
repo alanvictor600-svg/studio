@@ -37,7 +37,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const { role } = params as { role: 'cliente' | 'vendedor' };
   const { setOpenMobile } = useSidebar();
-  const cleanupListenersRef = useRef<(() => void) | null>(null);
 
   const { 
     cart, 
@@ -52,36 +51,47 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     startDataListeners,
     isDataLoading
   } = useDashboard();
+  
+  const cleanupListenersRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (isAuthLoading) return; // Wait until authentication check is complete
+    // This effect handles authentication and authorization for the dashboard.
+    if (isAuthLoading) {
+      // Don't do anything while auth state is resolving.
+      return;
+    }
 
     if (!isAuthenticated) {
-        router.replace('/login?redirect=' + pathname);
-        return;
+      // If user is not logged in, redirect to login page, preserving the intended destination.
+      router.replace('/login?redirect=' + pathname);
+      return;
     }
 
     if (currentUser && currentUser.role !== role) {
-        router.replace(`/dashboard/${currentUser.role}`);
+      // If user is logged in but trying to access the wrong role's dashboard,
+      // redirect them to their correct dashboard.
+      router.replace(`/dashboard/${currentUser.role}`);
     }
-
   }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
 
   // Effect to start/stop data listeners based on auth state
   useEffect(() => {
-    if (isAuthenticated && currentUser) {
+    // Only start listeners if the user is authenticated and correctly authorized for the current dashboard role.
+    if (isAuthenticated && currentUser && currentUser.role === role) {
       cleanupListenersRef.current = startDataListeners(currentUser);
     }
 
+    // Cleanup function to run when the component unmounts or dependencies change.
     return () => {
       if (cleanupListenersRef.current) {
         cleanupListenersRef.current();
-        cleanupListenersRef.current = null;
+        cleanupListenersRef.current = null; // Prevent multiple cleanups
       }
     };
-  }, [isAuthenticated, currentUser, startDataListeners]);
+  }, [isAuthenticated, currentUser, role, startDataListeners]);
 
 
+  // While authentication is loading, or if we are waiting for a redirect to happen, show a loading screen.
   if (isAuthLoading || !isAuthenticated || !currentUser || currentUser.role !== role) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -190,7 +200,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
         </header>
         <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900">
-            {isDataLoading && !children ? (
+            {isDataLoading ? (
                 <div className="text-center p-10 text-white">Carregando dados...</div>
             ) : children}
         </main>
@@ -223,5 +233,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </SidebarProvider>
   );
 }
-
-    

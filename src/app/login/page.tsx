@@ -37,6 +37,7 @@ function LoginPageContent() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAdminLogin, setIsAdminLogin] = useState(false);
+  const redirectPath = searchParams.get('redirect');
 
   useEffect(() => {
     if (searchParams.get('as') === 'admin') {
@@ -47,16 +48,24 @@ function LoginPageContent() {
   }, [searchParams]);
 
   useEffect(() => {
+    // If user is authenticated, redirect them
     if (!isLoading && isAuthenticated && currentUser) {
-      const targetDashboardPath = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
-      router.replace(targetDashboardPath);
+      // 1. If there's a specific redirect path in the URL, use it.
+      if (redirectPath) {
+        router.replace(redirectPath);
+      // 2. Otherwise, redirect to their default dashboard.
+      } else {
+        const targetDashboardPath = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
+        router.replace(targetDashboardPath);
+      }
     }
-  }, [isLoading, isAuthenticated, currentUser, router]);
+  }, [isLoading, isAuthenticated, currentUser, router, redirectPath]);
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
       await signInWithGoogle('cliente');
+      // On success, the useEffect above will handle redirection.
     } catch (error) {
       // Error is handled in auth context
     } finally {
@@ -74,7 +83,8 @@ function LoginPageContent() {
     setIsSubmitting(true);
     
     try {
-      await login(username, password, isAdminLogin ? 'admin' : undefined);
+      await login(username, password);
+      // On success, the useEffect above will handle redirection.
     } catch (error) {
        // Error is handled in auth context
     } finally {
@@ -210,5 +220,3 @@ export default function LoginPage() {
     </SuspenseWrapper>
   );
 }
-
-    

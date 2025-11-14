@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -48,28 +47,35 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const activeSection = searchParams.get('section') || 'configuracoes';
 
   useEffect(() => {
-    // This effect handles redirection for users who are not authenticated admins
-    // after the initial authentication check is complete.
-    if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
-      router.replace('/login?redirect=/admin');
+    // This effect handles authentication and authorization for the admin section.
+    if (isLoading) {
+      // Wait until the authentication check is complete.
+      return;
     }
-  }, [isLoading, isAuthenticated, currentUser, router]);
+
+    if (!isAuthenticated) {
+      // If the user is not authenticated, redirect to the login page.
+      // Pass the current path as a redirect parameter so they can come back after login.
+      router.replace('/login?redirect=' + pathname);
+      return;
+    }
+
+    if (currentUser && currentUser.role !== 'admin') {
+      // If the authenticated user is not an admin, they are not authorized.
+      // Redirect them to their own default dashboard.
+      router.replace(`/dashboard/${currentUser.role}`);
+    }
+  }, [isLoading, isAuthenticated, currentUser, router, pathname]);
 
 
-  // While loading, or if the user is not authenticated yet, show a loading screen.
+  // While loading, or if the user is not authenticated/authorized yet, show a loading screen.
   // This prevents content from flashing before the redirect logic in useEffect runs.
-  if (isLoading || !isAuthenticated || !currentUser) {
+  if (isLoading || !isAuthenticated || !currentUser || currentUser.role !== 'admin') {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-white text-xl">Verificando sessão de Admin...</p>
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <p className="text-foreground text-xl">Verificando permissões de Admin...</p>
       </div>
     );
-  }
-
-  // After loading, if the user is still not an admin, return null.
-  // The useEffect will handle the redirection, so we don't need to render anything.
-  if (currentUser.role !== 'admin') {
-    return null;
   }
 
   return (
