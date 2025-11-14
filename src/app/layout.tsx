@@ -3,8 +3,7 @@ import type {Metadata} from 'next';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider } from '@/context/auth-context';
+import { Providers } from '@/components/providers';
 import { PWALoader } from '@/components/pwa-loader';
 
 const APP_NAME = "Bolão Potiguar";
@@ -53,14 +52,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // --- CÓDIGO DE DIAGNÓSTICO ---
-  // Isso vai imprimir a chave de API no terminal do VS Code quando o servidor iniciar.
-  console.log("============================================================");
-  console.log("DIAGNÓSTICO: Chave de API do Firebase lida pelo Next.js:");
-  console.log(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-  console.log("============================================================");
-  // --- FIM DO CÓDIGO DE DIAGNÓSTICO ---
-  
   return (
     <html lang="pt-BR" suppressHydrationWarning>
        <head>
@@ -69,13 +60,11 @@ export default function RootLayout({
          <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <ThemeProvider>
-          <AuthProvider>
-            <PWALoader />
-            {children}
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>
+          <PWALoader />
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );
