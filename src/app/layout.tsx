@@ -23,7 +23,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: APP_DEFAULT_TITLE,
-    // startUpImage: [],
   },
   formatDetection: {
     telephone: false,
@@ -56,7 +55,6 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
        <head>
          <meta name="theme-color" content="#228B22" />
-         <link rel="manifest" href="/manifest.json" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <Providers>
