@@ -1,3 +1,4 @@
+
 // src/lib/services/ticketService.ts
 import { db } from '@/lib/firebase-client';
 import { doc, runTransaction, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
@@ -65,9 +66,9 @@ export const createSellerTicket = async ({
           createdAt: new Date().toISOString(),
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone?.trim() || undefined,
-          sellerId: seller.id,
-          sellerUsername: seller.username,
-          // buyerId should be undefined for seller tickets to non-registered users
+          sellerId: seller.id, // Correctly setting sellerId
+          sellerUsername: seller.username, // Correctly setting sellerUsername
+          buyerId: undefined, // Explicitly undefined
         };
 
         transaction.set(newTicketRef, newTicketData);
@@ -116,7 +117,8 @@ export const createClientTickets = async ({ user, cart, lotteryConfig }: CreateC
                 createdAt: new Date().toISOString(),
                 buyerName: user.username,
                 buyerId: user.id, // Correctly add buyerId for client's own tickets
-                // sellerId and sellerUsername are undefined for client tickets
+                sellerId: undefined, // Explicitly undefined
+                sellerUsername: undefined, // Explicitly undefined
             };
             transaction.set(newTicketRef, newTicketData);
             createdTickets.push({ ...newTicketData, id: newTicketRef.id });

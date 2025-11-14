@@ -91,8 +91,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
 
     const startDataListeners = useCallback((user: User): () => void => {
-        if (listenersActive.current) {
-            // If called again, return a no-op cleanup function
+        if (listenersActive.current || !user) {
             return () => {};
         }
         listenersActive.current = true;
@@ -126,11 +125,15 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         }));
 
         // 3. User Tickets Listener
+        const ticketsCollectionRef = collection(db, 'tickets');
         let ticketsQuery;
+        
         if (user.role === 'cliente') {
-            ticketsQuery = query(collection(db, 'tickets'), where('buyerId', '==', user.id));
+            ticketsQuery = query(ticketsCollectionRef, where('buyerId', '==', user.id));
         } else if (user.role === 'vendedor') {
-            ticketsQuery = query(collection(db, 'tickets'), where('sellerId', '==', user.id));
+            ticketsQuery = query(ticketsCollectionRef, where('sellerId', '==', user.id));
+        } else {
+            ticketsQuery = null; // No query for other roles like admin on this dashboard
         }
         
         if (ticketsQuery) {
@@ -145,7 +148,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 setIsDataLoading(false);
             }));
         } else {
-            // If no query is applicable (e.g., for an admin role on this dashboard)
             setUserTickets([]);
             setIsDataLoading(false);
         }
