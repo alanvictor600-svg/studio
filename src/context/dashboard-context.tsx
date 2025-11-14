@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createClientTickets } from '@/lib/services/ticketService';
 import { doc, onSnapshot, collection, query, where, Unsubscribe } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 
 interface PublicRankingEntry {
   initials: string;

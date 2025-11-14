@@ -16,9 +16,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// This function ensures Firebase is initialized only once.
+// Esta função garante que o Firebase seja inicializado apenas uma vez.
 const initializeFirebase = (): { app: FirebaseApp; auth: Auth; db: Firestore } => {
-  // This check is now more critical. If it's false here, the .env wasn't read by next.config.js.
+  // Esta verificação agora é mais crítica. Se for falso aqui, o .env não foi lido pelo next.config.js.
   if (!firebaseConfig.apiKey) {
       throw new Error("CONFIGURAÇÃO DO FIREBASE AUSENTE. Verifique se o arquivo .env existe, está na raiz do projeto e foi preenchido corretamente.");
   }

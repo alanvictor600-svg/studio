@@ -1,6 +1,6 @@
 // src/lib/services/configService.ts
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import type { LotteryConfig, CreditRequestConfig } from '@/types';
 
 /**

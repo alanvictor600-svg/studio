@@ -1,7 +1,7 @@
 
 
 // src/lib/services/lotteryService.ts
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { collection, addDoc, writeBatch, getDocs, query, where, doc } from 'firebase/firestore';
 import type { User, Ticket, LotteryConfig, AdminHistoryEntry, SellerHistoryEntry } from '@/types';
 import type { FinancialReport } from '@/lib/reports';

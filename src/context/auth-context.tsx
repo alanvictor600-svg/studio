@@ -1,20 +1,19 @@
 
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, Suspense } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { User } from '@/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase-client'; // ATUALIZADO
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
-
 interface AuthContextType {
-  currentUser: User | null; // This will hold Firestore data
-  firebaseUser: any; // Firebase user object from useAuthState
-  login: (username: string, passwordAttempt: string, loginAs?: 'admin') => Promise<void>;
+  currentUser: User | null;
+  firebaseUser: any; 
+  login: (username: string, passwordAttempt: string) => Promise<void>;
   signInWithGoogle: (role: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<void>;
@@ -29,42 +28,17 @@ const sanitizeUsernameForEmail = (username: string) => {
     return username.trim().toLowerCase();
 };
 
-
-function AuthProviderContent({ children }: { children: ReactNode }) {
-    const authContextValue = useAuthContextValue();
-    return (
-        <AuthContext.Provider value={authContextValue}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-    return (
-        <Suspense>
-            <AuthProviderContent>
-                {children}
-            </AuthProviderContent>
-        </Suspense>
-    );
-}
-
-
-function useAuthContextValue(): AuthContextType {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
   const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  const isAuthenticated = !authLoading && !!firebaseUser;
-  const isLoading = authLoading || (isAuthenticated && isFirestoreLoading);
-
-  useEffect(() => {
-    if (authError) {
-      console.error("Firebase Auth Hook Error:", authError);
-    }
-  }, [authError]);
+  const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
+  const isLoading = authLoading || (!!firebaseUser && isFirestoreLoading);
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
@@ -75,44 +49,47 @@ function useAuthContextValue(): AuthContextType {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
-              // This can happen if the user is deleted from Firestore but not Auth
               setCurrentUser(null); 
-              signOut(auth); // Log out to clean up state
+              signOut(auth);
             }
             setIsFirestoreLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
-            toast({ title: "Erro de Conexão", description: "Não foi possível sincronizar seus dados.", variant: "destructive" });
             setIsFirestoreLoading(false);
         });
     } else {
-        // No firebase user, so not loading anything from firestore
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
-    // Cleanup subscription on unmount
     return () => {
         if(unsubscribe) unsubscribe();
     };
-  }, [firebaseUser, toast]);
+  }, [firebaseUser]);
 
+  // Centralized redirect logic
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && currentUser) {
+      const isAuthPage = pathname === '/login' || pathname === '/cadastrar';
+      if (isAuthPage) {
+        const redirectPath = searchParams.get('redirect');
+        const targetDashboardPath = redirectPath || (currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
+        router.replace(targetDashboardPath);
+      }
+    }
+  }, [isLoading, isAuthenticated, currentUser, pathname, router, searchParams]);
 
   const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
-
      try {
         await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
-        // NO REDIRECT HERE. The redirection logic is now in the layouts.
-        
+        // Redirection is now handled by the central useEffect
      } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
-        } else if (error.code === 'auth/api-key-expired') {
-            toast({ title: "Chave de API Expirada", description: "A chave de configuração do Firebase expirou. Verifique o arquivo .env.", variant: "destructive", duration: 6000 });
         } else {
              console.error("Firebase login error:", error.code, error.message);
-             toast({ title: "Erro de Login", description: error.message || "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
+             toast({ title: "Erro de Login", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
         throw error;
      }
@@ -137,8 +114,7 @@ function useAuthContextValue(): AuthContextType {
             };
             await setDoc(userDocRef, newUser);
         }
-        // Redirection will be handled by the layout's useEffect
-
+        // Redirection is now handled by the central useEffect
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
@@ -152,11 +128,10 @@ function useAuthContextValue(): AuthContextType {
     }
   }, [toast]);
 
-
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // No need to setCurrentUser to null, the onAuthStateChanged listener will do it.
+      setCurrentUser(null);
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
     } catch (error) {
@@ -165,20 +140,17 @@ function useAuthContextValue(): AuthContextType {
     }
   }, [toast, router]);
 
-
   const register = useCallback(async (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => {
     const originalUsername = username.trim();
      if (!/^[a-zA-Z0-9_.-]+$/.test(originalUsername)) {
-         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido. Use apenas letras (a-z, A-Z), números (0-9) e os caracteres . - _", variant: "destructive" });
+         toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido.", variant: "destructive" });
          return;
     }
     const emailUsername = sanitizeUsernameForEmail(originalUsername);
     const fakeEmail = `${emailUsername}@bolao.potiguar`;
-
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passwordRaw);
         const newFirebaseUser = userCredential.user;
-
         const newUser: User = {
             id: newFirebaseUser.uid,
             username: originalUsername, 
@@ -186,13 +158,10 @@ function useAuthContextValue(): AuthContextType {
             createdAt: new Date().toISOString(),
             saldo: 0,
         };
-        
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
-
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
         await signOut(auth);
         router.push('/login');
-
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
             toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
@@ -206,7 +175,6 @@ function useAuthContextValue(): AuthContextType {
     }
   }, [router, toast]);
 
-
   const updateCurrentUserCredits = (newCredits: number) => {
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
@@ -214,7 +182,13 @@ function useAuthContextValue(): AuthContextType {
     });
   };
   
-  return { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
+  const value = { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, updateCurrentUserCredits };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = (): AuthContextType => {

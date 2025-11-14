@@ -1,6 +1,6 @@
 // src/lib/services/userService.ts
 import { doc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { deleteUserAction } from '@/app/actions/user';
 
 

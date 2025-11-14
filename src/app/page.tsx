@@ -9,7 +9,7 @@ import { LogIn, UserPlus, ArrowLeft, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/auth-context';
 import type { Draw } from '@/types';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { collection, query, orderBy, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { AdminDrawCard } from '@/components/admin-draw-card';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
