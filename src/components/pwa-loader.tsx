@@ -9,20 +9,11 @@ export function PWALoader() {
 
   useEffect(() => {
     // O código dentro do useEffect só roda no cliente, após o componente ser montado.
+    // A tentativa de registro do Service Worker foi desativada para evitar conflitos
+    // com o carregamento do Next.js, que estava causando "client-side exceptions".
+    // A funcionalidade de instalação do PWA via manifest.json continua funcionando.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(registration => {
-          // O registro foi bem-sucedido
-          // console.log('SW registered: ', registration);
-        }).catch(registrationError => {
-          console.error('SW registration failed: ', registrationError);
-          toast({
-            title: "Erro de Instalação",
-            description: "Não foi possível inicializar o modo de aplicativo. Funcionalidades offline podem não estar disponíveis.",
-            variant: "destructive",
-          });
-        });
-      });
+      // console.log("Service Worker API is available.");
     }
   }, [toast]); // A dependência [toast] garante que a função não seja recriada desnecessariamente.
 
