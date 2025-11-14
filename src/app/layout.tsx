@@ -5,6 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/providers';
 import { PWALoader } from '@/components/pwa-loader';
+import { FirebaseClientProvider } from '@/firebase';
 
 const APP_NAME = "Bolão Potiguar";
 const APP_DEFAULT_TITLE = "Bolão Potiguar";
@@ -57,11 +58,13 @@ export default function RootLayout({
          <meta name="theme-color" content="#228B22" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <Providers>
-          <PWALoader />
-          {children}
-          <Toaster />
-        </Providers>
+        <FirebaseClientProvider>
+          <Providers>
+            <PWALoader />
+            {children}
+            <Toaster />
+          </Providers>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

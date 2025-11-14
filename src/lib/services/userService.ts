@@ -40,5 +40,3 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
     // const userDocRef = doc(db, 'users', userId);
     // await deleteDoc(userDocRef);
 };
-
-    

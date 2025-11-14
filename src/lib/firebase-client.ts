@@ -1,30 +1,27 @@
+// src/lib/firebase-client.ts
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
-// ======================================================================
-// ALAN, COPIE O CONTEÚDO ABAIXO PARA A VERCEL.
-// DEPOIS DE COPIAR, ME AVISE PARA EU APAGAR ESTE ARQUIVO.
-// ======================================================================
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
 
-// CHAVES PÚBLICAS (COMEÇAM COM NEXT_PUBLIC_)
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
+function initializeClientApp(): { app: FirebaseApp; auth: Auth; db: Firestore } {
+  if (getApps().length > 0) {
+    const app = getApp();
+    return { app, auth: getAuth(app), db: getFirestore(app) };
+  }
+  
+  const app = initializeApp(firebaseConfig);
+  return { app, auth: getAuth(app), db: getFirestore(app) };
+}
 
-// CHAVES DO SERVIDOR (NÃO COMEÇAM COM NEXT_PUBLIC_)
-FIREBASE_TYPE=service_account
-FIREBASE_PROJECT_ID=...
-FIREBASE_PRIVATE_KEY_ID=...
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=...
-FIREBASE_CLIENT_ID=...
-FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
-FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
-FIREBASE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
-FIREBASE_CLIENT_X509_CERT_URL=...
+const { app, auth, db } = initializeClientApp();
 
-// ======================================================================
-// FIM DAS CREDENCIAIS.
-// ME AVISE QUANDO TERMINAR DE COPIAR.
-// ======================================================================
+export { app, auth, db };

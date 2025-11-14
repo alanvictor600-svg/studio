@@ -1,41 +1,47 @@
 
-// Define um nome e versão para o cache.
 const CACHE_NAME = 'bolao-potiguar-cache-v1';
-
-// Lista de URLs para fazer cache inicial (App Shell).
 const urlsToCache = [
   '/',
-  '/styles/globals.css', // Adapte para o caminho correto do seu CSS
-  // Adicione aqui outros assets estáticos importantes: logos, fontes, etc.
+  '/manifest.json',
 ];
 
-// Evento de instalação do Service Worker.
+// Only cache requests from our own origin
+const shouldCache = (request) => {
+    const url = new URL(request.url);
+    return url.origin === self.location.origin;
+};
+
 self.addEventListener('install', (event) => {
-  // Adia a instalação até que o cache seja preenchido.
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Cache aberto');
-        // Adiciona os recursos do App Shell ao cache.
-        // O fetch desses recursos pode falhar, então não queremos que uma falha quebre a instalação.
+        console.log('Opened cache');
+        
         const cachePromises = urlsToCache.map(urlToCache => {
-          return cache.add(urlToCache).catch(err => {
-            console.warn(`Falha ao fazer cache de ${urlToCache}: ${err}`);
-          });
+            const request = new Request(urlToCache);
+            return fetch(request).then(response => {
+                if (response.ok) {
+                    return cache.put(request, response);
+                }
+                return Promise.resolve();
+            }).catch(error => {
+                console.error(`Failed to fetch and cache ${urlToCache}:`, error);
+            });
         });
+
         return Promise.all(cachePromises);
       })
   );
 });
 
-// Evento de ativação do Service Worker.
+
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Deleta caches antigos que não estão na whitelist.
           if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
@@ -45,32 +51,43 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Evento de fetch: intercepta as requisições de rede.
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições que não são GET (como POST, etc.).
-  if (event.request.method !== 'GET') {
-    return;
-  }
-  
-  // Ignora requisições de extensões do Chrome ou outros protocolos não-HTTP.
-  if (!event.request.url.startsWith('http')) {
-      return;
-  }
+    // We only want to cache GET requests that are from our origin
+    if (event.request.method !== 'GET' || !shouldCache(event.request)) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      // 1. Tenta buscar da rede primeiro (Network First).
-      return fetch(event.request).then((response) => {
-        // Se a resposta da rede for bem-sucedida (status 200),
-        // clonamos a resposta e a armazenamos no cache para uso futuro.
-        if (response.status === 200) {
-          cache.put(event.request.url, response.clone());
-        }
-        return response;
-      }).catch(() => {
-        // 2. Se a rede falhar, tenta buscar do cache.
-        return cache.match(event.request);
-      });
-    })
-  );
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                if (response) {
+                    return response; // Serve from cache
+                }
+
+                // Not in cache, fetch from network
+                return fetch(event.request).then(
+                    (networkResponse) => {
+                        // Check if we received a valid response
+                        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                            return networkResponse;
+                        }
+
+                        const responseToCache = networkResponse.clone();
+
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            });
+
+                        return networkResponse;
+                    }
+                ).catch(error => {
+                    // Network request failed, and it's not in the cache.
+                    // You could return a generic fallback page here if you want.
+                    console.error('Fetch failed; returning offline page instead.', error);
+                    // e.g., return caches.match('/offline.html');
+                });
+            })
+    );
 });

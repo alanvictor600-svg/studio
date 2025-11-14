@@ -1,5 +1,3 @@
-
-
 // src/lib/services/lotteryService.ts
 import { db } from '@/lib/firebase-client';
 import { collection, addDoc, writeBatch, getDocs, query, where, doc } from 'firebase/firestore';

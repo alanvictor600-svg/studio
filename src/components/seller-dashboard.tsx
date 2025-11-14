@@ -221,5 +221,3 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
         </Tabs>
     );
 };
-
-    
