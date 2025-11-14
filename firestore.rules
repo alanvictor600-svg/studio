@@ -3,81 +3,109 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model. Each user has exclusive access to their profile data and associated tickets.
+ * Public data like draws are readable by any authenticated user.
  *
  * Data Structure:
  * - User profiles are stored in `/users/{userId}`.
  * - Each user's lottery tickets are stored in `/users/{userId}/tickets/{ticketId}`.
+ * - Draws are stored in `/draws/{drawId}`.
  *
  * Key Security Decisions:
  * - Users can only read and write their own data, enforced through path-based matching and the `isOwner()` function.
  * - Listing of tickets is restricted to the owner of the tickets.
+ * - Draws are public to all signed-in users but writable only by admins (simulated here by disallowing client writes).
  * - Users are identified using their Firebase Auth UID, which must match the `userId` in the Firestore paths.
- *
- * Denormalization for Authorization:
- *  - The `userId` field in the Ticket entity is used to enforce ownership and avoid `get()` calls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     /**
      * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) User 'user_abc' with matching userId creates their profile.
-     * @allow (get) User 'user_abc' reads their profile.
-     * @allow (update) User 'user_abc' updates their profile.
-     * @allow (delete) User 'user_abc' deletes their profile.
-     * @deny (create) User 'user_xyz' attempts to create a profile for user 'user_abc'.
-     * @deny (get) User 'user_xyz' attempts to read user 'user_abc's profile.
-     * @deny (update) User 'user_xyz' attempts to update user 'user_abc's profile.
-     * @deny (delete) User 'user_xyz' attempts to delete user 'user_abc's profile.
-     * @principle Enforces document ownership for writes and reads.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow get: if isSignedIn() && isOwner();
+      allow list: if false; // Do not allow listing all users
+      allow create: if isSignedIn() && isOwner() && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isOwner() && resource.data.id == userId;
+      allow delete: if isSignedIn() && isOwner() && resource != null;
     }
 
     /**
      * @description Controls access to ticket documents under a user's profile.
      * @path /users/{userId}/tickets/{ticketId}
-     * @allow (create) User 'user_abc' creates a ticket under their profile.
-     * @allow (get) User 'user_abc' reads a ticket under their profile.
-     * @allow (list) User 'user_abc' lists tickets under their profile.
-     * @allow (update) User 'user_abc' updates a ticket under their profile.
-     * @allow (delete) User 'user_abc' deletes a ticket under their profile.
-     * @deny (create) User 'user_xyz' attempts to create a ticket under user 'user_abc's profile.
-     * @deny (get) User 'user_xyz' attempts to read a ticket under user 'user_abc's profile.
-     * @deny (list) User 'user_xyz' attempts to list tickets under user 'user_abc's profile.
-     * @deny (update) User 'user_xyz' attempts to update a ticket under user 'user_abc's profile.
-     * @deny (delete) User 'user_xyz' attempts to delete a ticket under user 'user_abc's profile.
-     * @principle Enforces document ownership for writes and reads within a user's data tree.
      */
     match /users/{userId}/tickets/{ticketId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
+      function isOwner() {
         return request.auth.uid == userId;
       }
+      
+      allow get, list: if isSignedIn() && isOwner();
+      allow create: if isSignedIn() && isOwner() && request.resource.data.userId == userId;
+      allow update: if isSignedIn() && isOwner() && resource.data.userId == userId && resource != null;
+      allow delete: if isSignedIn() && isOwner() && resource != null;
+    }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+    /**
+     * @description Controls access to the draws collection.
+     * @path /draws/{drawId}
+     * @principle Allows any authenticated user to read the list of draws, but prevents any client from writing.
+     * Writes should be handled by a secure backend/admin environment.
+     */
+    match /draws/{drawId} {
+      allow get, list: if isSignedIn();
+      allow write: if false; // Disallow client-side writes for draws
+    }
+
+     /**
+     * @description Controls access to the configs collection.
+     * @path /configs/{configId}
+     * @principle Allows any authenticated user to read configurations, but prevents any client from writing.
+     */
+    match /configs/{configId} {
+        allow get: if isSignedIn();
+        allow write: if false;
+    }
+    
+    /**
+     * @description Controls access to the sellerHistory collection.
+     * @path /sellerHistory/{historyId}
+     * @principle Allows a seller to read their own history entries.
+     */
+    match /sellerHistory/{historyId} {
+        allow get, list: if isSignedIn() && request.query.where.field == 'sellerId' && request.query.where.value == request.auth.uid;
+        allow write: if false;
+    }
+    
+    /**
+     * @description Controls access to the adminHistory collection.
+     * @path /adminHistory/{historyId}
+     * @principle Disallows direct client access. Should be accessed via a secure backend.
+     */
+    match /adminHistory/{historyId} {
+        allow read, write: if false;
+    }
+
+     /**
+     * @description Controls access to the tickets collection (for queries).
+     * @path /tickets/{ticketId}
+     * @principle This allows queries on the top-level tickets collection, scoped by buyerId or sellerId.
+     */
+    match /tickets/{ticketId} {
+       allow read: if isSignedIn() && (
+          (request.query.where.field == 'buyerId' && request.query.where.value == request.auth.uid) ||
+          (request.query.where.field == 'sellerId' && request.query.where.value == request.auth.uid)
+       );
+       allow write: if false; // Direct writes to the root collection are disallowed. Use user-specific subcollections.
     }
   }
 }
