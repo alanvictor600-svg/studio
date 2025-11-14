@@ -1,7 +1,7 @@
 
 "use client";
 
-import { SuspenseWrapper } from '@/components/suspense-wrapper';
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -45,7 +45,7 @@ function LoginPageContent() {
     }
   }, [searchParams]);
 
-  // If the user is already authenticated, redirect them away from the login page.
+  // Redirection is now handled by AuthProvider
   useEffect(() => {
     if (!isLoading && isAuthenticated && currentUser) {
         const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
@@ -201,8 +201,8 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <SuspenseWrapper>
+    <Suspense>
       <LoginPageContent />
-    </SuspenseWrapper>
+    </Suspense>
   );
 }

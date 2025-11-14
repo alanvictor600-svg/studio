@@ -1,7 +1,7 @@
 
 "use client";
 
-import { SuspenseWrapper } from '@/components/suspense-wrapper';
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -56,6 +56,7 @@ function CadastroPageContent() {
   }, [searchParams]);
 
   useEffect(() => {
+    // Redirection is now handled by AuthProvider
     if (!authLoading && isAuthenticated && currentUser) {
         const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
         router.replace(defaultRedirect);
@@ -276,8 +277,8 @@ function CadastroPageContent() {
 
 export default function CadastroPage() {
   return (
-    <SuspenseWrapper>
+    <Suspense>
       <CadastroPageContent />
-    </SuspenseWrapper>
+    </Suspense>
   );
 }

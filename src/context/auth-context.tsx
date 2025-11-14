@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, Suspense } from 'react';
 import type { User } from '@/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -28,17 +28,44 @@ const sanitizeUsernameForEmail = (username: string) => {
     return username.trim().toLowerCase();
 };
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// Este é o componente filho que usará os hooks que precisam de Suspense.
+function AuthProviderContent({ children }: { children: ReactNode }) {
+    const authContextValue = useAuthContextValue();
+
+    // A lógica de redirecionamento que usa useSearchParams agora está isolada aqui.
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { currentUser, isAuthenticated, isLoading } = authContextValue;
+
+    useEffect(() => {
+        if (!isLoading && isAuthenticated && currentUser) {
+            const currentPath = window.location.pathname;
+            const loginOrRegister = currentPath.startsWith('/login') || currentPath.startsWith('/cadastrar');
+            
+            if(loginOrRegister) {
+                const defaultRedirect = currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`;
+                const redirectPath = searchParams.get('redirect');
+                router.replace(redirectPath || defaultRedirect);
+            }
+        }
+    }, [isLoading, isAuthenticated, currentUser, router, searchParams]);
+
     return (
-        <AuthContext.Provider value={useAuthContextValue()}>
+        <AuthContext.Provider value={authContextValue}>
             {children}
         </AuthContext.Provider>
-    )
+    );
 }
 
-export function AuthProviderContent({ children }: { children: ReactNode }) {
-    const auth = useAuth();
-    return <>{children}</>;
+// Este é o provedor principal que envolve a aplicação.
+export function AuthProvider({ children }: { children: ReactNode }) {
+    return (
+        <Suspense>
+            <AuthProviderContent>
+                {children}
+            </AuthProviderContent>
+        </Suspense>
+    );
 }
 
 
@@ -47,7 +74,6 @@ function useAuthContextValue(): AuthContextType {
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
   const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
@@ -67,7 +93,6 @@ function useAuthContextValue(): AuthContextType {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
-              // This can happen briefly during logout or if user is deleted from Firestore but not Auth.
               setCurrentUser(null);
             }
             setIsFirestoreLoading(false);
@@ -79,7 +104,6 @@ function useAuthContextValue(): AuthContextType {
 
         return () => unsubscribe();
     } else {
-        // If there's no Firebase user, ensure local state is also cleared
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
@@ -90,39 +114,9 @@ function useAuthContextValue(): AuthContextType {
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
 
      try {
-        const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
-        const fbUser = userCredential.user;
-        
-        // After signIn, the useEffect hook will run and set the currentUser.
-        // We need to fetch the document directly here to get the role for immediate redirection.
-        const userDocRef = doc(db, "users", fbUser.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-          const userData = { id: userDoc.id, ...userDoc.data() } as User;
-          
-          if(loginAs === 'admin' && userData.role !== 'admin') {
-            await signOut(auth); // Sign out if trying to log in as admin without permission
-            toast({ title: "Acesso Negado", description: "Este usuário não tem permissões de administrador.", variant: "destructive" });
-            return;
-          }
-
-           toast({ title: `Login como ${userData.username} bem-sucedido!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
-           
-           // Handle redirection logic inside the successful login
-           const redirectPath = searchParams.get('redirect');
-           
-           if (redirectPath && redirectPath !== '/') {
-             router.replace(redirectPath);
-           } else {
-             // Default redirection based on role
-             router.replace(userData.role === 'admin' ? '/admin' : `/dashboard/${userData.role}`);
-           }
-        } else {
-          // This case should be rare if user creation is robust
-          await signOut(auth);
-          toast({ title: "Erro de Login", description: "Dados do usuário não encontrados após autenticação.", variant: "destructive" });
-        }
+        await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
+        // O redirecionamento agora é tratado pelo useEffect no AuthProviderContent
+        // para evitar o uso de `useSearchParams` aqui.
      } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
@@ -132,10 +126,9 @@ function useAuthContextValue(): AuthContextType {
              console.error("Firebase login error:", error.code, error.message);
              toast({ title: "Erro de Login", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
-        // Rethrow to allow component to stop loading state
         throw error;
      }
-  }, [toast, router, searchParams]);
+  }, [toast]);
 
   const signInWithGoogle = useCallback(async (role: 'cliente' | 'vendedor') => {
     const provider = new GoogleAuthProvider();
@@ -147,33 +140,21 @@ function useAuthContextValue(): AuthContextType {
         const userDoc = await getDoc(userDocRef);
 
         let finalRole: User['role'] = role;
-        let finalUsername = user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`;
 
         if (userDoc.exists()) {
             const existingUserData = userDoc.data() as User;
             finalRole = existingUserData.role;
-            finalUsername = existingUserData.username;
-            toast({ title: `Bem-vindo(a) de volta, ${finalUsername}!`, description: "Redirecionando...", className: "bg-primary text-primary-foreground", duration: 2000 });
         } else {
             const newUser: User = {
                 id: user.uid,
-                username: finalUsername,
+                username: user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`,
                 role: finalRole,
                 createdAt: new Date().toISOString(),
                 saldo: 0,
             };
             await setDoc(userDocRef, newUser);
-            toast({ title: "Conta criada com sucesso!", description: "Bem-vindo(a) ao Bolão Potiguar!", className: "bg-primary text-primary-foreground", duration: 3000 });
         }
-        
-        const redirectPath = searchParams.get('redirect');
-        
-        if (redirectPath && redirectPath !== '/') {
-            router.replace(redirectPath);
-        } else {
-            router.replace(finalRole === 'admin' ? '/admin' : `/dashboard/${finalRole}`);
-        }
-
+         // O redirecionamento também será tratado pelo AuthProviderContent
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
@@ -183,18 +164,15 @@ function useAuthContextValue(): AuthContextType {
             console.error("Google Sign-In Error:", error);
             toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
         }
-         // Rethrow to allow component to stop loading state
         throw error;
     }
-  }, [router, toast, searchParams]);
+  }, [toast]);
 
 
   const logout = useCallback(async () => {
-    // Immediately redirect to prevent components from trying to render with a null user.
     router.push('/');
     try {
       await signOut(auth);
-      // The onSnapshot listener will handle clearing currentUser.
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -227,7 +205,7 @@ function useAuthContextValue(): AuthContextType {
         await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-        await signOut(auth); // Sign out the new user so they have to log in
+        await signOut(auth);
         router.push('/login');
 
     } catch (error: any) {
@@ -244,7 +222,6 @@ function useAuthContextValue(): AuthContextType {
 
 
   const updateCurrentUserCredits = (newCredits: number) => {
-    // Directly update the state to ensure UI is always in sync.
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
         return { ...prevUser, saldo: newCredits };
