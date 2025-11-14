@@ -28,6 +28,8 @@ import { WinningTicketsSection } from '@/components/admin/sections/WinningTicket
 import { CycleRankingSection } from '@/components/admin/sections/CycleRankingSection';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { generateFinancialReport } from '@/lib/reports';
+import { SuspenseWrapper } from '@/components/suspense-wrapper';
+
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
   ticketPrice: 2,
@@ -44,7 +46,7 @@ const DEFAULT_CREDIT_CONFIG: CreditRequestConfig = {
 export type AdminSection = 'configuracoes' | 'cadastrar-sorteio' | 'controles-loteria' | 'historico-sorteios' | 'bilhetes-premiados' | 'relatorios' | 'ranking-ciclo';
 
 
-export default function AdminPage() {
+function AdminPageContent() {
   const [draws, setDraws] = useState<Draw[]>([]);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig>(DEFAULT_LOTTERY_CONFIG);
@@ -437,5 +439,14 @@ export default function AdminPage() {
         </AlertDialog>
       )}
     </>
+  );
+}
+
+
+export default function AdminPage() {
+  return (
+    <SuspenseWrapper>
+      <AdminPageContent />
+    </SuspenseWrapper>
   );
 }

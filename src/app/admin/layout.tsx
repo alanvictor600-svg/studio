@@ -26,6 +26,7 @@ import { LogOut, Coins, Ticket, Home, User as UserIcon, Settings, PlusCircle, Sh
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Separator } from '@/components/ui/separator';
+import { SuspenseWrapper } from '@/components/suspense-wrapper';
 
 const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
@@ -170,10 +171,13 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
-            <AdminLayoutContent>{children}</AdminLayoutContent>
+            <SuspenseWrapper>
+                <AdminLayoutContent>{children}</AdminLayoutContent>
+            </SuspenseWrapper>
         </SidebarProvider>
     );
 }
