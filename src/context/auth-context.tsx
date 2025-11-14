@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -7,12 +8,12 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase-client';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
   currentUser: User | null;
-  firebaseUser: any; 
+  firebaseUser: FirebaseUser | null | undefined; 
   login: (username: string, passwordAttempt: string) => Promise<void>;
   signInWithGoogle: (role: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
@@ -68,7 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Centralized redirect logic
   useEffect(() => {
-    if (!isLoading && isAuthenticated && currentUser) {
+    if (isLoading) {
+      return; // Do nothing while loading
+    }
+    
+    if (isAuthenticated && currentUser) {
       const isAuthPage = pathname === '/login' || pathname === '/cadastrar';
       if (isAuthPage) {
         const redirectPath = searchParams.get('redirect');

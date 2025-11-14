@@ -5,7 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from '@/components/providers';
 import { PWALoader } from '@/components/pwa-loader';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 const APP_NAME = "Bolão Potiguar";
 const APP_DEFAULT_TITLE = "Bolão Potiguar";
