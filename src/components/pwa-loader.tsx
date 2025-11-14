@@ -8,6 +8,7 @@ export function PWALoader() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // O código dentro do useEffect só roda no cliente, após o componente ser montado.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(registration => {
@@ -23,7 +24,7 @@ export function PWALoader() {
         });
       });
     }
-  }, [toast]);
+  }, [toast]); // A dependência [toast] garante que a função não seja recriada desnecessariamente.
 
   return null; // This component does not render anything.
 }
