@@ -10,7 +10,7 @@ const APP_NAME = "Bolão Potiguar";
 const APP_DEFAULT_TITLE = "Bolão Potiguar";
 const APP_TITLE_TEMPLATE = "%s - Bolão Potiguar";
 const APP_DESCRIPTION = "Sua sorte começa aqui!";
-const APP_URL = "https://studio-two-beige.vercel.app/"; // Substitua pela sua URL de produção
+const APP_URL = "https://studio-two-beige.vercel.app";
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
