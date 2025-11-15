@@ -22,16 +22,13 @@ export function InstallPwaButton() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Previne o comportamento padrão do navegador
       e.preventDefault();
-      // Guarda o evento para que possa ser acionado depois.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     const handleAppInstalled = () => {
-      // Limpa o prompt após a instalação bem-sucedida.
       setDeferredPrompt(null);
       toast({
         title: "App Instalado!",
@@ -46,20 +43,18 @@ export function InstallPwaButton() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [toast]);
+  }, [toast]); // A dependência [toast] é estável e garante que o useEffect não seja recriado desnecessariamente.
 
   const handleInstallClick = async () => {
-    // Se o prompt de instalação estiver disponível, mostre-o.
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      // A lógica para limpar o prompt está no evento 'appinstalled'.
-    } else {
-      // Se o prompt não estiver disponível, não fazemos nada.
-      // O botão está visível, mas o clique não tem efeito para evitar confusão.
-      // A maioria dos casos será o iPhone, onde o usuário precisa usar o menu do Safari.
-      // No ambiente de desenvolvimento, o prompt pode não ser acionado.
     }
   };
+  
+  // O botão só será renderizado se o evento `beforeinstallprompt` tiver sido disparado.
+  if (!deferredPrompt) {
+    return null;
+  }
   
   return (
     <Button

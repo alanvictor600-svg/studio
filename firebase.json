@@ -1,12 +1,11 @@
+
 {
   "hosting": {
     "source": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "public/sw.js",
-      "public/manifest.webmanifest"
+      "**/node_modules/**"
     ]
   }
 }
