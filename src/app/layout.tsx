@@ -58,7 +58,6 @@ export default function RootLayout({
          <meta name="theme-color" content="#15803d" />
          <link rel="apple-touch-icon" href="/logo.png" />
          <link rel="shortcut icon" href="/logo.png" />
-         <link rel="manifest" href="/manifest.webmanifest" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <FirebaseClientProvider>

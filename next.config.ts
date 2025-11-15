@@ -3,6 +3,13 @@
 // Load environment variables from .env file
 require('dotenv').config({ path: './.env' });
 
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development'
+});
+
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -27,4 +34,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withPWA(nextConfig);
