@@ -29,19 +29,20 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
       return;
     }
 
-    const headers = ['ID', 'Comprador', 'Telefone', 'Vendedor', 'Status', 'Data', ...Array.from({ length: 10 }, (_, i) => `N${i + 1}`), 'Acertos'];
+    // Cabeçalho simplificado conforme solicitado
+    const headers = ['Comprador', 'Vendedor', ...Array.from({ length: 10 }, (_, i) => `N${i + 1}`)];
     
     const rows = activeTickets.map(ticket => {
-        const matches = calculateTicketMatches(ticket, draws);
+        // Assegura que os números do bilhete tenham sempre 10 posições
+        const ticketNumbers = ticket.numbers.slice(0, 10);
+        while(ticketNumbers.length < 10) {
+          ticketNumbers.push(''); // preenche com vazio se tiver menos de 10
+        }
+
         return [
-            ticket.id,
             `"${ticket.buyerName || 'N/A'}"`,
-            `"${ticket.buyerPhone || ''}"`,
             `"${ticket.sellerUsername || '-'}"`,
-            ticket.status,
-            ticket.createdAt,
-            ...ticket.numbers,
-            matches
+            ...ticketNumbers
         ];
     });
 
