@@ -5,10 +5,12 @@ import { useMemo, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Copy } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RankedTicket, Draw } from '@/types';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useToast } from "@/hooks/use-toast";
 
 interface CycleRankingSectionProps {
   rankedTickets: RankedTicket[];
@@ -16,6 +18,34 @@ interface CycleRankingSectionProps {
 }
 
 export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTickets, draws }) => {
+  const { toast } = useToast();
+
+  const handleCopyToClipboard = () => {
+    if (rankedTickets.length === 0) {
+      toast({ title: "Nenhum dado para copiar", description: "Não há bilhetes para copiar.", variant: "destructive" });
+      return;
+    }
+
+    const headers = ['Comprador', 'Vendedor', ...Array.from({ length: 10 }, (_, i) => `N${i + 1}`), 'Acertos'];
+    const rows = rankedTickets.map(ticket => [
+      ticket.buyerName,
+      ticket.sellerUsername || '-',
+      ...ticket.numbers,
+      ticket.matches
+    ]);
+
+    const tsvContent = [
+      headers.join('\t'),
+      ...rows.map(row => row.join('\t'))
+    ].join('\n');
+
+    navigator.clipboard.writeText(tsvContent).then(() => {
+      toast({ title: "Tabela Copiada!", description: "Os dados estão prontos para serem colados no Excel.", className: "bg-primary text-primary-foreground" });
+    }, (err) => {
+      toast({ title: "Erro ao Copiar", description: "Não foi possível copiar os dados.", variant: "destructive" });
+      console.error('Could not copy text: ', err);
+    });
+  };
 
   return (
     <section aria-labelledby="cycle-ranking-heading">
@@ -25,7 +55,7 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
       </h2>
       <Card className="w-full mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
         <CardHeader>
-           <div className="flex justify-between items-center">
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle className="text-xl font-semibold">
                 Placar Geral de Acertos
@@ -34,6 +64,9 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                 Todos os bilhetes ativos ordenados pela quantidade de acertos.
               </CardDescription>
             </div>
+             <Button onClick={handleCopyToClipboard} variant="outline" size="sm">
+                <Copy className="mr-2 h-4 w-4" /> Copiar para Excel
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
