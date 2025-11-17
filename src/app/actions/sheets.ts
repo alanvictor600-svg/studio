@@ -1,4 +1,4 @@
-// src/lib/services/googleSheetsService.ts
+// src/app/actions/sheets.ts
 'use server';
 
 import { google } from 'googleapis';
@@ -23,7 +23,6 @@ const getGoogleSheetsClient = () => {
     };
 
     if (!credentials.client_email || !credentials.private_key) {
-        // Log detalhado para depuração
         console.error("Erro Crítico: Credenciais do Google Sheets não configuradas nas variáveis de ambiente.");
         console.log("GOOGLE_CLIENT_EMAIL está definido?", !!process.env.GOOGLE_CLIENT_EMAIL);
         console.log("GOOGLE_PRIVATE_KEY está definido?", !!process.env.GOOGLE_PRIVATE_KEY);
@@ -49,11 +48,11 @@ export const appendTicketToSheet = async (ticket: Ticket) => {
 
     if (!sheets) {
         console.error('Falha ao obter o cliente do Google Sheets. A função será interrompida.');
-        return;
+        throw new Error('Falha ao autenticar com o Google Sheets.');
     }
     if(!spreadsheetId) {
         console.error('Erro Crítico: GOOGLE_SHEET_ID não está definido nas variáveis de ambiente. A função será interrompida.');
-        return;
+        throw new Error('ID da Planilha não configurado no servidor.');
     }
 
     console.log(`Pronto para enviar dados para a planilha ID: ${spreadsheetId}`);
@@ -80,13 +79,12 @@ export const appendTicketToSheet = async (ticket: Ticket) => {
         });
         console.log(`Sucesso! Bilhete ID: ${ticket.id} adicionado à planilha.`);
     } catch (error) {
-        // Log de erro MUITO mais detalhado
         console.error('ERRO AO ADICIONAR LINHA NO GOOGLE SHEETS:');
         console.error('============================================');
         console.error('Mensagem de Erro:', (error as Error).message);
         console.error('Objeto de Erro Completo:', JSON.stringify(error, null, 2));
         console.error('============================================');
-        // Novamente, não lançamos o erro para não impactar o usuário.
-        // O ideal aqui seria registrar esse erro em um sistema de logs.
+        // Agora, lançamos o erro para que o cliente saiba que a integração falhou.
+        throw new Error('Falha ao enviar dados para a planilha.');
     }
 };
