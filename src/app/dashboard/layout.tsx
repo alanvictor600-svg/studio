@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -186,7 +187,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-semibold text-primary hidden md:block">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
             <div className="flex items-center gap-4 ml-auto">
-                {currentUser.role === 'cliente' && (
+                {currentUser.role === 'cliente' && !isDataLoading && (
                     <ShoppingCart 
                         cart={cart}
                         currentUser={currentUser}

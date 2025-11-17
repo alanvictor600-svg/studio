@@ -99,6 +99,15 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setIsDataLoading(true);
 
         const unsubscribes: Unsubscribe[] = [];
+        let configLoaded = false;
+        let ticketsLoaded = false;
+        let drawsLoaded = false;
+
+        const checkAllDataLoaded = () => {
+            if(configLoaded && ticketsLoaded && drawsLoaded) {
+                setIsDataLoading(false);
+            }
+        }
 
         // 1. Config Listener
         const configDocRef = doc(db, 'configs', 'global');
@@ -114,8 +123,12 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             } else {
                  setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
             }
+            configLoaded = true;
+            checkAllDataLoaded();
         }, (error) => {
             console.error("Error fetching lottery config: ", error);
+            configLoaded = true;
+            checkAllDataLoaded();
         }));
 
         // 2. Draws Listener
@@ -123,8 +136,12 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         unsubscribes.push(onSnapshot(drawsQuery, (drawsSnapshot) => {
             const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
             setAllDraws(drawsData);
+            drawsLoaded = true;
+            checkAllDataLoaded();
         }, (error) => {
             console.error("Error fetching draws: ", error);
+            drawsLoaded = true;
+            checkAllDataLoaded();
         }));
 
         // 3. User Tickets Listener
@@ -145,14 +162,17 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                     .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 setUserTickets(userTicketsData);
-                setIsDataLoading(false); // Data is considered loaded after tickets arrive
+                ticketsLoaded = true;
+                checkAllDataLoaded();
             }, (error) => {
                 console.error("Error fetching user tickets: ", error);
-                setIsDataLoading(false);
+                ticketsLoaded = true;
+                checkAllDataLoaded();
             }));
         } else {
             setUserTickets([]);
-            setIsDataLoading(false);
+            ticketsLoaded = true;
+            checkAllDataLoaded();
         }
 
         // Return a cleanup function that calls all unsubscribes
