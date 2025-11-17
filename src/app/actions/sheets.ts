@@ -147,11 +147,18 @@ export const createSellerTicketAction = async ({
 
     if (!createdTicket) throw new Error("Falha ao criar o bilhete na transação.");
     
-    try {
-        await appendTicketToSheet(createdTicket);
-    } catch (error) {
-        console.error("Falha ao enviar bilhete para o Google Sheets (não fatal):", error);
+    // Se o GOOGLE_SHEET_ID não estiver configurado, simplesmente pulamos esta etapa sem erro.
+    if (process.env.GOOGLE_SHEET_ID) {
+        try {
+            await appendTicketToSheet(createdTicket);
+        } catch (error) {
+            // Não impede a venda de ser concluída, mas loga o erro no servidor.
+            console.error("Falha ao enviar bilhete para o Google Sheets (não fatal):", error);
+        }
+    } else {
+        console.warn("GOOGLE_SHEET_ID não definido. A integração com a planilha foi pulada.");
     }
+
 
     return { createdTicket, newBalance };
 };
@@ -192,12 +199,18 @@ export const createClientTicketsAction = async ({ user, cart, lotteryConfig }: C
         }
     });
 
-    for (const ticket of createdTickets) {
-        try {
-            await appendTicketToSheet(ticket);
-        } catch (error) {
-            console.error("Falha ao enviar bilhete para o Google Sheets (não fatal):", error);
+    // Se o GOOGLE_SHEET_ID não estiver configurado, simplesmente pulamos esta etapa sem erro.
+    if (process.env.GOOGLE_SHEET_ID) {
+        for (const ticket of createdTickets) {
+            try {
+                await appendTicketToSheet(ticket);
+            } catch (error) {
+                // Não impede a venda de ser concluída, mas loga o erro no servidor.
+                console.error("Falha ao enviar bilhete para o Google Sheets (não fatal):", error);
+            }
         }
+    } else {
+        console.warn("GOOGLE_SHEET_ID não definido. A integração com a planilha foi pulada.");
     }
 
     return { createdTickets, newBalance };
