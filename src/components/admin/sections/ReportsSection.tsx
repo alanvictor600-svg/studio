@@ -3,17 +3,60 @@
 
 import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { FinancialChart } from '@/components/financial-chart';
-import type { AdminHistoryEntry } from '@/types';
+import type { AdminHistoryEntry, Ticket } from '@/types';
 import type { FinancialReport } from '@/lib/reports';
-import { PieChart, Users, DollarSign, Percent, Trophy, BookText } from 'lucide-react';
+import { PieChart, Users, DollarSign, Percent, Trophy, BookText, Download } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 interface ReportsSectionProps {
   financialReport: FinancialReport;
   adminHistory: AdminHistoryEntry[];
+  allTickets: Ticket[];
 }
 
-export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, adminHistory }) => {
+export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, adminHistory, allTickets }) => {
+  const { toast } = useToast();
+
+  const handleDownloadCSV = () => {
+    const activeTickets = allTickets.filter(t => t.status === 'active' || t.status === 'winning');
+    
+    if (activeTickets.length === 0) {
+      toast({ title: "Nenhum dado para baixar", description: "Não há bilhetes ativos ou premiados para exportar.", variant: "destructive" });
+      return;
+    }
+
+    const headers = ['ID', 'Comprador', 'Telefone', 'Vendedor', 'Status', 'Data', 'Numeros'];
+    const rows = activeTickets.map(ticket => [
+      ticket.id,
+      `"${ticket.buyerName || 'N/A'}"`,
+      `"${ticket.buyerPhone || ''}"`,
+      `"${ticket.sellerUsername || '-'}"`,
+      ticket.status,
+      ticket.createdAt,
+      `"${ticket.numbers.join(', ')}"`
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `bilhetes_bolao_potiguar_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast({ title: "Download Iniciado", description: "O arquivo CSV com os bilhetes está sendo baixado.", className: "bg-primary text-primary-foreground" });
+    }
+  };
+
   return (
     <section aria-labelledby="financial-reports-heading" className="space-y-12">
       <h2 id="financial-reports-heading" className="text-3xl md:text-4xl font-bold text-primary mb-8 text-center flex items-center justify-center">
@@ -79,6 +122,24 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
                   Cálculos baseados em todos os bilhetes com status 'ativo'. O prêmio é o total arrecadado menos todas as comissões.
               </p>
           </CardFooter>
+      </Card>
+      
+      <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center font-bold text-primary flex items-center justify-center">
+            <Download className="mr-3 h-6 w-6" />
+            Exportar Dados
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Baixe uma lista de todos os bilhetes ativos e premiados do ciclo atual em formato CSV, compatível com Excel.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Button onClick={handleDownloadCSV} size="lg">
+            <Download className="mr-2 h-5 w-5" />
+            Baixar Bilhetes (CSV)
+          </Button>
+        </CardContent>
       </Card>
 
       <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">

@@ -5,13 +5,10 @@ import { useMemo, type FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Copy } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RankedTicket, Draw } from '@/types';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { useToast } from "@/hooks/use-toast";
-
 
 interface CycleRankingSectionProps {
   rankedTickets: RankedTicket[];
@@ -19,43 +16,6 @@ interface CycleRankingSectionProps {
 }
 
 export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTickets, draws }) => {
-  const { toast } = useToast();
-
-  const handleCopyToClipboard = () => {
-    if (rankedTickets.length === 0) {
-      toast({ title: "Nenhum dado para copiar", variant: "destructive" });
-      return;
-    }
-
-    const headers = ['Comprador', 'Vendedor', '1º', '2º', '3º', '4º', '5º', '6º', '7º', '8º', '9º', '10º', 'Acertos'];
-    const rows = rankedTickets.map(ticket => [
-      ticket.buyerName || 'N/A',
-      ticket.sellerUsername || '-',
-      ...ticket.numbers,
-      ticket.matches
-    ]);
-
-    const tsvContent = [
-      headers.join('\t'),
-      ...rows.map(row => row.join('\t'))
-    ].join('\n');
-
-    navigator.clipboard.writeText(tsvContent).then(() => {
-      toast({
-        title: "Tabela Copiada!",
-        description: "Os dados estão prontos para serem colados no Excel.",
-        className: "bg-primary text-primary-foreground"
-      });
-    }, (err) => {
-      toast({
-        title: "Erro ao Copiar",
-        description: "Não foi possível copiar os dados para a área de transferência.",
-        variant: "destructive"
-      });
-      console.error('Could not copy text: ', err);
-    });
-  };
-
 
   return (
     <section aria-labelledby="cycle-ranking-heading">
@@ -74,9 +34,6 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
                 Todos os bilhetes ativos ordenados pela quantidade de acertos.
               </CardDescription>
             </div>
-            <Button onClick={handleCopyToClipboard} variant="outline" size="sm" disabled={rankedTickets.length === 0}>
-              <Copy className="mr-2 h-4 w-4" /> Copiar para Excel
-            </Button>
           </div>
         </CardHeader>
         <CardContent>

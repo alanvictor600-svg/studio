@@ -363,6 +363,7 @@ function AdminPageContent() {
           <ReportsSection
             financialReport={financialReport}
             adminHistory={adminHistory}
+            allTickets={processedTickets}
           />
         );
       case 'historico-sorteios':
