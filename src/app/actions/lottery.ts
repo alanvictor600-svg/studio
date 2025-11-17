@@ -84,7 +84,7 @@ export const startNewLotteryAction = async ({ allUsers, processedTickets, lotter
     });
 
     // 4. Reset Tickets
-    const ticketsSnapshot = await adminDb.collection('tickets').where('status', 'in', ['active', 'winning', 'unpaid']).get();
+    const ticketsSnapshot = await adminDb.collection('tickets').where('status', 'in', ['active', 'winning', 'awaiting_payment', 'unpaid']).get();
     ticketsSnapshot.forEach(ticketDoc => {
         batch.update(ticketDoc.ref, { status: 'expired' });
     });

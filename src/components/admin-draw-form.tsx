@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { FC } from 'react';
@@ -237,7 +236,7 @@ export const AdminDrawForm: FC<AdminDrawFormProps> = ({ onAddDraw, hasWinningTic
                         />
                         ))}
                     </div>
-                    {areConfirmNumbersMatching && (
+                    {areConfirmNumbersMatching && areNumbersFilled && (
                         <p className="text-sm text-green-600 mt-2 flex items-center gap-1"><CheckCircle size={14} /> Os números de confirmação batem!</p>
                     )}
                 </div>
