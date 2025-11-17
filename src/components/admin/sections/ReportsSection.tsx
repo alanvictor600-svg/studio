@@ -39,19 +39,24 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
           ticketNumbers.push(''); // preenche com vazio se tiver menos de 10
         }
 
+        const buyerName = ticket.buyerName ? `"${ticket.buyerName.replace(/"/g, '""')}"` : 'N/A';
+        const sellerUsername = ticket.sellerUsername ? `"${ticket.sellerUsername.replace(/"/g, '""')}"` : '-';
+
         return [
-            `"${ticket.buyerName || 'N/A'}"`,
-            `"${ticket.sellerUsername || '-'}"`,
+            buyerName,
+            sellerUsername,
             ...ticketNumbers
         ];
     });
 
+    // Usar ponto e vírgula (;) como separador para compatibilidade com o Excel (Brasil/Europa)
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Adiciona um BOM para garantir que o Excel interprete como UTF-8
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
