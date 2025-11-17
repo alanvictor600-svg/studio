@@ -9,19 +9,19 @@ import type { AdminHistoryEntry, Ticket, Draw } from '@/types';
 import type { FinancialReport } from '@/lib/reports';
 import { PieChart, Users, DollarSign, Percent, Trophy, BookText, Download } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { calculateTicketMatches } from '@/lib/lottery-utils';
+import * as XLSX from 'xlsx';
 
 interface ReportsSectionProps {
   financialReport: FinancialReport;
   adminHistory: AdminHistoryEntry[];
   allTickets: Ticket[];
-  draws: Draw[]; // Adicionando draws para calcular acertos
+  draws: Draw[];
 }
 
 export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, adminHistory, allTickets, draws }) => {
   const { toast } = useToast();
 
-  const handleDownloadCSV = () => {
+  const handleDownloadExcel = () => {
     const activeTickets = allTickets.filter(t => t.status === 'active' || t.status === 'winning');
     
     if (activeTickets.length === 0) {
@@ -29,44 +29,40 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
       return;
     }
 
-    // Cabeçalho simplificado conforme solicitado
-    const headers = ['Comprador', 'Vendedor', ...Array.from({ length: 10 }, (_, i) => `N${i + 1}`)];
+    const headers = ['Comprador', 'Vendedor', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9', 'N10'];
     
-    const rows = activeTickets.map(ticket => {
-        // Assegura que os números do bilhete tenham sempre 10 posições
-        const ticketNumbers = ticket.numbers.slice(0, 10);
-        while(ticketNumbers.length < 10) {
-          ticketNumbers.push(''); // preenche com vazio se tiver menos de 10
-        }
+    const data = activeTickets.map(ticket => {
+      const ticketNumbers = ticket.numbers.slice(0, 10);
+      while(ticketNumbers.length < 10) {
+        ticketNumbers.push(''); // preenche com vazio se tiver menos de 10
+      }
 
-        const buyerName = ticket.buyerName ? `"${ticket.buyerName.replace(/"/g, '""')}"` : 'N/A';
-        const sellerUsername = ticket.sellerUsername ? `"${ticket.sellerUsername.replace(/"/g, '""')}"` : '-';
+      const buyerName = ticket.buyerName || 'N/A';
+      const sellerUsername = ticket.sellerUsername || '-';
 
-        return [
-            buyerName,
-            sellerUsername,
-            ...ticketNumbers
-        ];
+      return [
+          buyerName,
+          sellerUsername,
+          ...ticketNumbers
+      ];
     });
 
-    // Usar ponto e vírgula (;) como separador para compatibilidade com o Excel (Brasil/Europa)
-    const csvContent = [
-      headers.join(';'),
-      ...rows.map(row => row.join(';'))
-    ].join('\n');
+    try {
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Bilhetes");
+      
+      // Ajusta a largura das colunas
+      const colWidths = headers.map((_, i) => ({ wch: i < 2 ? 25 : 5 })); // Colunas de nome mais largas
+      worksheet['!cols'] = colWidths;
 
-    // Adiciona um BOM para garantir que o Excel interprete como UTF-8
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `bilhetes_bolao_potiguar_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast({ title: "Download Iniciado", description: "O arquivo CSV com os bilhetes está sendo baixado.", className: "bg-primary text-primary-foreground" });
+      // Gera o arquivo e inicia o download
+      XLSX.writeFile(workbook, `bilhetes_bolao_potiguar_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({ title: "Download Iniciado", description: "O arquivo Excel com os bilhetes está sendo baixado.", className: "bg-primary text-primary-foreground" });
+    } catch (e) {
+      console.error("Erro ao gerar arquivo Excel:", e);
+      toast({ title: "Erro ao Exportar", description: "Não foi possível gerar o arquivo Excel.", variant: "destructive" });
     }
   };
 
@@ -144,13 +140,13 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
             Exportar Dados
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            Baixe uma lista de todos os bilhetes ativos e premiados do ciclo atual em formato CSV, compatível com Excel.
+            Baixe uma lista de todos os bilhetes ativos e premiados do ciclo atual em formato Excel (.xlsx).
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button onClick={handleDownloadCSV} size="lg">
+          <Button onClick={handleDownloadExcel} size="lg">
             <Download className="mr-2 h-5 w-5" />
-            Baixar Bilhetes (CSV)
+            Baixar Bilhetes (Excel)
           </Button>
         </CardContent>
       </Card>
