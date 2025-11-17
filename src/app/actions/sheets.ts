@@ -1,3 +1,4 @@
+
 // src/app/actions/sheets.ts
 'use server';
 
@@ -156,7 +157,7 @@ export const createSellerTicketAction = async ({
 };
 
 interface CreateClientTicketsParams {
-    user: User;
+    user: { id: string; username: string };
     cart: number[][];
     lotteryConfig: LotteryConfig;
 }

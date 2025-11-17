@@ -181,7 +181,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         
         try {
             const { createdTickets, newBalance } = await createClientTicketsAction({
-                user: currentUser,
+                user: { id: currentUser.id, username: currentUser.username },
                 cart,
                 lotteryConfig
             });
