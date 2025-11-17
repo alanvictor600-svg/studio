@@ -5,18 +5,20 @@ import type { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FinancialChart } from '@/components/financial-chart';
-import type { AdminHistoryEntry, Ticket } from '@/types';
+import type { AdminHistoryEntry, Ticket, Draw } from '@/types';
 import type { FinancialReport } from '@/lib/reports';
 import { PieChart, Users, DollarSign, Percent, Trophy, BookText, Download } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { calculateTicketMatches } from '@/lib/lottery-utils';
 
 interface ReportsSectionProps {
   financialReport: FinancialReport;
   adminHistory: AdminHistoryEntry[];
   allTickets: Ticket[];
+  draws: Draw[]; // Adicionando draws para calcular acertos
 }
 
-export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, adminHistory, allTickets }) => {
+export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, adminHistory, allTickets, draws }) => {
   const { toast } = useToast();
 
   const handleDownloadCSV = () => {
@@ -27,16 +29,21 @@ export const ReportsSection: FC<ReportsSectionProps> = ({ financialReport, admin
       return;
     }
 
-    const headers = ['ID', 'Comprador', 'Telefone', 'Vendedor', 'Status', 'Data', 'Numeros'];
-    const rows = activeTickets.map(ticket => [
-      ticket.id,
-      `"${ticket.buyerName || 'N/A'}"`,
-      `"${ticket.buyerPhone || ''}"`,
-      `"${ticket.sellerUsername || '-'}"`,
-      ticket.status,
-      ticket.createdAt,
-      `"${ticket.numbers.join(', ')}"`
-    ]);
+    const headers = ['ID', 'Comprador', 'Telefone', 'Vendedor', 'Status', 'Data', ...Array.from({ length: 10 }, (_, i) => `N${i + 1}`), 'Acertos'];
+    
+    const rows = activeTickets.map(ticket => {
+        const matches = calculateTicketMatches(ticket, draws);
+        return [
+            ticket.id,
+            `"${ticket.buyerName || 'N/A'}"`,
+            `"${ticket.buyerPhone || ''}"`,
+            `"${ticket.sellerUsername || '-'}"`,
+            ticket.status,
+            ticket.createdAt,
+            ...ticket.numbers,
+            matches
+        ];
+    });
 
     const csvContent = [
       headers.join(','),

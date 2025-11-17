@@ -364,6 +364,7 @@ function AdminPageContent() {
             financialReport={financialReport}
             adminHistory={adminHistory}
             allTickets={processedTickets}
+            draws={draws}
           />
         );
       case 'historico-sorteios':
