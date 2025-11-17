@@ -18,21 +18,15 @@ const formatPrivateKey = (key: string | undefined) => {
 };
 
 const getGoogleSheetsClient = () => {
-    console.log("Tentando obter o cliente do Google Sheets...");
-
     const credentials = {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY),
     };
 
     if (!credentials.client_email || !credentials.private_key) {
-        console.error("Erro Crítico: Credenciais do Google Sheets não configuradas nas variáveis de ambiente.");
-        console.log("GOOGLE_CLIENT_EMAIL está definido?", !!process.env.GOOGLE_CLIENT_EMAIL);
-        console.log("GOOGLE_PRIVATE_KEY está definido?", !!process.env.GOOGLE_PRIVATE_KEY);
+        console.error("Erro Crítico: Credenciais do Google Sheets não configuradas nas variáveis de ambiente (GOOGLE_CLIENT_EMAIL ou GOOGLE_PRIVATE_KEY).");
         return null;
     }
-
-    console.log("Credenciais encontradas. Configurando autenticação JWT...");
 
     const auth = new google.auth.JWT(
         credentials.client_email,
@@ -45,7 +39,6 @@ const getGoogleSheetsClient = () => {
 };
 
 export const appendTicketToSheet = async (ticket: Ticket) => {
-    console.log(`Iniciando appendTicketToSheet para o bilhete ID: ${ticket.id}`);
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
@@ -58,8 +51,6 @@ export const appendTicketToSheet = async (ticket: Ticket) => {
         throw new Error('ID da Planilha não configurado no servidor.');
     }
 
-    console.log(`Pronto para enviar dados para a planilha ID: ${spreadsheetId}`);
-
     // Formata os dados do bilhete para o formato da planilha
     const rowData = [
         format(parseISO(ticket.createdAt), "dd/MM/yyyy HH:mm:ss", { locale: ptBR }),
@@ -71,7 +62,6 @@ export const appendTicketToSheet = async (ticket: Ticket) => {
     ];
 
     try {
-        console.log("Enviando dados para a API do Google Sheets...");
         await sheets.spreadsheets.values.append({
             spreadsheetId,
             range: 'Bilhetes!A:A', // Nome da aba!Coluna para iniciar. 'A:A' faz o append na primeira linha vazia.
@@ -82,13 +72,7 @@ export const appendTicketToSheet = async (ticket: Ticket) => {
         });
         console.log(`Sucesso! Bilhete ID: ${ticket.id} adicionado à planilha.`);
     } catch (error) {
-        console.error('ERRO AO ADICIONAR LINHA NO GOOGLE SHEETS:');
-        console.error('============================================');
-        if (error instanceof Error) {
-            console.error('Mensagem de Erro:', error.message);
-        }
-        console.error('Objeto de Erro Completo:', JSON.stringify(error, null, 2));
-        console.error('============================================');
+        console.error('ERRO AO ADICIONAR LINHA NO GOOGLE SHEETS:', error);
         // Agora, lançamos o erro para que o cliente saiba que a integração falhou.
         throw new Error('Falha ao enviar dados para a planilha.');
     }
@@ -148,7 +132,7 @@ export const createSellerTicketAction = async ({
     if (!createdTicket) throw new Error("Falha ao criar o bilhete na transação.");
     
     // Se o GOOGLE_SHEET_ID não estiver configurado, simplesmente pulamos esta etapa sem erro.
-    if (process.env.GOOGLE_SHEET_ID) {
+    if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
         try {
             await appendTicketToSheet(createdTicket);
         } catch (error) {
@@ -156,7 +140,7 @@ export const createSellerTicketAction = async ({
             console.error("Falha ao enviar bilhete para o Google Sheets (não fatal):", error);
         }
     } else {
-        console.warn("GOOGLE_SHEET_ID não definido. A integração com a planilha foi pulada.");
+        console.warn("Integração com Google Sheets pulada: uma ou mais variáveis de ambiente (GOOGLE_SHEET_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY) não estão definidas.");
     }
 
 
@@ -200,7 +184,7 @@ export const createClientTicketsAction = async ({ user, cart, lotteryConfig }: C
     });
 
     // Se o GOOGLE_SHEET_ID não estiver configurado, simplesmente pulamos esta etapa sem erro.
-    if (process.env.GOOGLE_SHEET_ID) {
+    if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
         for (const ticket of createdTickets) {
             try {
                 await appendTicketToSheet(ticket);
@@ -210,7 +194,7 @@ export const createClientTicketsAction = async ({ user, cart, lotteryConfig }: C
             }
         }
     } else {
-        console.warn("GOOGLE_SHEET_ID não definido. A integração com a planilha foi pulada.");
+        console.warn("Integração com Google Sheets pulada: uma ou mais variáveis de ambiente (GOOGLE_SHEET_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY) não estão definidas.");
     }
 
     return { createdTickets, newBalance };
