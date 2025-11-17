@@ -102,9 +102,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
         // 1. Config Listener
         const configDocRef = doc(db, 'configs', 'global');
-        unsubscribes.push(onSnapshot(configDocRef, (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
+        unsubscribes.push(onSnapshot(configDocRef, (configDoc) => {
+            if (configDoc.exists()) {
+                const data = configDoc.data();
                 setLotteryConfig({
                     ticketPrice: data.ticketPrice || 2,
                     sellerCommissionPercentage: data.sellerCommissionPercentage || 10,
