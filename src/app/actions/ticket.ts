@@ -106,7 +106,7 @@ export const createClientTicketsAction = async ({ user, cart }: CreateClientTick
 
     // Create tickets
     for (const ticketNumbers of cart) {
-        const newTicketId = uuidvv4();
+        const newTicketId = uuidv4();
         const newTicketRef = adminDb.collection("tickets").doc(newTicketId);
         const newTicketData: Ticket = {
             id: newTicketId,
