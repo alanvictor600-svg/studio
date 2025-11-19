@@ -175,18 +175,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col flex-1 min-h-screen">
-        <header className="flex h-14 items-center justify-between border-b bg-secondary px-4 md:px-6 sticky top-0 z-10">
-            <div className="flex items-center gap-2">
+        <header className="grid grid-cols-3 h-14 items-center border-b bg-secondary px-4 md:px-6 sticky top-0 z-10 md:flex md:justify-between">
+            {/* Left Section */}
+            <div className="flex items-center justify-start md:flex-1">
                 <div className="md:hidden">
                     <SidebarTrigger />
                 </div>
-                <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-1 md:hidden">
+                 <span className="font-semibold text-primary hidden md:block">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
+            </div>
+
+            {/* Center Section - Mobile Only */}
+            <div className="flex items-center justify-center md:hidden">
+                <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-1">
                     <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
-                    <span className="sm:inline-block">Bolão Potiguar</span>
+                    <span className="hidden sm:inline-block">Bolão Potiguar</span>
                 </Link>
             </div>
-            <span className="font-semibold text-primary hidden md:block">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
-            <div className="flex items-center gap-4 ml-auto">
+            
+            {/* Right Section */}
+            <div className="flex items-center justify-end gap-2 md:gap-4 md:flex-1">
                 {currentUser.role === 'cliente' && !isDataLoading && (
                     <ShoppingCart 
                         cart={cart}
