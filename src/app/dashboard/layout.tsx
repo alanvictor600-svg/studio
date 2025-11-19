@@ -190,7 +190,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton onClick={handleForceRefresh} variant="outline" className="h-12 text-base">
-                        <RefreshCw className="mr-2 h-5 w-5" /> Forçar Atualização
+                        <RefreshCw className="mr-2 h-5 w-5" /> Atualizar Bolão
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
