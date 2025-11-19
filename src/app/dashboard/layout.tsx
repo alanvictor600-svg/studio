@@ -22,13 +22,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
+import { LogOut, Coins, Home, LayoutDashboard, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { ShoppingCart } from '@/components/shopping-cart';
 import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -37,6 +38,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const { role } = params as { role: 'cliente' | 'vendedor' };
   const { setOpenMobile } = useSidebar();
+  const { toast } = useToast();
 
   const { 
     cart, 
@@ -89,6 +91,41 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       }
     };
   }, [isAuthenticated, currentUser, role, startDataListeners]);
+
+  const handleForceRefresh = async () => {
+    setOpenMobile(false);
+    toast({
+      title: 'Forçando Atualização...',
+      description: 'Limpando cache e recarregando os dados mais recentes.',
+    });
+
+    try {
+      // Unregister all service workers to ensure cache is bypassed on next load
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+      
+      // Clear all caches managed by the Cache API
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+
+      // Perform a hard reload
+      window.location.reload();
+
+    } catch (error) {
+      console.error('Falha ao forçar a atualização:', error);
+      toast({
+        title: 'Erro na Atualização',
+        description: 'Não foi possível limpar o cache. A página será recarregada.',
+        variant: 'destructive',
+      });
+      // Fallback to simple reload
+      window.location.reload();
+    }
+  };
 
 
   // While authentication is loading, or if we are waiting for a redirect to happen, show a loading screen.
@@ -151,22 +188,29 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarSeparator className="my-2"/>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                        <Link href="/">
-                            <Home /> Página Inicial
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        <LogOut /> Sair da Conta
+                    <SidebarMenuButton onClick={handleForceRefresh} variant="outline" className="h-12 text-base">
+                        <RefreshCw className="mr-2 h-5 w-5" /> Forçar Atualização
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
             
             <div className="mt-auto">
+              <SidebarMenu>
+                  <SidebarSeparator className="my-2" />
+                  <SidebarMenuItem>
+                      <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
+                          <Link href="/">
+                              <Home /> Página Inicial
+                          </Link>
+                      </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                          <LogOut /> Sair da Conta
+                      </SidebarMenuButton>
+                  </SidebarMenuItem>
+              </SidebarMenu>
               <div className="flex items-center justify-center p-2">
                   <ThemeToggleButton />
               </div>
