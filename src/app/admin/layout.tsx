@@ -93,7 +93,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
              </div>
           </Link>
         </SidebarHeader>
-        <SidebarContent className="p-2">
+        <SidebarContent className="flex flex-col p-2">
             <div className="mb-4 p-3 rounded-lg bg-sidebar-accent/50 text-sidebar-accent-foreground">
                 <div className="text-sm font-medium">Administrador:</div>
                 <div className="text-lg font-bold flex items-center gap-2">
@@ -119,10 +119,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="flex flex-col gap-2 p-2">
+
             <div className="flex-grow"></div>
-             <SidebarMenu>
+
+            <SidebarMenu>
+                 <SidebarSeparator className="my-2" />
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                         <Link href="/">
@@ -139,7 +140,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-center p-2">
                 <ThemeToggleButton />
             </div>
-        </SidebarFooter>
+        </SidebarContent>
       </Sidebar>
       <SidebarInset className="flex flex-col flex-1">
         <header className="flex h-14 items-center justify-between border-b bg-secondary px-4 md:hidden sticky top-0 z-10">
