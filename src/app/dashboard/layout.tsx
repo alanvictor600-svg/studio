@@ -173,34 +173,30 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <div className="relative flex min-h-screen flex-1 flex-col bg-background">
-        <header className="relative flex h-16 items-center border-b bg-secondary px-4 sticky top-0 z-10 md:hidden">
-            {/* Left Section: Menu Trigger */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <SidebarTrigger />
-            </div>
-
-            {/* Center Section: Logo and Title */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
-                    <span className="inline-block font-semibold">Bolão Potiguar</span>
-                </Link>
-            </div>
-            
-            {/* Right Section: Actions */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                {currentUser.role === 'cliente' && !isDataLoading && (
-                    <ShoppingCart 
-                        cart={cart}
-                        currentUser={currentUser}
-                        lotteryConfig={lotteryConfig}
-                        isSubmitting={isSubmitting}
-                        onPurchase={handlePurchaseCart}
-                        onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
-                    />
-                )}
-            </div>
+      <SidebarInset>
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-4 md:hidden">
+          <div className="flex justify-start">
+            <SidebarTrigger />
+          </div>
+          <div className="flex justify-center">
+            <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
+              <span className="inline-block font-semibold">Bolão Potiguar</span>
+            </Link>
+          </div>
+          <div className="flex items-center justify-end">
+             {currentUser.role === 'cliente' && !isDataLoading && (
+              <ShoppingCart 
+                  cart={cart}
+                  currentUser={currentUser}
+                  lotteryConfig={lotteryConfig}
+                  isSubmitting={isSubmitting}
+                  onPurchase={handlePurchaseCart}
+                  onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
+              />
+            )}
+          </div>
         </header>
 
         {/* Desktop Header */}
@@ -240,7 +236,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             tickets={receiptTickets}
             lotteryConfig={lotteryConfig}
         />
-      </div>
+      </SidebarInset>
     </>
   );
 }
