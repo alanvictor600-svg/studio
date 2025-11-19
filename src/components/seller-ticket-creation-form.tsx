@@ -16,7 +16,7 @@ import type { Ticket, LotteryConfig } from '@/types';
 import { useAuth } from '@/context/auth-context';
 import { createSellerTicketAction } from '@/app/actions/ticket';
 import { useDashboard } from '@/context/dashboard-context';
-import { SelectedNumberBadge } from './selected-number-badge';
+import { SelectedNumberBadge } from '@/components/selected-number-badge';
 
 
 interface SellerTicketCreationFormProps {
