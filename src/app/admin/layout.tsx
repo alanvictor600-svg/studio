@@ -18,14 +18,14 @@ import {
     SidebarMenuItem, 
     SidebarMenuButton, 
     SidebarInset,
-    useSidebar
+    useSidebar,
+    SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Coins, Ticket, Home, User as UserIcon, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { Separator } from '@/components/ui/separator';
 import { SuspenseWrapper } from '@/components/suspense-wrapper';
 
 const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
@@ -119,12 +119,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-            <div className="flex items-center justify-center p-2">
-                <ThemeToggleButton />
-            </div>
-            <SidebarMenu>
+             <SidebarSeparator className="my-2" />
+             <SidebarMenu>
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                         <Link href="/">
@@ -138,6 +134,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+            <div className="flex items-center justify-center p-2">
+                <ThemeToggleButton />
+            </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col flex-1">

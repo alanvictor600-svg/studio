@@ -17,14 +17,14 @@ import {
     SidebarMenuItem, 
     SidebarMenuButton, 
     SidebarInset,
-    useSidebar
+    useSidebar,
+    SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { Separator } from '@/components/ui/separator';
 import { ShoppingCart } from '@/components/shopping-cart';
 import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
@@ -126,7 +126,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     </Avatar>
                     <span className="truncate">{currentUser.username}</span>
                 </div>
-                <Separator className="my-2 bg-sidebar-border" />
+                <SidebarSeparator className="my-2 bg-sidebar-border" />
                 <div className="text-sm font-medium">Seu Saldo:</div>
                 <div className="text-2xl font-bold text-yellow-400 flex items-center gap-1.5">
                     <Coins size={22} />
@@ -152,11 +152,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-            <div className="flex items-center justify-center p-2">
-                <ThemeToggleButton />
-            </div>
+            <SidebarSeparator className="my-2" />
             <SidebarMenu>
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
@@ -171,9 +167,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+            <div className="flex items-center justify-center p-2">
+                <ThemeToggleButton />
+            </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="flex flex-col flex-1 overflow-x-hidden">
+      <SidebarInset className="flex flex-1 flex-col overflow-x-hidden">
         {/* Mobile Header */}
         <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
           <div className="flex justify-start">
