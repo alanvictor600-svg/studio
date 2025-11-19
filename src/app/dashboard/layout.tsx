@@ -173,9 +173,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-4 md:hidden">
+      <SidebarInset className="flex flex-col flex-1 overflow-x-hidden">
+        {/* Mobile Header - REFACTORED FOR PERFECT CENTERING */}
+        <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
           <div className="flex justify-start">
             <SidebarTrigger />
           </div>

@@ -33,13 +33,13 @@ export const ShoppingCart: FC<ShoppingCartProps> = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="relative shadow-md h-10 w-10 p-0 sm:w-auto sm:px-4 sm:py-2">
-          <ShoppingCartIcon className="h-5 w-5" />
-          <span className="hidden sm:inline-block sm:ml-2">Meu Carrinho</span>
+        <Button variant="ghost" className="relative shadow-none h-10 px-2">
+          <ShoppingCartIcon className="h-6 w-6" />
+          <span className="ml-1">Meu Carrinho</span>
           {cart.length > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
             >
               {cart.length}
             </Badge>
