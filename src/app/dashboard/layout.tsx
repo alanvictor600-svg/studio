@@ -204,9 +204,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarContent>
       </Sidebar>
       
-      {/* Main Content Area */}
       <div className="flex flex-1 flex-col md:pl-[16rem] group-data-[collapsible=icon]/sidebar-wrapper:md:pl-[3rem] transition-[padding] duration-200 ease-linear">
-        {/* Mobile Header */}
         <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
           <div className="flex justify-start">
             <SidebarTrigger />
@@ -230,7 +228,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Desktop Header */}
         <header className="hidden md:flex h-14 items-center justify-between border-b bg-secondary px-6 sticky top-0 z-10">
              <span className="font-semibold text-primary">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
              <div className="flex items-center justify-end gap-4">
