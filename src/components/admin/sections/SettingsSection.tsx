@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useCallback, useMemo, type FC, useEffect } from 'react';
@@ -14,9 +15,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { Settings, Palette as PaletteIcon, Users, Contact, DollarSign, Percent, Search, CreditCard, Eye, Loader2 } from 'lucide-react';
+import { Settings, Palette as PaletteIcon, Users, Contact, DollarSign, Percent, Search, CreditCard, Eye, Loader2, RefreshCcw } from 'lucide-react';
 import { db } from '@/lib/firebase-client';
-import { collection, query, orderBy, limit, startAfter, getDocs, QueryDocumentSnapshot, DocumentData, Query, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, getDocs, QueryDocumentSnapshot, DocumentData, Query, where, doc, getDoc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 const USERS_PER_PAGE = 20;
 
@@ -71,6 +73,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
   // User list state
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [refreshingUserId, setRefreshingUserId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async (searchTerm: string) => {
     setIsLoadingUsers(true);
@@ -110,6 +113,30 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
   useEffect(() => {
     fetchUsers(debouncedSearchTerm);
   }, [debouncedSearchTerm, fetchUsers]);
+
+  const handleRefreshBalance = async (userId: string) => {
+    setRefreshingUserId(userId);
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            const updatedUser = { id: userDoc.id, ...userDoc.data() } as User;
+            setUsers(prevUsers => 
+                prevUsers.map(u => u.id === userId ? updatedUser : u)
+            );
+            toast({
+                title: 'Saldo Atualizado!',
+                description: `O saldo de ${updatedUser.username} foi sincronizado.`,
+            });
+        }
+    } catch (error) {
+        console.error('Error refreshing balance:', error);
+        toast({ title: 'Erro ao Atualizar', description: 'Não foi possível buscar o saldo mais recente.', variant: 'destructive' });
+    } finally {
+        setRefreshingUserId(null);
+    }
+  };
+
 
   const handleSaveLottery = () => {
     const price = parseFloat(ticketPriceInput);
@@ -317,8 +344,21 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                                 {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </Badge>
                             </TableCell>
-                            <TableCell className="text-center font-mono text-yellow-600 dark:text-yellow-400">
-                            R$ {(user.saldo || 0).toFixed(2).replace('.', ',')}
+                            <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                    <span className="font-mono text-yellow-600 dark:text-yellow-400">
+                                        R$ {(user.saldo || 0).toFixed(2).replace('.', ',')}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground"
+                                        onClick={() => handleRefreshBalance(user.id)}
+                                        disabled={refreshingUserId === user.id}
+                                    >
+                                        <RefreshCcw className={cn("h-4 w-4", refreshingUserId === user.id && "animate-spin")} />
+                                    </Button>
+                                </div>
                             </TableCell>
                             <TableCell className="text-center font-medium">
                             {getUserActiveTicketsCount(user)}
