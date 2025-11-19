@@ -16,9 +16,27 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { Settings, Palette as PaletteIcon, Users, Contact, DollarSign, Percent, Search, CreditCard, Eye, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase-client';
-import { collection, query, orderBy, limit, startAfter, getDocs, QueryDocumentSnapshot, DocumentData, Query } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, getDocs, QueryDocumentSnapshot, DocumentData, Query, where } from 'firebase/firestore';
 
-const USERS_PER_PAGE = 15;
+const USERS_PER_PAGE = 20;
+
+// Custom hook for debouncing
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 
 interface SettingsSectionProps {
   lotteryConfig: LotteryConfig;
@@ -46,58 +64,52 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
   const [clientSalesCommissionInput, setClientSalesCommissionInput] = useState(lotteryConfig.clientSalesCommissionToOwnerPercentage.toString());
   const [whatsappInput, setWhatsappInput] = useState(creditRequestConfig.whatsappNumber);
   const [pixKeyInput, setPixKeyInput] = useState(creditRequestConfig.pixKey);
+  
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(userSearchTerm, 300);
 
-  // Pagination state
+  // User list state
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const fetchUsers = useCallback(async (loadMore = false) => {
-    if (loadMore) {
-        setIsFetchingMore(true);
-    } else {
-        setIsLoadingUsers(true);
-    }
-    
+  const fetchUsers = useCallback(async (searchTerm: string) => {
+    setIsLoadingUsers(true);
     try {
         let q: Query<DocumentData>;
         const usersCollectionRef = collection(db, 'users');
 
-        if (loadMore && lastVisible) {
-            q = query(usersCollectionRef, orderBy("username"), startAfter(lastVisible), limit(USERS_PER_PAGE));
+        if (searchTerm) {
+            // Firestore does not support case-insensitive search natively.
+            // A common approach is to search for a range.
+            const endTerm = searchTerm.toLowerCase() + '\uf8ff';
+            q = query(
+                usersCollectionRef, 
+                where("username", ">=", searchTerm),
+                where("username", "<=", endTerm),
+                orderBy("username"), 
+                limit(USERS_PER_PAGE)
+            );
         } else {
+            // Default query: fetches initial set of users ordered by username
             q = query(usersCollectionRef, orderBy("username"), limit(USERS_PER_PAGE));
         }
         
         const documentSnapshots = await getDocs(q);
-
-        const newUsers = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        
-        setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1] || null);
-        setHasMore(newUsers.length === USERS_PER_PAGE);
-
-        if (loadMore) {
-            setUsers(prev => [...prev, ...newUsers]);
-        } else {
-            setUsers(newUsers);
-        }
+        const fetchedUsers = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(fetchedUsers);
 
     } catch (error) {
         console.error("Error fetching users: ", error);
         toast({ title: "Erro ao Carregar Usuários", description: "Não foi possível buscar a lista de usuários.", variant: "destructive" });
     } finally {
         setIsLoadingUsers(false);
-        setIsFetchingMore(false);
     }
-  }, [toast, lastVisible]);
+  }, [toast]);
 
+  // Effect to trigger fetch when debounced search term changes
   useEffect(() => {
-    fetchUsers(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchUsers(debouncedSearchTerm);
+  }, [debouncedSearchTerm, fetchUsers]);
 
   const handleSaveLottery = () => {
     const price = parseFloat(ticketPriceInput);
@@ -141,15 +153,6 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
     const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
     return allTickets.filter(t => t.status === 'active' && t[idField] === user.id).length;
   }, [allTickets]);
-
-  const filteredUsers = useMemo(() => {
-    if (!userSearchTerm) {
-      return users;
-    }
-    return users.filter(user =>
-      user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
-    );
-  }, [users, userSearchTerm]);
 
   return (
     <section aria-labelledby="lottery-settings-heading">
@@ -273,7 +276,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                   <div className="mb-4 relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                      placeholder="Pesquisar por nome de usuário (na lista carregada)..."
+                      placeholder="Pesquisar por nome de usuário..."
                       value={userSearchTerm}
                       onChange={(e) => setUserSearchTerm(e.target.value)}
                       className="pl-10 h-10 w-full"
@@ -283,7 +286,10 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
               <CardContent>
               <ScrollArea className="h-96">
                 {isLoadingUsers ? (
-                  <p className="text-center text-muted-foreground py-10">Carregando usuários...</p>
+                  <div className="flex items-center justify-center text-muted-foreground py-10">
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <span>Carregando usuários...</span>
+                  </div>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -296,7 +302,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredUsers.length > 0 ? filteredUsers.map(user => (
+                        {users.length > 0 ? users.map(user => (
                         <TableRow key={user.id}>
                             <TableCell>
                             <div className="flex items-center gap-3">
@@ -333,7 +339,7 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                                 <TableCell colSpan={5} className="h-24 text-center">
                                     <p className="text-lg text-muted-foreground">Nenhum usuário encontrado.</p>
                                     <p className="text-sm text-muted-foreground/80">
-                                      {userSearchTerm ? 'Tente um termo de busca diferente.' : 'Nenhum usuário registrado ainda.'}
+                                      {debouncedSearchTerm ? 'Tente um termo de busca diferente.' : 'Nenhum usuário registrado ainda.'}
                                   </p>
                                 </TableCell>
                             </TableRow>
@@ -343,23 +349,6 @@ export const SettingsSection: FC<SettingsSectionProps> = ({
                 )}
               </ScrollArea>
               </CardContent>
-              {hasMore && !userSearchTerm && (
-                  <CardFooter className="pt-4 justify-center">
-                      <Button
-                          onClick={() => fetchUsers(true)}
-                          disabled={isFetchingMore}
-                      >
-                          {isFetchingMore ? (
-                              <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Carregando...
-                              </>
-                          ) : (
-                              'Carregar Mais Usuários'
-                          )}
-                      </Button>
-                  </CardFooter>
-              )}
             </Card>
         </TabsContent>
         <TabsContent value="contato" className="mt-6">
