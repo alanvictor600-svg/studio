@@ -175,13 +175,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col flex-1 min-h-screen">
-        <header className="flex h-14 items-center justify-between border-b bg-secondary px-4 sticky top-0 z-10 md:hidden">
-            {/* Left Section - Contains the sidebar trigger */}
-            <div className="flex items-center">
+        <header className="relative flex h-16 items-center border-b bg-secondary px-4 sticky top-0 z-10 md:hidden">
+            {/* Left Section: Menu Trigger */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <SidebarTrigger />
             </div>
 
-            {/* Center Section - Contains the logo and title */}
+            {/* Center Section: Logo and Title */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-2">
                     <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
@@ -189,8 +189,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 </Link>
             </div>
             
-            {/* Right Section - Contains actions like cart and theme toggle */}
-            <div className="flex items-center justify-end gap-2">
+            {/* Right Section: Actions */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 {currentUser.role === 'cliente' && !isDataLoading && (
                     <ShoppingCart 
                         cart={cart}
@@ -258,3 +258,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </SidebarProvider>
   );
 }
+
