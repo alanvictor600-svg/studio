@@ -20,10 +20,10 @@ const withPWA = require('next-pwa')({
     },
     {
       urlPattern: /\.(?:js|css)$/i,
-      handler: 'NetworkFirst', // Changed from StaleWhileRevalidate to NetworkFirst
+      handler: 'NetworkFirst', // Revertido para NetworkFirst para priorizar conteúdo novo
       options: {
         cacheName: 'static-resources',
-        networkTimeoutSeconds: 10, // Try the network for 10s, then fallback to cache
+        networkTimeoutSeconds: 10, // Tenta a rede por 10s, depois vai para o cache
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 dias
