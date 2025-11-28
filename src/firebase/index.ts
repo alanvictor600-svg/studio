@@ -5,7 +5,9 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 let app: FirebaseApp;
-if (!getApps().length) {
+
+// This check prevents initializing the app on the server or multiple times on the client.
+if (typeof window !== 'undefined' && !getApps().length) {
     app = initializeApp(firebaseConfig);
 } else {
     app = getApp();
