@@ -11,12 +11,11 @@ import {
     SidebarProvider, 
     SidebarTrigger, 
     SidebarContent, 
-    SidebarHeader,
+    SidebarHeader, 
     SidebarFooter, 
     SidebarMenu, 
     SidebarMenuItem, 
     SidebarMenuButton, 
-    SidebarInset,
     useSidebar,
     SidebarSeparator
 } from '@/components/ui/sidebar';
@@ -78,7 +77,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
     return () => {
       if (cleanupListenersRef.current) {
-        cleanupListenersref.current();
+        cleanupListenersRef.current();
         cleanupListenersRef.current = null;
       }
     };
@@ -118,7 +117,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (isAuthLoading || !isAuthenticated || !currentUser || currentUser.role !== role) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-background">
+      <div className="flex justify-center items-center h-full">
         <p className="text-foreground text-xl">Carregando painel...</p>
       </div>
     );
