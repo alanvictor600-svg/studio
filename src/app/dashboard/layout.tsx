@@ -34,6 +34,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const { setOpenMobile } = useSidebar();
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const { role } = params as { role: 'cliente' | 'vendedor' };
+  const cleanupListenersRef = useRef<(() => void) | null>(null);
 
   const { 
     cart, 
@@ -44,9 +49,41 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     isCreditsDialogOpen,
     setIsCreditsDialogOpen,
     receiptTickets,
-    setReceiptTickets
+    setReceiptTickets,
+    startDataListeners,
+    isDataLoading
   } = useDashboard();
   
+  useEffect(() => {
+    // This effect handles authentication and authorization for the dashboard.
+    if (isAuthLoading) {
+      return; // Don't do anything while auth state is resolving.
+    }
+
+    if (!isAuthenticated) {
+      router.replace('/login?redirect=' + pathname);
+      return;
+    }
+
+    if (currentUser && currentUser.role !== role) {
+      router.replace(`/dashboard/${currentUser.role}`);
+    }
+  }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
+
+  // Effect to start/stop data listeners based on auth state
+  useEffect(() => {
+    if (isAuthenticated && currentUser && currentUser.role === role) {
+      cleanupListenersRef.current = startDataListeners(currentUser);
+    }
+
+    return () => {
+      if (cleanupListenersRef.current) {
+        cleanupListenersRef.current();
+        cleanupListenersRef.current = null;
+      }
+    };
+  }, [isAuthenticated, currentUser, role, startDataListeners]);
+
   const handleForceRefresh = async () => {
     setOpenMobile(false);
     toast({
@@ -79,8 +116,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
 
-  if (!currentUser) {
-    // This should ideally not be shown as loading.tsx will handle it, but it's a safe fallback.
+  if (isAuthLoading || !isAuthenticated || !currentUser) {
+    // This will be caught by loading.tsx, but it's a safe fallback.
     return null;
   }
 
@@ -223,44 +260,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const { role } = params as { role: 'cliente' | 'vendedor' };
-  const { currentUser, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const cleanupListenersRef = useRef<(() => void) | null>(null);
+  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
 
-  const { startDataListeners, isDataLoading } = useDashboard();
-
-  useEffect(() => {
-    if (isAuthLoading) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      router.replace('/login?redirect=' + pathname);
-      return;
-    }
-
-    if (currentUser && currentUser.role !== role) {
-      router.replace(`/dashboard/${currentUser.role}`);
-    }
-  }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
-
-  useEffect(() => {
-    if (isAuthenticated && currentUser && currentUser.role === role) {
-      cleanupListenersRef.current = startDataListeners(currentUser);
-    }
-
-    return () => {
-      if (cleanupListenersRef.current) {
-        cleanupListenersRef.current();
-        cleanupListenersRef.current = null;
-      }
-    };
-  }, [isAuthenticated, currentUser, role, startDataListeners]);
-
-  if (isAuthLoading || !isAuthenticated || isDataLoading) {
+  if (isAuthLoading || !isAuthenticated) {
     return (
        <div className="flex h-screen w-full items-center justify-center bg-background">
           {/* This content will be replaced by loading.tsx */}
