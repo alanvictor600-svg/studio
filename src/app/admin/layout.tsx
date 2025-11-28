@@ -75,8 +75,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
              <div className="flex flex-col">
-                <span className="text-lg font-semibold text-black dark:text-white">Bolão Potiguar</span>
-                <span className="text-xs text-black/80 dark:text-white/80 -mt-1">
+                <span className="text-lg font-semibold text-sidebar-foreground">Bolão Potiguar</span>
+                <span className="text-xs text-sidebar-foreground/80 -mt-1">
                   Painel de Administrador
                 </span>
              </div>
@@ -115,13 +115,13 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                       <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                           <Link href="/">
-                              <Home /> Página Inicial
+                              <Home /> <span>Página Inicial</span>
                           </Link>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                          <LogOut /> Sair da Conta
+                          <LogOut /> <span>Sair da Conta</span>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
             </SidebarMenu>

@@ -126,8 +126,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
                         <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
                         <div className="flex flex-col">
-                            <span className="text-lg font-semibold text-black dark:text-white">Bolão Potiguar</span>
-                            <span className="text-xs text-black/80 dark:text-white/80 -mt-1">
+                            <span className="text-lg font-semibold text-sidebar-foreground">Bolão Potiguar</span>
+                            <span className="text-xs text-sidebar-foreground/80 -mt-1">
                                 Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
                             </span>
                         </div>
@@ -155,7 +155,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                            <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
                                 <Link href={dashboardPath}>
                                     <LayoutDashboard />
-                                    Meu Painel
+                                    <span>Meu Painel</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -163,7 +163,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
                                 <Link href="/solicitar-saldo">
-                                    <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
+                                    <Coins className="mr-2 h-5 w-5" /> 
+                                    <span>Adquirir Saldo</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -173,19 +174,20 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton onClick={handleForceRefresh} variant="outline">
-                                 <RefreshCw className="mr-2 h-4 w-4" /> Atualizar Bolão
+                                 <RefreshCw className="mr-2 h-4 w-4" /> 
+                                 <span>Atualizar Bolão</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild>
                                 <Link href="/">
-                                    <Home /> Página Inicial
+                                    <Home /> <span>Página Inicial</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                 <LogOut /> Sair da Conta
+                                 <LogOut /> <span>Sair da Conta</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
