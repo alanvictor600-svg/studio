@@ -490,14 +490,6 @@ const SidebarMenuButton = React.forwardRef<
     const { isMobile, state } = useSidebar()
     const isCollapsed = state === "collapsed"
 
-    // If 'asChild' is true, we must wrap children in a single element.
-    // If not, we can render the button directly with its children.
-    const content = asChild ? (
-      <Slot>{children}</Slot>
-    ) : (
-      <>{children}</>
-    );
-
     const button = (
       <Comp
         ref={ref}
@@ -507,7 +499,7 @@ const SidebarMenuButton = React.forwardRef<
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         {...props}
       >
-        {content}
+        {children}
         {isCollapsed && tooltip && typeof tooltip === 'string' && <span className="sr-only">{tooltip}</span>}
       </Comp>
     );
