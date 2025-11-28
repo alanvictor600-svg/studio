@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -115,11 +116,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 
   if (isAuthLoading || !isAuthenticated || !currentUser || isDataLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background">
-         <p className="text-foreground text-xl">Carregando painel...</p>
-      </div>
-    );
+    // A tela de carregamento é gerenciada pelo loading.tsx
+    return null;
   }
 
   const dashboardPath = `/dashboard/${currentUser.role}`;
@@ -168,7 +166,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
                         <Link href="/solicitar-saldo">
-                            <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
+                           <>
+                             <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
+                           </>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -185,7 +185,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                       <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                           <Link href="/">
+                            <>
                               <Home /> Página Inicial
+                            </>
                           </Link>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -202,7 +204,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarContent>
       </Sidebar>
       
-      <div className="flex flex-1 flex-col md:pl-[16rem] group-data-[collapsible=icon]/sidebar-wrapper:md:pl-[3rem] transition-[padding] duration-200 ease-linear">
+      <div className="flex flex-1 flex-col md:pl-[16rem] transition-[padding] duration-200 ease-linear">
         <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
           <div className="flex justify-start">
             <SidebarTrigger />
