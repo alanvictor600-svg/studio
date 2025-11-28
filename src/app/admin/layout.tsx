@@ -126,9 +126,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                       <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                           <Link href="/">
-                            <>
                               <Home /> Página Inicial
-                            </>
                           </Link>
                       </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -32,10 +32,6 @@ import { useToast } from '@/hooks/use-toast';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const { role } = params as { role: 'cliente' | 'vendedor' };
   const { setOpenMobile } = useSidebar();
   const { toast } = useToast();
 
@@ -48,41 +44,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     isCreditsDialogOpen,
     setIsCreditsDialogOpen,
     receiptTickets,
-    setReceiptTickets,
-    startDataListeners,
-    isDataLoading
+    setReceiptTickets
   } = useDashboard();
   
-  const cleanupListenersRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    if (isAuthLoading) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      router.replace('/login?redirect=' + pathname);
-      return;
-    }
-
-    if (currentUser && currentUser.role !== role) {
-      router.replace(`/dashboard/${currentUser.role}`);
-    }
-  }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
-
-  useEffect(() => {
-    if (isAuthenticated && currentUser && currentUser.role === role) {
-      cleanupListenersRef.current = startDataListeners(currentUser);
-    }
-
-    return () => {
-      if (cleanupListenersRef.current) {
-        cleanupListenersRef.current();
-        cleanupListenersRef.current = null;
-      }
-    };
-  }, [isAuthenticated, currentUser, role, startDataListeners]);
-
   const handleForceRefresh = async () => {
     setOpenMobile(false);
     toast({
@@ -115,8 +79,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
 
-  if (isAuthLoading || !isAuthenticated || !currentUser || isDataLoading) {
-    // A tela de carregamento é gerenciada pelo loading.tsx
+  if (!currentUser) {
+    // This should ideally not be shown as loading.tsx will handle it, but it's a safe fallback.
     return null;
   }
 
@@ -155,7 +119,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                    <SidebarMenuButton asChild isActive={usePathname() === dashboardPath} onClick={() => setOpenMobile(false)}>
                         <Link href={dashboardPath}>
                             <LayoutDashboard />
                             Meu Painel
@@ -166,45 +130,36 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
                         <Link href="/solicitar-saldo">
-                           <>
                              <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
-                           </>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
+                 <SidebarMenuItem>
                     <SidebarMenuButton onClick={handleForceRefresh} variant="outline" className="h-12 text-base">
                         <RefreshCw className="mr-2 h-5 w-5" /> Atualizar Bolão
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
+                        <Link href="/">
+                            <Home /> Página Inicial
+                        </Link>
+                    </SidebarMenuButton>
+                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                        <LogOut /> Sair da Conta
+                    </SidebarMenuButton>
+                 </SidebarMenuItem>
             </SidebarMenu>
             
-            <div className="mt-auto">
-              <SidebarMenu>
-                  <SidebarSeparator className="my-2" />
-                  <SidebarMenuItem>
-                      <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                          <Link href="/">
-                            <>
-                              <Home /> Página Inicial
-                            </>
-                          </Link>
-                      </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                          <LogOut /> Sair da Conta
-                      </SidebarMenuButton>
-                  </SidebarMenuItem>
-              </SidebarMenu>
-              <div className="flex items-center justify-center p-2">
-                  <ThemeToggleButton />
-              </div>
+            <div className="mt-auto flex items-center justify-center p-2">
+              <ThemeToggleButton />
             </div>
         </SidebarContent>
       </Sidebar>
       
-      <div className="flex flex-1 flex-col md:pl-[16rem] transition-[padding] duration-200 ease-linear">
+      <div className="flex flex-1 flex-col md:pl-64">
         <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
           <div className="flex justify-start">
             <SidebarTrigger />
@@ -268,6 +223,51 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const { role } = params as { role: 'cliente' | 'vendedor' };
+  const { currentUser, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const cleanupListenersRef = useRef<(() => void) | null>(null);
+
+  const { startDataListeners, isDataLoading } = useDashboard();
+
+  useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      router.replace('/login?redirect=' + pathname);
+      return;
+    }
+
+    if (currentUser && currentUser.role !== role) {
+      router.replace(`/dashboard/${currentUser.role}`);
+    }
+  }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
+
+  useEffect(() => {
+    if (isAuthenticated && currentUser && currentUser.role === role) {
+      cleanupListenersRef.current = startDataListeners(currentUser);
+    }
+
+    return () => {
+      if (cleanupListenersRef.current) {
+        cleanupListenersRef.current();
+        cleanupListenersRef.current = null;
+      }
+    };
+  }, [isAuthenticated, currentUser, role, startDataListeners]);
+
+  if (isAuthLoading || !isAuthenticated || isDataLoading) {
+    return (
+       <div className="flex h-screen w-full items-center justify-center bg-background">
+          {/* This content will be replaced by loading.tsx */}
+       </div>
+    );
+  }
+  
   return (
     <SidebarProvider>
       <DashboardProvider>
