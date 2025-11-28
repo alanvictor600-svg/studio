@@ -55,9 +55,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   } = useDashboard();
   
   useEffect(() => {
-    // This effect handles authentication and authorization for the dashboard.
     if (isAuthLoading) {
-      return; // Don't do anything while auth state is resolving.
+      return; 
     }
 
     if (!isAuthenticated) {
@@ -70,7 +69,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
 
-  // Effect to start/stop data listeners based on auth state
   useEffect(() => {
     if (isAuthenticated && currentUser && currentUser.role === role) {
       cleanupListenersRef.current = startDataListeners(currentUser);
@@ -117,14 +115,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 
   if (isAuthLoading || !isAuthenticated || !currentUser) {
-    // This will be caught by loading.tsx, but it's a safe fallback.
     return null;
   }
 
   const dashboardPath = `/dashboard/${currentUser.role}`;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen">
       <Sidebar>
         <SidebarHeader>
           <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
@@ -240,7 +237,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
         </header>
 
-        <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900">
+        <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900 overflow-y-auto">
            {children}
         </main>
       </div>
