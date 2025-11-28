@@ -78,7 +78,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
     return () => {
       if (cleanupListenersRef.current) {
-        cleanupListenersRef.current();
+        cleanupListenersref.current();
         cleanupListenersRef.current = null;
       }
     };
