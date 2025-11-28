@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -115,18 +114,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
 
-  // Render the skeleton layout immediately. 
-  // The `loading.tsx` file will be shown by Next.js in the `{children}` slot.
   if (isAuthLoading || !isAuthenticated || !currentUser) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <div className="hidden md:block w-64 border-r"></div>
-        <div className="flex-1 flex flex-col">
-          <div className="h-14 border-b"></div>
-          <main className="flex-1 flex items-center justify-center">
-             <p className="text-foreground text-xl">Verificando acesso...</p>
-          </main>
-        </div>
+      <div className="flex justify-center items-center min-h-screen bg-background">
+         <p className="text-foreground text-xl">Verificando acesso...</p>
       </div>
     );
   }
@@ -135,128 +126,127 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader>
-            <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
-              <div className="flex flex-col">
-                  <span className="text-lg font-semibold text-black dark:text-white">Bolão Potiguar</span>
-                  <span className="text-xs text-black/80 dark:text-white/80 -mt-1">
-                    Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
-                  </span>
-              </div>
-            </Link>
-          </SidebarHeader>
-          <SidebarContent className="flex flex-col p-2">
-              <div className="mb-4 p-3 rounded-lg bg-sidebar-accent/50 text-sidebar-accent-foreground">
-                  <div className="text-sm font-medium">Bem-vindo(a)!</div>
-                  <div className="text-lg font-bold flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                          <AvatarFallback>{currentUser.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <span className="truncate">{currentUser.username}</span>
-                  </div>
-                  <SidebarSeparator className="my-2 bg-sidebar-border" />
-                  <div className="text-sm font-medium">Seu Saldo:</div>
-                  <div className="text-2xl font-bold text-yellow-400 flex items-center gap-1.5">
-                      <Coins size={22} />
-                      <span>R$ {(currentUser.saldo || 0).toFixed(2).replace('.', ',')}</span>
-                  </div>
-              </div>
+      <Sidebar>
+        <SidebarHeader>
+          <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
+            <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
+            <div className="flex flex-col">
+                <span className="text-lg font-semibold text-black dark:text-white">Bolão Potiguar</span>
+                <span className="text-xs text-black/80 dark:text-white/80 -mt-1">
+                  Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
+                </span>
+            </div>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent className="flex flex-col p-2">
+            <div className="mb-4 p-3 rounded-lg bg-sidebar-accent/50 text-sidebar-accent-foreground">
+                <div className="text-sm font-medium">Bem-vindo(a)!</div>
+                <div className="text-lg font-bold flex items-center gap-2">
+                    <Avatar className="h-7 w-7">
+                        <AvatarFallback>{currentUser.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{currentUser.username}</span>
+                </div>
+                <SidebarSeparator className="my-2 bg-sidebar-border" />
+                <div className="text-sm font-medium">Seu Saldo:</div>
+                <div className="text-2xl font-bold text-yellow-400 flex items-center gap-1.5">
+                    <Coins size={22} />
+                    <span>R$ {(currentUser.saldo || 0).toFixed(2).replace('.', ',')}</span>
+                </div>
+            </div>
 
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                        <Link href={dashboardPath}>
+                            <LayoutDashboard />
+                            Meu Painel
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
+                        <Link href="/solicitar-saldo">
+                            <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton onClick={handleForceRefresh} variant="outline" className="h-12 text-base">
+                        <RefreshCw className="mr-2 h-5 w-5" /> Atualizar Bolão
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+            
+            <div className="mt-auto">
               <SidebarMenu>
+                  <SidebarSeparator className="my-2" />
                   <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                          <Link href={dashboardPath}>
-                              <LayoutDashboard />
-                              Meu Painel
-                          </Link>
-                      </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  
-                  <SidebarMenuItem>
-                      <SidebarMenuButton asChild className="bg-green-500/80 text-white hover:bg-green-600/90 font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                          <Link href="/solicitar-saldo">
-                              <Coins className="mr-2 h-5 w-5" /> Adquirir Saldo
+                      <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
+                          <Link href="/">
+                              <Home /> Página Inicial
                           </Link>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                      <SidebarMenuButton onClick={handleForceRefresh} variant="outline" className="h-12 text-base">
-                          <RefreshCw className="mr-2 h-5 w-5" /> Atualizar Bolão
+                      <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                          <LogOut /> Sair da Conta
                       </SidebarMenuButton>
                   </SidebarMenuItem>
               </SidebarMenu>
-              
-              <div className="mt-auto">
-                <SidebarMenu>
-                    <SidebarSeparator className="my-2" />
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                            <Link href="/">
-                                <Home /> Página Inicial
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                            <LogOut /> Sair da Conta
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-                <div className="flex items-center justify-center p-2">
-                    <ThemeToggleButton />
-                </div>
+              <div className="flex items-center justify-center p-2">
+                  <ThemeToggleButton />
               </div>
-          </SidebarContent>
-        </Sidebar>
-        
-        <div className="flex flex-1 flex-col md:pl-[16rem] group-data-[collapsible=icon]/sidebar-wrapper:md:pl-[3rem] transition-[padding] duration-200 ease-linear">
-          <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
-            <div className="flex justify-start">
-              <SidebarTrigger />
             </div>
-            <div className="flex justify-center">
-              <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-2">
-                <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
-              </Link>
-            </div>
-            <div className="flex items-center justify-end">
-              {currentUser.role === 'cliente' && (
-                <ShoppingCart 
-                    cart={cart}
-                    currentUser={currentUser}
-                    lotteryConfig={lotteryConfig}
-                    isSubmitting={isSubmitting}
-                    onPurchase={handlePurchaseCart}
-                    onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
-                />
-              )}
-            </div>
-          </header>
+        </SidebarContent>
+      </Sidebar>
+      
+      <div className="flex flex-1 flex-col md:pl-[16rem] group-data-[collapsible=icon]/sidebar-wrapper:md:pl-[3rem] transition-[padding] duration-200 ease-linear">
+        <header className="sticky top-0 z-10 grid h-16 grid-cols-3 items-center border-b bg-secondary px-2 md:hidden">
+          <div className="flex justify-start">
+            <SidebarTrigger />
+          </div>
+          <div className="flex justify-center">
+            <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
+            </Link>
+          </div>
+          <div className="flex items-center justify-end">
+            {currentUser.role === 'cliente' && (
+              <ShoppingCart 
+                  cart={cart}
+                  currentUser={currentUser}
+                  lotteryConfig={lotteryConfig}
+                  isSubmitting={isSubmitting}
+                  onPurchase={handlePurchaseCart}
+                  onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
+              />
+            )}
+          </div>
+        </header>
 
-          <header className="hidden md:flex h-14 items-center justify-between border-b bg-secondary px-6 sticky top-0 z-10">
-              <span className="font-semibold text-primary">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
-              <div className="flex items-center justify-end gap-4">
-                  {currentUser.role === 'cliente' && (
-                      <ShoppingCart 
-                          cart={cart}
-                          currentUser={currentUser}
-                          lotteryConfig={lotteryConfig}
-                          isSubmitting={isSubmitting}
-                          onPurchase={handlePurchaseCart}
-                          onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
-                      />
-                  )}
-              </div>
-          </header>
+        <header className="hidden md:flex h-14 items-center justify-between border-b bg-secondary px-6 sticky top-0 z-10">
+            <span className="font-semibold text-primary">{currentUser.role === 'cliente' ? 'Painel do Cliente' : 'Painel do Vendedor'}</span>
+            <div className="flex items-center justify-end gap-4">
+                {currentUser.role === 'cliente' && (
+                    <ShoppingCart 
+                        cart={cart}
+                        currentUser={currentUser}
+                        lotteryConfig={lotteryConfig}
+                        isSubmitting={isSubmitting}
+                        onPurchase={handlePurchaseCart}
+                        onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
+                    />
+                )}
+            </div>
+        </header>
 
-          <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900">
-             {children}
-          </main>
-        </div>
-      </SidebarProvider>
+        <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900">
+           {children}
+        </main>
+      </div>
+
       <InsufficientCreditsDialog
           isOpen={isCreditsDialogOpen}
           onOpenChange={setIsCreditsDialogOpen}
@@ -277,8 +267,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </DashboardProvider>
+    <SidebarProvider>
+      <DashboardProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </DashboardProvider>
+    </SidebarProvider>
   );
 }
