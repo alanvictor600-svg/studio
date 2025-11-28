@@ -220,7 +220,7 @@ const Sidebar = React.forwardRef<
       <aside
         ref={ref}
         className={cn(
-            "hidden md:flex flex-col fixed inset-y-0 z-20 h-full transition-[width] duration-200 ease-linear",
+            "hidden md:flex flex-col h-full transition-[width] duration-200 ease-linear",
             "bg-sidebar text-sidebar-foreground border-r border-sidebar-border",
             side === "right" && "border-r-0 border-l",
             state === "expanded" && "w-[--sidebar-width]",
@@ -305,7 +305,7 @@ const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 mt-auto", className)}
       {...props}
     />
   )
@@ -467,7 +467,7 @@ const sidebarMenuButtonVariants = cva(
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<"button"> & {
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
@@ -490,19 +490,27 @@ const SidebarMenuButton = React.forwardRef<
     const { isMobile, state } = useSidebar()
     const isCollapsed = state === "collapsed"
 
+    // If 'asChild' is true, we must wrap children in a single element.
+    // If not, we can render the button directly with its children.
+    const content = asChild ? (
+      <Slot>{children}</Slot>
+    ) : (
+      <>{children}</>
+    );
+
     const button = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         {...props}
       >
-        {children}
-        {isCollapsed && <span className="sr-only">{typeof tooltip === 'string' ? tooltip : ''}</span>}
+        {content}
+        {isCollapsed && tooltip && typeof tooltip === 'string' && <span className="sr-only">{tooltip}</span>}
       </Comp>
-    )
+    );
 
     if (!tooltip || !isCollapsed) {
       return button

@@ -1,9 +1,9 @@
 
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, Suspense } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { User, LotteryConfig } from '@/types';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase-client';
@@ -32,42 +32,14 @@ const sanitizeUsernameForEmail = (username: string) => {
     return username.trim().toLowerCase();
 };
 
-// Componente filho para lidar com a lógica de redirecionamento.
-// Ele usa os hooks de navegação e será envolto em Suspense.
-function AuthRedirectHandler() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { isLoading, isAuthenticated, currentUser } = useAuth();
-
-  useEffect(() => {
-    if (isLoading) {
-      return; // Do nothing while loading
-    }
-    
-    if (isAuthenticated && currentUser) {
-      const isAuthPage = pathname === '/login' || pathname === '/cadastrar';
-      if (isAuthPage) {
-        const redirectPath = searchParams.get('redirect');
-        const targetDashboardPath = redirectPath || (currentUser.role === 'admin' ? '/admin' : `/dashboard/${currentUser.role}`);
-        router.replace(targetDashboardPath);
-      }
-    }
-  }, [isLoading, isAuthenticated, currentUser, pathname, router, searchParams]);
-
-  return null; // Este componente não renderiza nada na UI.
-}
-
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, authLoading, authError] = useAuthState(auth);
   const [isFirestoreLoading, setIsFirestoreLoading] = useState(true);
-  const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig | null>(null); // State for lottery config
+  const [lotteryConfig, setLotteryConfig] = useState<LotteryConfig | null>(null);
   const router = useRouter();
   const { toast } = useToast();
   
-  // State for the new user registration flow
   const [isRoleSelectionOpen, setIsRoleSelectionOpen] = useState(false);
   const [pendingGoogleUser, setPendingGoogleUser] = useState<FirebaseUser | null>(null);
 
@@ -83,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
-              // This case will now be handled by the role selection flow for new Google users
               if (!isRoleSelectionOpen) {
                   setCurrentUser(null);
               }
@@ -103,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsFirestoreLoading(false);
     }
 
-    // Listener for lottery configuration
     const configDocRef = doc(db, 'configs', 'global');
     const configUnsubscribe = onSnapshot(configDocRef, (doc) => {
         if (doc.exists()) {
@@ -122,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      const fakeEmail = `${emailUsername}@bolao.potiguar`;
      try {
         await signInWithEmailAndPassword(auth, fakeEmail, passwordAttempt);
-        // Redirection is now handled by the AuthRedirectHandler component
      } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             toast({ title: "Erro de Login", description: "Usuário ou senha incorretos.", variant: "destructive" });
@@ -171,7 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // If a role is provided (from /cadastrar page), create user directly.
           if (role) {
              const newUser: User = {
                 id: user.uid,
@@ -183,12 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
           } else {
-            // If no role is provided (from /login page), open the role selection dialog.
             setPendingGoogleUser(user);
             setIsRoleSelectionOpen(true);
           }
         }
-        // If user already exists, redirection is handled by the useEffect.
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
@@ -253,9 +219,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      <Suspense>
-        <AuthRedirectHandler />
-      </Suspense>
       {children}
        <RoleSelectionDialog
         isOpen={isRoleSelectionOpen}

@@ -3,10 +3,10 @@
 
 import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib/lottery-utils';
 import { NumberButton } from '@/components/number-button';
-import { X, Sparkles, Trash2, PauseCircle, PlusCircle } from 'lucide-react';
+import { Sparkles, Trash2, PlusCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { SelectedNumberBadge } from '@/components/selected-number-badge';
 
@@ -92,21 +92,18 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
                   <Button variant="destructive" onClick={handleClearSelection} className="h-11 text-base shadow-md" disabled={isSubmitting || currentPicks.length === 0}>
                       <Trash2 className="mr-2 h-4 w-4" /> Limpar
                   </Button>
-                  <Button 
-                    onClick={handleAddTicketToCart} 
-                    className="h-auto py-3 bg-green-600 hover:bg-green-700 text-white shadow-lg text-base flex-wrap" 
-                    disabled={isSubmitting || currentPicks.length !== MAX_PICKS}
-                  >
-                      <PlusCircle className="mr-2 h-5 w-5" />
-                      <span className="sm:hidden">Add ao carrinho</span>
-                      <span className="hidden sm:inline">Adicionar ao Carrinho</span>
+                  <Button variant="outline" onClick={handleAutoFill} className="h-11 text-base shadow-sm" disabled={isSubmitting}>
+                      <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
                   </Button>
               </div>
-              <div className="flex justify-center">
-                 <Button variant="outline" onClick={handleAutoFill} className="h-11 text-base shadow-sm" disabled={isSubmitting}>
-                  <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
-              </Button>
-              </div>
+               <Button 
+                    onClick={handleAddTicketToCart} 
+                    className="w-full h-auto py-3 bg-green-600 hover:bg-green-700 text-white shadow-lg text-base" 
+                    disabled={isSubmitting || currentPicks.length !== MAX_PICKS}
+                >
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Adicionar ao Carrinho
+                </Button>
           </div>
         </div>
 
