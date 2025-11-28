@@ -114,10 +114,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
 
-  if (isAuthLoading || !isAuthenticated || !currentUser) {
+  if (isAuthLoading || !isAuthenticated || !currentUser || isDataLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
-         <p className="text-foreground text-xl">Verificando acesso...</p>
+         <p className="text-foreground text-xl">Carregando painel...</p>
       </div>
     );
   }

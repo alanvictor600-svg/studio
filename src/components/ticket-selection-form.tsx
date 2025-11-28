@@ -57,7 +57,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
     }
     onCartChange([...cart, currentPicks]);
     setCurrentPicks([]);
-    toast({ title: "Bilhete Adicionado ao Carrinho", description: "Sua seleção está pronta para ser comprada.", duration: 3000 });
+    toast({ title: "Bilhete Adicionado ao Carrinho", description: "Sua seleção está pronta para ser comprada.", className: "bg-primary text-primary-foreground", duration: 3000 });
   };
 
   const handleClearSelection = () => {
