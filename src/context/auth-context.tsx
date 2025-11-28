@@ -10,6 +10,8 @@ import { auth, db } from '@/lib/firebase-client';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { RoleSelectionDialog } from '@/components/role-selection-dialog';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 interface AuthContextType {
@@ -88,7 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             setIsFirestoreLoading(false);
         }, (error) => {
-            console.error("Error listening to user document:", error);
+            const contextualError = new FirestorePermissionError({
+              operation: 'get',
+              path: userDocRef.path,
+            });
+            console.error("Error listening to user document:", contextualError);
+            errorEmitter.emit('permission-error', contextualError);
             setIsFirestoreLoading(false);
         });
     } else {
