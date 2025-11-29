@@ -22,12 +22,18 @@ import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { SellerDashboardProvider, useSellerDashboard } from '@/context/seller-dashboard-context';
+import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
 
-// Componente de UI que acessa o contexto específico do vendedor
+
 function SellerDashboardUI({ children }: { children: React.ReactNode }) {
     const { currentUser, logout } = useAuth();
     const { setOpenMobile } = useSidebar();
-    const { isDataLoading } = useSellerDashboard();
+    const { 
+        isDataLoading,
+        receiptTickets,
+        setReceiptTickets,
+        lotteryConfig
+    } = useSellerDashboard();
     
     if (!currentUser) return null;
 
@@ -117,20 +123,28 @@ function SellerDashboardUI({ children }: { children: React.ReactNode }) {
                         <Image src="/logo.png" alt="Logo Bolão Potiguar" width={32} height={32} />
                     </Link>
                     
-                    {/* Placeholder for potential header actions */}
                     <div></div>
                 </header>
                 
                 <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900 overflow-y-auto">
                    {isDataLoading ? (
-                       <div className="flex justify-center items-center h-full text-white">Carregando dados...</div>
+                       <div className="flex justify-center items-center h-full text-white">Carregando dados do painel...</div>
                     ) : children}
                 </main>
             </div>
+             <TicketReceiptDialog
+                isOpen={!!receiptTickets}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setReceiptTickets(null);
+                    }
+                }}
+                tickets={receiptTickets}
+                lotteryConfig={lotteryConfig}
+            />
         </div>
     );
 }
-
 
 // Layout principal que gerencia o estado e a autenticação
 export default function VendedorLayout({ children }: { children: React.ReactNode }) {
@@ -154,7 +168,7 @@ export default function VendedorLayout({ children }: { children: React.ReactNode
     if (isLoading || !isAuthenticated || !currentUser || currentUser.role !== 'vendedor') {
         return (
             <div className="flex justify-center items-center h-screen bg-background">
-                <p className="text-xl">Carregando painel do vendedor...</p>
+                <p className="text-xl">Verificando acesso e carregando dados...</p>
             </div>
         );
     }

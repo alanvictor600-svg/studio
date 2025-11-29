@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { LotteryConfig, User, Ticket, Draw } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { createClientTicketsAction } from '@/app/actions/ticket';
@@ -46,7 +46,6 @@ export const ClientDashboardProvider = ({ children, user }: { children: ReactNod
 
     const [rawUserTickets, setRawUserTickets] = useState<Ticket[]>([]);
     const [allDraws, setAllDraws] = useState<Draw[]>([]);
-    const [isLotteryPaused, setIsLotteryPaused] = useState(false);
     const [isDataLoading, setIsDataLoading] = useState(true);
     
     const lastConfigVersion = useRef<number | undefined>(lotteryConfig.configVersion);
@@ -64,7 +63,10 @@ export const ClientDashboardProvider = ({ children, user }: { children: ReactNod
     }, [lotteryConfig.configVersion, toast]);
 
     useEffect(() => {
+        if (!user) return;
+
         setIsDataLoading(true);
+        const listeners: (() => void)[] = [];
         let loadedCount = 0;
         const totalListeners = 3;
 
@@ -75,36 +77,53 @@ export const ClientDashboardProvider = ({ children, user }: { children: ReactNod
             }
         };
 
-        const configDocRef = doc(db, 'configs', 'global');
-        const configUnsub = onSnapshot(configDocRef, (configDoc) => {
-            setLotteryConfig(prev => ({ ...prev, ...(configDoc.data() as LotteryConfig) }));
-            checkAllDataLoaded();
-        }, () => checkAllDataLoaded());
+        try {
+            const configDocRef = doc(db, 'configs', 'global');
+            const configUnsub = onSnapshot(configDocRef, (configDoc) => {
+                if (configDoc.exists()) {
+                    setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
+                }
+                checkAllDataLoaded();
+            }, () => {
+                console.error("Failed to load config.");
+                checkAllDataLoaded();
+            });
+            listeners.push(configUnsub);
 
-        const drawsQuery = query(collection(db, 'draws'));
-        const drawsUnsub = onSnapshot(drawsQuery, (drawsSnapshot) => {
-            setAllDraws(drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw)));
-            checkAllDataLoaded();
-        }, () => checkAllDataLoaded());
-        
-        const ticketsQuery = query(collection(db, 'tickets'), where('buyerId', '==', user.id));
-        const ticketsUnsub = onSnapshot(ticketsQuery, (ticketSnapshot) => {
-            setRawUserTickets(ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-            checkAllDataLoaded();
-        }, () => checkAllDataLoaded());
+            const drawsQuery = query(collection(db, 'draws'));
+            const drawsUnsub = onSnapshot(drawsQuery, (drawsSnapshot) => {
+                setAllDraws(drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw)));
+                checkAllDataLoaded();
+            }, () => {
+                console.error("Failed to load draws.");
+                checkAllDataLoaded();
+            });
+            listeners.push(drawsUnsub);
+            
+            const ticketsQuery = query(collection(db, 'tickets'), where('buyerId', '==', user.id));
+            const ticketsUnsub = onSnapshot(ticketsQuery, (ticketSnapshot) => {
+                setRawUserTickets(ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+                checkAllDataLoaded();
+            }, () => {
+                console.error("Failed to load user tickets.");
+                checkAllDataLoaded();
+            });
+            listeners.push(ticketsUnsub);
+
+        } catch (error) {
+            console.error("Error setting up Firestore listeners:", error);
+            setIsDataLoading(false);
+        }
 
         return () => {
-            configUnsub();
-            drawsUnsub();
-            ticketsUnsub();
+            listeners.forEach(unsub => unsub());
         };
     }, [user]);
 
     const userTickets = useMemo(() => updateTicketStatusesBasedOnDraws(rawUserTickets, allDraws), [rawUserTickets, allDraws]);
     
-    useEffect(() => {
-        const hasWinningTickets = userTickets.some(t => t.status === 'winning');
-        setIsLotteryPaused(hasWinningTickets);
+    const isLotteryPaused = useMemo(() => {
+        return userTickets.some(t => t.status === 'winning');
     }, [userTickets]);
 
     const showCreditsDialog = useCallback(() => setIsCreditsDialogOpen(true), []);

@@ -44,7 +44,7 @@ function ClientDashboardUI({ children }: { children: React.ReactNode }) {
         isDataLoading
     } = useClientDashboard();
 
-    if (!currentUser) return null;
+    if (!currentUser) return null; // Should not happen due to layout checks
 
     const dashboardPath = `/cliente`;
 
@@ -146,7 +146,7 @@ function ClientDashboardUI({ children }: { children: React.ReactNode }) {
                 
                 <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900 overflow-y-auto">
                    {isDataLoading ? (
-                        <div className="flex justify-center items-center h-full text-white">Carregando dados...</div>
+                        <div className="flex justify-center items-center h-full text-white">Carregando dados do painel...</div>
                     ) : children}
                 </main>
             </div>
@@ -189,11 +189,10 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
         }
     }, [isLoading, isAuthenticated, currentUser, router]);
 
-    // Mostra uma tela de carregamento enquanto a autenticação está em andamento ou se o usuário não está autorizado
     if (isLoading || !isAuthenticated || !currentUser || currentUser.role !== 'cliente') {
         return (
             <div className="flex justify-center items-center h-screen bg-background">
-                <p className="text-xl">Carregando painel do cliente...</p>
+                <p className="text-xl">Verificando acesso e carregando dados...</p>
             </div>
         );
     }
