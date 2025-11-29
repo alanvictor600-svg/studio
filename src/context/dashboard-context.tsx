@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useRef, useEffect } from 'react';
@@ -5,7 +6,7 @@ import type { LotteryConfig, User, Ticket, Draw } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createClientTicketsAction } from '@/app/actions/ticket';
-import { doc, onSnapshot, collection, query, where, Unsubscribe } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, Unsubscribe, Query } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -139,30 +140,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         });
 
         const ticketsCollectionRef = collection(db, 'tickets');
-        let ticketsQuery: Query | null = null;
+        const idField = user.role === 'cliente' ? 'buyerId' : 'sellerId';
+        const ticketsQuery = query(ticketsCollectionRef, where(idField, '==', user.id));
         
-        if (user.role === 'cliente') {
-            ticketsQuery = query(ticketsCollectionRef, where('buyerId', '==', user.id));
-        } else if (user.role === 'vendedor') {
-            ticketsQuery = query(ticketsCollectionRef, where('sellerId', '==', user.id));
-        }
-        
-        let ticketsUnsub: Unsubscribe | null = null;
-        if (ticketsQuery) {
-            ticketsUnsub = onSnapshot(ticketsQuery, (ticketSnapshot) => {
-                const userTicketsData = ticketSnapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setUserTickets(userTicketsData);
-                checkAllDataLoaded();
-            }, (error) => {
-                console.error("Error fetching user tickets: ", error);
-                checkAllDataLoaded();
-            });
-        } else {
-            setUserTickets([]);
+        const ticketsUnsub = onSnapshot(ticketsQuery, (ticketSnapshot) => {
+            const userTicketsData = ticketSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setUserTickets(userTicketsData);
             checkAllDataLoaded();
-        }
+        }, (error) => {
+            console.error("Error fetching user tickets: ", error);
+            checkAllDataLoaded();
+        });
 
         const allUnsubscribes = [configUnsub, drawsUnsub, ticketsUnsub].filter(Boolean) as Unsubscribe[];
         listenersRef.current = allUnsubscribes;
