@@ -18,9 +18,8 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { PauseCircle } from 'lucide-react';
 
 
-export default function DashboardPage() {
-  const params = useParams();
-  const { role } = params as { role: 'cliente' | 'vendedor' };
+export default function DashboardPage({ params }: { params: { role: 'cliente' | 'vendedor' } }) {
+  const { role } = params;
   const { currentUser, isLoading: isAuthLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
