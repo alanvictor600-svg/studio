@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig, RankedTicket } from '@/types';
+import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { CreditManagementDialog } from '@/components/credit-management-dialog';
@@ -55,7 +55,6 @@ function AdminPageContent() {
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   
-  const [allUsers, setAllUsers] = useState<User[]>([]); // Now primarily used for `startNewLottery`
   const [userToView, setUserToView] = useState<User | null>(null);
   const [isUserViewDialogOpen, setIsUserViewDialogOpen] = useState(false);
   const [userToManageCredits, setUserToManageCredits] = useState<User | null>(null);
@@ -378,7 +377,7 @@ function AdminPageContent() {
         );
       case 'ranking-ciclo':
         return (
-          <CycleRankingSection rankedTickets={cycleRanking} draws={draws} />
+          <CycleRankingSection rankedTickets={cycleRanking} />
         );
       default:
         return null;

@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useMemo, type FC } from 'react';
+import { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Copy } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { RankedTicket, Draw } from '@/types';
+import type { RankedTicket } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
@@ -15,10 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 
 interface CycleRankingSectionProps {
   rankedTickets: RankedTicket[];
-  draws: Draw[];
 }
 
-export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTickets, draws }) => {
+export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTickets }) => {
   const { toast } = useToast();
 
   const handleCopyToClipboard = () => {

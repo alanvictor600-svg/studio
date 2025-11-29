@@ -1,11 +1,12 @@
+
 "use client";
 
 import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib/lottery-utils';
 import { NumberButton } from '@/components/number-button';
-import { X, Sparkles, Trash2, PauseCircle, PlusCircle } from 'lucide-react';
+import { Sparkles, Trash2, PlusCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { SelectedNumberBadge } from './selected-number-badge';
 
@@ -65,7 +66,7 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-xl bg-card/80 backdrop-blur-sm">
+    <>
       <CardHeader>
         <CardTitle className="text-2xl text-center font-bold text-primary">Monte Seu Bilhete</CardTitle>
         <CardDescription className="text-center text-muted-foreground">
@@ -119,6 +120,6 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </>
   );
 };

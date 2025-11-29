@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import type { User, LotteryConfig } from '@/types';
+import type { User } from '@/types';
 import Link from 'next/link';
 
 import { 
@@ -22,10 +22,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Ticket, Home, User as UserIcon, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, TrendingUp } from 'lucide-react';
+import { LogOut, Home, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { Separator } from '@/components/ui/separator';
 import { SuspenseWrapper } from '@/components/suspense-wrapper';
 
 const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
