@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -492,6 +491,7 @@ const SidebarMenuButton = React.forwardRef<
     const isCollapsed = state === "collapsed"
 
     const buttonContent = (
+      // This div is the key fix. It wraps all children, so `Comp` always receives a single child.
       <div className="flex items-center gap-2 [&>svg]:size-4 [&>svg]:shrink-0">
         {children}
       </div>
@@ -703,5 +703,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    

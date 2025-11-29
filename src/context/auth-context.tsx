@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -44,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingGoogleUser, setPendingGoogleUser] = useState<FirebaseUser | null>(null);
 
   const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
-  const isLoading = authLoading || (!!firebaseUser && !currentUser && isFirestoreLoading);
+  const isLoading = authLoading || isFirestoreLoading;
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
@@ -237,5 +236,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    

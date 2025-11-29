@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useRef, useEffect } from 'react';
@@ -99,10 +98,12 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         }
 
         setIsDataLoading(true);
-        let loadedFlags = { config: false, tickets: false, draws: false };
+        let loadedCount = 0;
+        const totalListeners = 3;
 
         const checkAllDataLoaded = () => {
-            if(loadedFlags.config && loadedFlags.tickets && loadedFlags.draws) {
+            loadedCount++;
+            if (loadedCount === totalListeners) {
                 setIsDataLoading(false);
             }
         };
@@ -121,36 +122,24 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             } else {
                  setLotteryConfig(DEFAULT_LOTTERY_CONFIG);
             }
-            if (!loadedFlags.config) {
-                loadedFlags.config = true;
-                checkAllDataLoaded();
-            }
+            checkAllDataLoaded();
         }, (error) => {
             console.error("Error fetching lottery config: ", error);
-            if (!loadedFlags.config) {
-                loadedFlags.config = true;
-                checkAllDataLoaded();
-            }
+            checkAllDataLoaded();
         });
 
         const drawsQuery = query(collection(db, 'draws'));
         const drawsUnsub = onSnapshot(drawsQuery, (drawsSnapshot) => {
             const drawsData = drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw));
             setAllDraws(drawsData);
-            if (!loadedFlags.draws) {
-                loadedFlags.draws = true;
-                checkAllDataLoaded();
-            }
+            checkAllDataLoaded();
         }, (error) => {
             console.error("Error fetching draws: ", error);
-            if (!loadedFlags.draws) {
-                loadedFlags.draws = true;
-                checkAllDataLoaded();
-            }
+            checkAllDataLoaded();
         });
 
         const ticketsCollectionRef = collection(db, 'tickets');
-        let ticketsQuery = null;
+        let ticketsQuery: Query | null = null;
         
         if (user.role === 'cliente') {
             ticketsQuery = query(ticketsCollectionRef, where('buyerId', '==', user.id));
@@ -165,23 +154,14 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                     .map(doc => ({ id: doc.id, ...doc.data() } as Ticket))
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 setUserTickets(userTicketsData);
-                 if (!loadedFlags.tickets) {
-                    loadedFlags.tickets = true;
-                    checkAllDataLoaded();
-                }
+                checkAllDataLoaded();
             }, (error) => {
                 console.error("Error fetching user tickets: ", error);
-                if (!loadedFlags.tickets) {
-                    loadedFlags.tickets = true;
-                    checkAllDataLoaded();
-                }
+                checkAllDataLoaded();
             });
         } else {
             setUserTickets([]);
-            if (!loadedFlags.tickets) {
-                loadedFlags.tickets = true;
-                checkAllDataLoaded();
-            }
+            checkAllDataLoaded();
         }
 
         const allUnsubscribes = [configUnsub, drawsUnsub, ticketsUnsub].filter(Boolean) as Unsubscribe[];
@@ -281,5 +261,3 @@ export const useDashboard = (): DashboardContextType => {
     }
     return context;
 };
-
-    
