@@ -19,7 +19,7 @@ import {
     SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Home, LayoutDashboard, RefreshCw } from 'lucide-react';
+import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { ShoppingCart } from '@/components/shopping-cart';
@@ -68,9 +68,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 function DashboardUI({ children }: { children: React.ReactNode }) {
     const { currentUser, logout } = useAuth();
     const { setOpenMobile } = useSidebar();
-    const router = useRouter();
-    const pathname = usePathname();
-
+    
     const {
         cart,
         setCart,
@@ -120,7 +118,7 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
 
                     <SidebarMenu>
                         <SidebarMenuItem>
-                           <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                           <SidebarMenuButton asChild isActive={location.pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
                                 <Link href={dashboardPath}>
                                     <LayoutDashboard />
                                     <span>Meu Painel</span>
@@ -140,6 +138,7 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                 </SidebarContent>
                 <SidebarFooter>
                     <SidebarMenu>
+                        <SidebarSeparator className="my-2" />
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                                 <Link href="/">
