@@ -17,6 +17,35 @@ interface CycleRankingSectionProps {
   draws: Draw[];
 }
 
+const fallbackCopyTextToClipboard = (text: string, toast: (options: any) => void) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  
+  // Avoid scrolling to bottom
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      toast({ title: "Tabela Copiada!", description: "Os dados estão prontos para serem colados no Excel.", className: "bg-primary text-primary-foreground" });
+    } else {
+      toast({ title: "Falha ao copiar", description: "Não foi possível copiar automaticamente. Por favor, copie manualmente.", variant: "destructive" });
+    }
+  } catch (err) {
+    console.error('Fallback: Oops, unable to copy', err);
+    toast({ title: "Erro ao copiar", description: "Não foi possível copiar os dados. Por favor, copie manualmente.", variant: "destructive" });
+  }
+
+  document.body.removeChild(textArea);
+};
+
 export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTickets, draws }) => {
   const { toast } = useToast();
 
@@ -35,16 +64,21 @@ export const CycleRankingSection: FC<CycleRankingSectionProps> = ({ rankedTicket
     ]);
 
     const tsvContent = [
-      headers.join('\t'),
-      ...rows.map(row => row.join('\t'))
-    ].join('\n');
+      headers.join('	'),
+      ...rows.map(row => row.join('	'))
+    ].join('
+');
 
-    navigator.clipboard.writeText(tsvContent).then(() => {
-      toast({ title: "Tabela Copiada!", description: "Os dados estão prontos para serem colados no Excel.", className: "bg-primary text-primary-foreground" });
-    }, (err) => {
-      toast({ title: "Erro ao Copiar", description: "Não foi possível copiar os dados.", variant: "destructive" });
-      console.error('Could not copy text: ', err);
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tsvContent).then(() => {
+        toast({ title: "Tabela Copiada!", description: "Os dados estão prontos para serem colados no Excel.", className: "bg-primary text-primary-foreground" });
+      }).catch(err => {
+        console.error('Could not copy text using navigator: ', err);
+        fallbackCopyTextToClipboard(tsvContent, toast);
+      });
+    } else {
+      fallbackCopyTextToClipboard(tsvContent, toast);
+    }
   };
 
   return (

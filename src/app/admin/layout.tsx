@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Fragment } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
@@ -100,8 +100,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                           onClick={() => setOpenMobile(false)}
                         >
                             <Link href={`/admin?section=${item.id}`}>
-                                <item.Icon />
-                                <span>{item.label}</span>
+                                <Fragment>
+                                    <item.Icon />
+                                    <span>{item.label}</span>
+                                </Fragment>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -114,15 +116,19 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                       <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                           <Link href="/">
-                              <Home />
-                              <span>Página Inicial</span>
+                              <Fragment>
+                                  <Home />
+                                  <span>Página Inicial</span>
+                              </Fragment>
                           </Link>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                          <LogOut />
-                          <span>Sair da Conta</span>
+                          <Fragment>
+                              <LogOut />
+                              <span>Sair da Conta</span>
+                          </Fragment>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
             </SidebarMenu>

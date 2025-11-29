@@ -490,13 +490,6 @@ const SidebarMenuButton = React.forwardRef<
     const { isMobile, state } = useSidebar()
     const isCollapsed = state === "collapsed"
 
-    const buttonContent = (
-      // This div is the key fix. It wraps all children, so `Comp` always receives a single child.
-      <div className="flex items-center gap-2 [&>svg]:size-4 [&>svg]:shrink-0">
-        {children}
-      </div>
-    );
-
     const button = (
       <Comp
         ref={ref}
@@ -506,7 +499,9 @@ const SidebarMenuButton = React.forwardRef<
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         {...props}
       >
-        {buttonContent}
+        <div className="flex items-center gap-2 [&>svg]:size-4 [&>svg]:shrink-0">
+            {children}
+        </div>
         {isCollapsed && tooltip && typeof tooltip === 'string' && <span className="sr-only">{tooltip}</span>}
       </Comp>
     );

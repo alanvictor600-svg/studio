@@ -149,19 +149,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                            <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                                <Link href={dashboardPath}>
+                                <div>
                                     <LayoutDashboard />
                                     <span>Meu Painel</span>
-                                </Link>
+                                </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                                <Link href="/solicitar-saldo">
+                                <div>
                                     <Coins /> 
                                     <span>Adquirir Saldo</span>
-                                </Link>
+                                </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
@@ -170,20 +170,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton onClick={handleForceRefresh} variant="outline">
-                                 <RefreshCw /> 
-                                 <span>Atualizar Bolão</span>
+                                 <div>
+                                     <RefreshCw /> 
+                                     <span>Atualizar Bolão</span>
+                                 </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                                <Link href="/">
+                                <div>
                                     <Home /> <span>Página Inicial</span>
-                                </Link>
+                                </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                 <LogOut /> <span>Sair da Conta</span>
+                                 <div>
+                                     <LogOut /> <span>Sair da Conta</span>
+                                 </div>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
