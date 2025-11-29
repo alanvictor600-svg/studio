@@ -141,8 +141,8 @@ service cloud.firestore {
        //    listing all tickets.
        allow list: if isSignedIn() && (
           isAdmin() ||
-          (request.query.where[0][1] == 'buyerId' && request.query.where[0][2] == request.auth.uid) ||
-          (request.query.where[0][1] == 'sellerId' && request.query.where[0][2] == request.auth.uid)
+          (request.query.where[0][0] == 'buyerId' && request.query.where[0][2] == request.auth.uid) ||
+          (request.query.where[0][0] == 'sellerId' && request.query.where[0][2] == request.auth.uid)
        );
        
        // Allow creation if the user is the designated buyer or seller.

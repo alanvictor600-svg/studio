@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Ticket } from '@/types';
 import { useAuth } from '@/context/auth-context';
 import { createSellerTicketAction } from '@/app/actions/ticket';
-import { useSellerDashboard } from '@/context/seller-dashboard-context';
+import { useDashboard } from '@/context/dashboard-context';
 import { SelectedNumberBadge } from '@/components/selected-number-badge';
 
 interface SellerTicketCreationFormProps {
@@ -35,7 +35,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
-  const { setReceiptTickets, showCreditsDialog, isDataLoading } = useSellerDashboard();
+  const { setReceiptTickets, showCreditsDialog, isDataLoading } = useDashboard();
 
 
   const numberCounts = countOccurrences(currentPicks);

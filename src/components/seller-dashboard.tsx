@@ -8,13 +8,11 @@ import { TicketList } from '@/components/ticket-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShoppingBag, FileText, Loader2, BarChart3, Percent, DollarSign, Ticket as TicketIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, where, orderBy, getDocs, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
 import { SellerHistoryCard } from './seller-history-card';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { useSellerDashboard } from '@/context/seller-dashboard-context';
+import { useDashboard } from '@/context/dashboard-context';
 
 interface SellerDashboardProps {
     isLotteryPaused?: boolean;
@@ -24,8 +22,6 @@ interface SellerDashboardProps {
     allDraws: Draw[];
 }
 
-const REPORTS_PER_PAGE = 9;
-
 export const SellerDashboard: FC<SellerDashboardProps> = ({ 
     isLotteryPaused,
     onTicketCreated,
@@ -33,68 +29,16 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
     currentUser,
     allDraws,
 }) => {
-    const { toast } = useToast();
-    const [sellerHistory, setSellerHistory] = useState<SellerHistoryEntry[]>([]);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-    const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-    const [hasMore, setHasMore] = useState(true);
-    const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [activeTab, setActiveTab] = useState('vendas');
 
-    const { lotteryConfig, handleGenerateReceipt } = useSellerDashboard();
-
-    const fetchHistory = useCallback(async (loadMore = false) => {
-        if (!currentUser || currentUser.role !== 'vendedor') {
-            setIsLoadingHistory(false);
-            return;
-        }
-
-        if (loadMore) {
-            setIsFetchingMore(true);
-        } else {
-            setIsLoadingHistory(true);
-        }
-        
-        try {
-            const historyQueryConstraints = [
-                where("sellerId", "==", currentUser.id),
-                orderBy("endDate", "desc"),
-                limit(REPORTS_PER_PAGE)
-            ];
-
-            if (loadMore && lastVisible) {
-                historyQueryConstraints.push(startAfter(lastVisible));
-            }
-            
-            const q = query(collection(db, 'sellerHistory'), ...historyQueryConstraints);
-            const documentSnapshots = await getDocs(q);
-
-            const newHistoryData = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as SellerHistoryEntry));
-            
-            setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1] || null);
-            setHasMore(newHistoryData.length === REPORTS_PER_PAGE);
-
-            if (loadMore) {
-                setSellerHistory(prev => [...prev, ...newHistoryData]);
-            } else {
-                setSellerHistory(newHistoryData);
-            }
-
-        } catch (error) {
-            console.error("Error fetching seller history: ", error);
-            toast({ title: "Erro ao Carregar Histórico", description: "Não foi possível buscar seu histórico de vendas.", variant: "destructive" });
-        } finally {
-            setIsLoadingHistory(false);
-            setIsFetchingMore(false);
-        }
-    }, [currentUser, toast, lastVisible]);
-
-    useEffect(() => {
-        if (currentUser && activeTab === 'relatorios') {
-            fetchHistory(false);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentUser, activeTab]);
+    const { 
+        lotteryConfig, 
+        handleGenerateReceipt,
+        sellerHistory,
+        isLoadingHistory,
+        loadMoreHistory,
+        hasMoreHistory
+    } = useDashboard();
 
     const currentCycleSummary = useMemo(() => {
         if (!lotteryConfig) {
@@ -201,13 +145,13 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
                                         <SellerHistoryCard key={entry.id} historyEntry={entry} />
                                     ))}
                                 </div>
-                                {hasMore && (
+                                {hasMoreHistory && (
                                     <div className="flex justify-center mt-6">
                                         <Button
-                                            onClick={() => fetchHistory(true)}
-                                            disabled={isFetchingMore}
+                                            onClick={() => loadMoreHistory()}
+                                            disabled={isLoadingHistory}
                                         >
-                                            {isFetchingMore ? (
+                                            {isLoadingHistory ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                     Carregando...

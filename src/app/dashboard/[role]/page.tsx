@@ -1,20 +1,42 @@
+
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import type { Ticket } from '@/types';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { useClientDashboard } from '@/context/client-dashboard-context';
+import { useDashboard } from '@/context/dashboard-context';
+import type { Ticket } from '@/types';
 
+// Import Client and Seller specific components
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Ticket as TicketIcon, ShoppingCart } from 'lucide-react';
+import { Ticket as TicketIcon, ShoppingCart, PauseCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { PauseCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { SellerDashboard } from '@/components/seller-dashboard';
 
-export default function ClientePage() {
-  const { currentUser } = useAuth();
+export default function DashboardPage() {
+    const params = useParams();
+    const { role } = params as { role: 'cliente' | 'vendedor' };
+    const { currentUser } = useAuth();
+    
+    // This is the Client Page implementation
+    if (role === 'cliente') {
+        return <ClientePageContent />;
+    }
+    
+    // This is the Seller Page implementation
+    if (role === 'vendedor') {
+        return <VendedorPageContent />;
+    }
+
+    // Fallback in case of an invalid role
+    return <p>Painel desconhecido.</p>;
+}
+
+// Client-specific page content
+function ClientePageContent() {
   const {
     cart,
     setCart,
@@ -23,7 +45,7 @@ export default function ClientePage() {
     allDraws,
     isLotteryPaused,
     handleGenerateReceipt,
-  } = useClientDashboard();
+  } = useDashboard();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('aposta');
@@ -42,12 +64,6 @@ export default function ClientePage() {
     }
   }, [ticketToRebet, toast, setCart]);
   
-  if (!currentUser) {
-    // O layout já garante que o usuário está carregado,
-    // mas isso previne qualquer erro de renderização caso algo mude.
-    return null; 
-  }
-
   const handleRebet = (numbers: number[]) => {
     setTicketToRebet(numbers);
   };
@@ -114,6 +130,45 @@ export default function ClientePage() {
               </section>
           </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Seller-specific page content
+function VendedorPageContent() {
+  const { currentUser } = useAuth();
+  const {
+      userTickets,
+      allDraws,
+      isLotteryPaused,
+  } = useDashboard();
+
+  if (!currentUser) {
+    return null;
+  }
+  
+  const handleTicketCreated = (newTicket: Ticket) => {
+    // The onSnapshot in the context will automatically update the list.
+  };
+
+  return (
+    <div className="space-y-12">
+      <header>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 text-transparent bg-clip-text">
+            Painel do Vendedor
+          </h1>
+          <p className="text-lg text-white/80 mt-2 text-center">
+             Gerencie suas vendas e acompanhe seus resultados.
+          </p>
+      </header>
+
+      <SellerDashboard 
+            isLotteryPaused={isLotteryPaused}
+            onTicketCreated={handleTicketCreated}
+            userTickets={userTickets}
+            currentUser={currentUser}
+            allDraws={allDraws}
+        />
     </div>
   );
 }
