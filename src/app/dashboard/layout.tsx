@@ -150,19 +150,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                            <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                                <div>
+                                <Link href={dashboardPath}>
                                     <LayoutDashboard />
                                     <span>Meu Painel</span>
-                                </div>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                                <div>
+                                <Link href="/solicitar-saldo">
                                     <Coins /> 
                                     <span>Adquirir Saldo</span>
-                                </div>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
@@ -179,9 +179,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                                <div>
+                                <Link href="/">
                                     <Home /> <span>Página Inicial</span>
-                                </div>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
