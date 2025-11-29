@@ -61,6 +61,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     const [isDataLoading, setIsDataLoading] = useState(true);
     
     const listenersRef = useRef<Unsubscribe[]>([]);
+    const lastConfigVersion = useRef<number | undefined>(lotteryConfig.configVersion);
 
     useEffect(() => {
         // Cleanup on unmount or when auth state changes
@@ -81,6 +82,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
              listenersRef.current = [];
         }
     }, [isAuthenticated]);
+    
+    useEffect(() => {
+        // Logic to force a page reload if the config version changes.
+        if (lotteryConfig.configVersion && lastConfigVersion.current && lotteryConfig.configVersion > lastConfigVersion.current) {
+            toast({
+                title: "Atualização Disponível!",
+                description: "Novas configurações do bolão foram aplicadas. A página será recarregada.",
+                duration: 5000,
+            });
+            setTimeout(() => window.location.reload(), 3000);
+        }
+        lastConfigVersion.current = lotteryConfig.configVersion;
+    }, [lotteryConfig.configVersion, toast]);
 
     const showCreditsDialog = useCallback(() => {
         setIsCreditsDialogOpen(true);
@@ -91,9 +105,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        // Determine if lottery is paused based on draws existence
-        setIsLotteryPaused(allDraws.length > 0);
-    }, [allDraws]);
+        // Determine if lottery is paused based on winning tickets existence
+        const hasWinningTickets = userTickets.some(t => t.status === 'winning');
+        setIsLotteryPaused(hasWinningTickets);
+    }, [userTickets]);
 
 
     const startDataListeners = useCallback((user: User): () => void => {
