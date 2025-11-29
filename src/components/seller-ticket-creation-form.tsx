@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, type FC } from 'react';
@@ -10,14 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { generateAutoFilledTicket, countOccurrences, animalMapping } from '@/lib/lottery-utils';
 import { NumberButton } from '@/components/number-button';
-import { X, Sparkles, Trash2, TicketPlus, User, Phone, PauseCircle } from 'lucide-react';
+import { Sparkles, Trash2, TicketPlus, User, Phone, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import type { Ticket, LotteryConfig } from '@/types';
+import type { Ticket } from '@/types';
 import { useAuth } from '@/context/auth-context';
 import { createSellerTicketAction } from '@/app/actions/ticket';
-import { useDashboard } from '@/context/dashboard-context';
+import { useSellerDashboard } from '@/context/seller-dashboard-context';
 import { SelectedNumberBadge } from '@/components/selected-number-badge';
-
 
 interface SellerTicketCreationFormProps {
   isLotteryPaused?: boolean;
@@ -37,7 +34,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
-  const { setReceiptTickets, showCreditsDialog, isDataLoading } = useDashboard();
+  const { setReceiptTickets, showCreditsDialog, isDataLoading } = useSellerDashboard();
 
 
   const numberCounts = countOccurrences(currentPicks);
@@ -53,8 +50,8 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
             <PauseCircle className="h-5 w-5 text-primary" />
             <AlertTitle className="text-primary">Vendas Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
-              O registro de novas vendas está suspenso pois a loteria já começou ou há um bilhete premiado.
-              Aguarde o administrador iniciar uma nova loteria para continuar.
+              O registro de novas vendas está suspenso.
+              Aguarde o administrador iniciar um novo ciclo para continuar.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -117,13 +114,10 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
         buyerPhone: buyerPhone.trim() || undefined,
       });
       
-      // Clear form and show receipt using context
       setCurrentPicks([]);
       setBuyerName('');
       setBuyerPhone('');
       setReceiptTickets([createdTicket]);
-
-      // Notify parent about new ticket (onSnapshot will handle the rest)
       onTicketCreated(createdTicket);
 
       toast({ title: "Venda Registrada!", description: "O bilhete foi ativado e o comprovante gerado. O saldo será atualizado em breve.", className: "bg-primary text-primary-foreground", duration: 3000 });

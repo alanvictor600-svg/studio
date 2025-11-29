@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Fragment } from 'react';
+import { useEffect, Fragment, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
@@ -22,7 +22,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Home, Settings, PlusCircle, ShieldCheck, PieChart, History, Trophy, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { SuspenseWrapper } from '@/components/suspense-wrapper';
 
 const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
@@ -54,7 +53,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     if (currentUser && currentUser.role !== 'admin') {
-      router.replace(`/dashboard/${currentUser.role}`);
+      const destination = currentUser.role === 'cliente' ? '/cliente' : '/vendedor';
+      router.replace(destination);
     }
   }, [isLoading, isAuthenticated, currentUser, router, pathname]);
 
@@ -172,9 +172,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
-            <SuspenseWrapper>
+            <Suspense>
                 <AdminLayoutContent>{children}</AdminLayoutContent>
-            </SuspenseWrapper>
+            </Suspense>
         </SidebarProvider>
     );
 }

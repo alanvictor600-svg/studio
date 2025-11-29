@@ -1,18 +1,14 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { User } from '@/types';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase-client';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { RoleSelectionDialog } from '@/components/role-selection-dialog';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-
 
 interface AuthContextType {
   currentUser: User | null;
@@ -21,9 +17,8 @@ interface AuthContextType {
   signInWithGoogle: (role?: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<void>;
-  isLoading: boolean; // Combines authLoading and isFirestoreLoading
+  isLoading: boolean;
   isAuthenticated: boolean;
-  isFirestoreLoading: boolean; // Specifically for Firestore user profile loading
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,13 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingGoogleUser, setPendingGoogleUser] = useState<FirebaseUser | null>(null);
 
   const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
-  // isLoading is true if Firebase Auth is loading OR if we have a Firebase user but are still fetching their profile from Firestore.
   const isLoading = authLoading || (!!firebaseUser && isFirestoreLoading);
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
     
-    // Reset firestore loading state whenever firebaseUser changes.
     setIsFirestoreLoading(true);
 
     if (firebaseUser) {
@@ -58,17 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
-              // This can happen during sign up process
               setCurrentUser(null);
             }
-            // We have a definitive answer from Firestore (exists or not), so loading is done.
             setIsFirestoreLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
             setIsFirestoreLoading(false);
         });
     } else {
-        // No firebase user, so no profile to load and no current user.
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
@@ -109,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             saldo: 0,
         };
         await setDoc(userDocRef, newUser);
-        // The onSnapshot listener will automatically update the currentUser state.
         toast({ title: "Cadastro Concluído!", description: "Bem-vindo ao Bolão Potiguar!", className: "bg-primary text-primary-foreground" });
     } catch(e) {
         console.error("Error creating new user document:", e);
@@ -161,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      // O redirecionamento será tratado pela página que detectar a mudança de estado
       router.push('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
@@ -204,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, toast]);
   
-  const value = { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, isFirestoreLoading };
+  const value = { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated };
 
   return (
     <AuthContext.Provider value={value}>

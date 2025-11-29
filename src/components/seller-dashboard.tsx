@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, type FC, useEffect, useCallback, useMemo } from 'react';
-import type { Ticket, LotteryConfig, User, Draw, SellerHistoryEntry } from '@/types';
+import type { Ticket, User, Draw, SellerHistoryEntry } from '@/types';
 import { SellerTicketCreationForm } from '@/components/seller-ticket-creation-form';
 import { TicketList } from '@/components/ticket-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +13,7 @@ import { SellerHistoryCard } from './seller-history-card';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { useDashboard } from '@/context/dashboard-context';
+import { useSellerDashboard } from '@/context/seller-dashboard-context';
 
 interface SellerDashboardProps {
     isLotteryPaused?: boolean;
@@ -41,7 +40,7 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [activeTab, setActiveTab] = useState('vendas');
 
-    const { lotteryConfig, handleGenerateReceipt } = useDashboard();
+    const { lotteryConfig, handleGenerateReceipt } = useSellerDashboard();
 
     const fetchHistory = useCallback(async (loadMore = false) => {
         if (!currentUser || currentUser.role !== 'vendedor') {

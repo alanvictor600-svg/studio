@@ -1,8 +1,6 @@
-
-
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import type { Draw, Ticket, LotteryConfig, User, AdminHistoryEntry, CreditRequestConfig } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
@@ -11,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase-client';
-import { collection, onSnapshot, doc, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, orderBy } from 'firebase/firestore';
 
 import { addDrawAction, startNewLotteryAction } from '@/app/actions/lottery';
 import { saveLotteryConfig, saveCreditRequestConfig } from '@/lib/services/configService';
@@ -27,7 +25,6 @@ import { WinningTicketsSection } from '@/components/admin/sections/WinningTicket
 import { CycleRankingSection } from '@/components/admin/sections/CycleRankingSection';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { generateFinancialReport } from '@/lib/reports';
-import { SuspenseWrapper } from '@/components/suspense-wrapper';
 
 
 const DEFAULT_LOTTERY_CONFIG: LotteryConfig = {
@@ -74,7 +71,8 @@ function AdminPageContent() {
 
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || currentUser?.role !== 'admin')) {
-      router.push('/login?redirect=/admin');
+      const redirectPath = currentUser?.role === 'cliente' ? '/cliente' : '/vendedor';
+      router.push(currentUser ? redirectPath : '/login?redirect=/admin');
     }
   }, [isLoading, isAuthenticated, currentUser, router]);
 
@@ -423,8 +421,8 @@ function AdminPageContent() {
 
 export default function AdminPage() {
   return (
-    <SuspenseWrapper>
+    <Suspense>
       <AdminPageContent />
-    </SuspenseWrapper>
+    </Suspense>
   );
 }
