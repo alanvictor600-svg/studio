@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { notFound, useParams, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import type { Ticket } from '@/types';
 
@@ -20,10 +20,9 @@ import { PauseCircle } from 'lucide-react';
 
 export default function DashboardPage({ params }: { params: { role: 'cliente' | 'vendedor' } }) {
   const { role } = params;
-  const { currentUser, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { currentUser } = useAuth(); // Auth state is now managed by layout
   const { toast } = useToast();
-  const router = useRouter();
-
+  
   const {
       cart,
       setCart,
@@ -38,18 +37,16 @@ export default function DashboardPage({ params }: { params: { role: 'cliente' | 
   const [activeTab, setActiveTab] = useState('aposta');
   const [ticketToRebet, setTicketToRebet] = useState<number[] | null>(null);
   
-  // Validate the role from the URL
   useEffect(() => {
     if (role !== 'cliente' && role !== 'vendedor') {
       notFound();
     }
   }, [role]);
   
-  // Effect to handle re-betting logic
   useEffect(() => {
     if (ticketToRebet) {
       setCart(prevCart => [...prevCart, ticketToRebet]);
-      setTicketToRebet(null); // Reset after adding to cart
+      setTicketToRebet(null); 
       setActiveTab('aposta');
        toast({
         title: "Bilhete adicionado ao carrinho!",
@@ -59,26 +56,16 @@ export default function DashboardPage({ params }: { params: { role: 'cliente' | 
     }
   }, [ticketToRebet, toast, setCart]);
 
-
   const processedUserTickets = useMemo(() => updateTicketStatusesBasedOnDraws(userTickets, allDraws), [userTickets, allDraws]);
   
-  if (isAuthLoading || isDataLoading) {
-    return <div className="text-center p-10 text-white">Carregando dados do painel...</div>;
-  }
-
-  if (!isAuthenticated || !currentUser) {
-    // This case is primarily handled by the layout, but as a fallback:
-    return <div className="text-center p-10 text-white">Você precisa estar logado para ver esta página.</div>;
-  }
-  
-  if (currentUser.role !== role) {
-    // This can happen briefly if a user's role changes.
-    // The layout's useEffect will handle redirection, so we can just show a loading state.
-    return <div className="text-center p-10 text-white">Verificando permissões...</div>;
+  // The loading state is now handled by the layout, so this page will only render when data is ready.
+  // We just need to ensure we have a currentUser before proceeding.
+  if (!currentUser) {
+    return <div className="text-center p-10 text-white">Carregando usuário...</div>;
   }
 
   const handleTicketCreated = (newTicket: Ticket) => {
-    // The onSnapshot listener in the context will handle the update automatically.
+    // onSnapshot listener in context handles the update.
   };
 
   const handleRebet = (numbers: number[]) => {

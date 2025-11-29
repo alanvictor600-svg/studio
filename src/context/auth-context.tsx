@@ -2,8 +2,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import type { User, LotteryConfig } from '@/types';
-import { useRouter } from 'next/navigation';
+import type { User } from '@/types';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase-client';
@@ -21,8 +21,9 @@ interface AuthContextType {
   signInWithGoogle: (role?: 'cliente' | 'vendedor') => Promise<void>;
   logout: () => void;
   register: (username: string, passwordRaw: string, role: 'cliente' | 'vendedor') => Promise<void>;
-  isLoading: boolean;
+  isLoading: boolean; // Combines authLoading and isFirestoreLoading
   isAuthenticated: boolean;
+  isFirestoreLoading: boolean; // Specifically for Firestore user profile loading
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,33 +43,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingGoogleUser, setPendingGoogleUser] = useState<FirebaseUser | null>(null);
 
   const isAuthenticated = !authLoading && !!firebaseUser && !!currentUser;
-  const isLoading = authLoading || isFirestoreLoading;
+  // isLoading is true if Firebase Auth is loading OR if we have a Firebase user but are still fetching their profile from Firestore.
+  const isLoading = authLoading || (!!firebaseUser && isFirestoreLoading);
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
+    
+    // Reset firestore loading state whenever firebaseUser changes.
+    setIsFirestoreLoading(true);
+
     if (firebaseUser) {
-        setIsFirestoreLoading(true);
         const userDocRef = doc(db, "users", firebaseUser.uid);
         userUnsubscribe = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
               // This can happen during sign up process
-              if (!isRoleSelectionOpen) {
-                  setCurrentUser(null);
-              }
+              setCurrentUser(null);
             }
+            // We have a definitive answer from Firestore (exists or not), so loading is done.
             setIsFirestoreLoading(false);
         }, (error) => {
-            const contextualError = new FirestorePermissionError({
-              operation: 'get',
-              path: userDocRef.path,
-            });
-            console.error("Error listening to user document:", contextualError);
-            errorEmitter.emit('permission-error', contextualError);
+            console.error("Error listening to user document:", error);
             setIsFirestoreLoading(false);
         });
     } else {
+        // No firebase user, so no profile to load and no current user.
         setCurrentUser(null);
         setIsFirestoreLoading(false);
     }
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
         if(userUnsubscribe) userUnsubscribe();
     };
-  }, [firebaseUser, isRoleSelectionOpen]);
+  }, [firebaseUser]);
 
   const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             saldo: 0,
         };
         await setDoc(userDocRef, newUser);
-        setCurrentUser(newUser); // Optimistically set current user
+        // The onSnapshot listener will automatically update the currentUser state.
         toast({ title: "Cadastro Concluído!", description: "Bem-vindo ao Bolão Potiguar!", className: "bg-primary text-primary-foreground" });
     } catch(e) {
         console.error("Error creating new user document:", e);
@@ -140,7 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 saldo: 0,
             };
             await setDoc(userDocRef, newUser);
-            setCurrentUser(newUser);
           } else {
             setPendingGoogleUser(user);
             setIsRoleSelectionOpen(true);
@@ -162,9 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null);
-      toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
       router.push('/');
+      toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: "Erro ao Sair", description: "Não foi possível fazer o logout. Tente novamente.", variant: "destructive" });
@@ -206,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, toast]);
   
-  const value = { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated };
+  const value = { currentUser, firebaseUser, login, signInWithGoogle, logout, register, isLoading, isAuthenticated, isFirestoreLoading };
 
   return (
     <AuthContext.Provider value={value}>

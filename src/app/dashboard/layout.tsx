@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
@@ -26,16 +26,50 @@ import { ShoppingCart } from '@/components/shopping-cart';
 import { DashboardProvider, useDashboard } from '@/context/dashboard-context';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
 import { TicketReceiptDialog } from '@/components/ticket-receipt-dialog';
-import { useToast } from '@/hooks/use-toast';
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-    const { currentUser, logout, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+    const { currentUser, logout, isLoading } = useAuth();
     const { setOpenMobile } = useSidebar();
-    const { toast } = useToast();
     const router = useRouter();
     const pathname = usePathname();
     const params = useParams();
     const { role } = params as { role: 'cliente' | 'vendedor' };
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        if (!currentUser) {
+            router.replace('/login?redirect=' + pathname);
+            return;
+        }
+
+        if (currentUser.role !== role) {
+            router.replace(`/dashboard/${currentUser.role}`);
+        }
+    }, [isLoading, currentUser, role, router, pathname]);
+
+    if (isLoading || !currentUser || currentUser.role !== role) {
+        return (
+            <div className="flex justify-center items-center h-screen bg-background">
+                <p className="text-xl">Carregando painel...</p>
+            </div>
+        );
+    }
+    
+    // We are now sure currentUser is not null, so we can pass it to DashboardProvider
+    return (
+        <DashboardProvider user={currentUser}>
+            <DashboardUI>{children}</DashboardUI>
+        </DashboardProvider>
+    );
+}
+
+// New component to access dashboard context
+function DashboardUI({ children }: { children: React.ReactNode }) {
+    const { currentUser, logout } = useAuth();
+    const { setOpenMobile } = useSidebar();
+    const router = useRouter();
+    const pathname = usePathname();
 
     const {
         cart,
@@ -44,75 +78,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         isSubmitting,
         lotteryConfig,
         isCreditsDialogOpen,
-        setIsCreditsDialogOpen,
         receiptTickets,
         setReceiptTickets,
-        startDataListeners,
         isDataLoading
     } = useDashboard();
-    
-    const cleanupListenersRef = useRef<(() => void) | null>(null);
 
-    useEffect(() => {
-        if (isAuthLoading) return;
-
-        if (!isAuthenticated) {
-            router.replace('/login?redirect=' + pathname);
-            return;
-        }
-
-        if (currentUser && currentUser.role !== role) {
-            router.replace(`/dashboard/${currentUser.role}`);
-        }
-    }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
-
-    useEffect(() => {
-        if (isAuthenticated && currentUser && currentUser.role === role && !cleanupListenersRef.current) {
-            cleanupListenersRef.current = startDataListeners(currentUser);
-        }
-        return () => {
-            if (cleanupListenersRef.current) {
-                cleanupListenersRef.current();
-                cleanupListenersRef.current = null;
-            }
-        };
-    }, [isAuthenticated, currentUser, role, startDataListeners]);
-
-    const handleForceRefresh = async () => {
-        setOpenMobile(false);
-        toast({
-            title: 'Forçando Atualização...',
-            description: 'Limpando cache e recarregando os dados mais recentes.',
-        });
-
-        try {
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (const registration of registrations) {
-                    await registration.unregister();
-                }
-            }
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-            window.location.reload();
-        } catch (error) {
-            console.error('Falha ao forçar a atualização:', error);
-            toast({
-                title: 'Erro na Atualização',
-                description: 'Não foi possível limpar o cache. A página será recarregada.',
-                variant: 'destructive',
-            });
-            window.location.reload();
-        }
-    };
-
-    if (isAuthLoading || !isAuthenticated || !currentUser || currentUser.role !== role) {
-        return (
-            <div className="flex justify-center items-center h-screen bg-background">
-                <p className="text-xl">Carregando...</p>
-            </div>
-        );
-    }
+    if (!currentUser) return null; // Should not happen due to parent checks
 
     const dashboardPath = `/dashboard/${currentUser.role}`;
 
@@ -170,14 +141,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarFooter>
                     <SidebarMenu>
                         <SidebarMenuItem>
-                            <SidebarMenuButton onClick={handleForceRefresh} variant="outline">
-                                 <div>
-                                     <RefreshCw /> 
-                                     <span>Atualizar Bolão</span>
-                                 </div>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
                             <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
                                 <Link href="/">
                                     <Home /> <span>Página Inicial</span>
@@ -215,9 +178,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                                 cart={cart}
                                 currentUser={currentUser}
                                 lotteryConfig={lotteryConfig}
-                                isSubmitting={isSubmitting}
                                 onPurchase={handlePurchaseCart}
                                 onRemoveFromCart={(index) => setCart(cart.filter((_, i) => i !== index))}
+                                isSubmitting={isSubmitting}
                             />
                         )}
                     </div>
@@ -232,7 +195,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <InsufficientCreditsDialog
                 isOpen={isCreditsDialogOpen}
-                onOpenChange={setIsCreditsDialogOpen}
+                onOpenChange={(isOpen) => !isOpen && useDashboard().setReceiptTickets(null)}
             />
             <TicketReceiptDialog
                 isOpen={!!receiptTickets}
@@ -251,9 +214,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
-            <DashboardProvider>
-                <DashboardLayoutContent>{children}</DashboardLayoutContent>
-            </DashboardProvider>
+             <DashboardLayoutContent>{children}</DashboardLayoutContent>
         </SidebarProvider>
     );
 }
