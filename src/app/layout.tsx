@@ -2,7 +2,8 @@ import type {Metadata} from 'next';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Providers } from '@/components/providers';
+import { Providers }from '@/components/providers';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 const APP_NAME = "Bolão Potiguar";
 const APP_DEFAULT_TITLE = "Bolão Potiguar";
@@ -62,10 +63,12 @@ export default function RootLayout({
          <link rel="shortcut icon" href="/logo.png" />
        </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <Providers>
-          {children}
-          <Toaster />
-        </Providers>
+        <FirebaseClientProvider>
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
