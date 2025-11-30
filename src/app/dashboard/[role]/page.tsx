@@ -70,7 +70,7 @@ function ClientePageContent() {
   return (
     <div className="flex flex-col h-full space-y-8">
       <header className="flex-shrink-0">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 text-transparent bg-clip-text">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center bg-gradient-to-r from-yellow-300 via-amber-500 to-yellow-500 text-transparent bg-clip-text">
             Bem-vindo, Apostador!
           </h1>
           <p className="text-lg text-white/80 mt-2 text-center">
@@ -91,7 +91,7 @@ function ClientePageContent() {
               ))}
           </TabsList>
           
-          <TabsContent value="aposta" className="flex-grow">
+          <TabsContent value="aposta" className="flex-grow flex flex-col">
               {isLotteryPaused ? (
                   <Alert variant="default" className="border-primary/50 bg-card/90 text-foreground max-w-2xl mx-auto">
                       <PauseCircle className="h-5 w-5 text-primary" />
@@ -99,4 +99,71 @@ function ClientePageContent() {
                       <AlertDescription className="text-muted-foreground">
                       O registro de novas apostas está suspenso.
                       Aguarde o administrador iniciar um novo ciclo para continuar apostando.
-                      </Aler
+                      </AlertDescription>
+                  </Alert>
+              ) : (
+                <TicketSelectionForm 
+                    cart={cart}
+                    onCartChange={setCart}
+                    isSubmitting={isSubmitting}
+                />
+              )}
+          </TabsContent>
+          
+          <TabsContent value="bilhetes" className="flex-grow">
+               <TicketList
+                    tickets={userTickets}
+                    draws={allDraws}
+                    onRebet={handleRebet}
+                    onGenerateReceipt={handleGenerateReceipt}
+                />
+          </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+
+function VendedorPageContent() {
+    const { currentUser } = useAuth();
+    const { 
+        userTickets, 
+        allDraws, 
+        isLotteryPaused,
+        handleGenerateReceipt,
+    } = useDashboard();
+    
+    // This state is local because it only affects the seller's view of their own tickets.
+    const [localTickets, setLocalTickets] = useState<Ticket[]>(userTickets);
+
+    // Keep local state in sync with context
+    useEffect(() => {
+        setLocalTickets(userTickets);
+    }, [userTickets]);
+
+    // When a ticket is created, add it to the top of the local list for immediate feedback.
+    const handleTicketCreated = (newTicket: Ticket) => {
+        setLocalTickets(prevTickets => [newTicket, ...prevTickets]);
+    };
+    
+    return (
+        <div className="flex flex-col h-full space-y-8">
+            <header>
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center bg-gradient-to-r from-cyan-400 via-teal-500 to-cyan-600 text-transparent bg-clip-text">
+                    Painel do Vendedor
+                </h1>
+                <p className="text-lg text-white/80 mt-2 text-center">
+                    Gerencie suas vendas, acompanhe seus resultados e ganhe comissões.
+                </p>
+            </header>
+            
+            <SellerDashboard
+                isLotteryPaused={isLotteryPaused}
+                onTicketCreated={handleTicketCreated}
+                userTickets={localTickets}
+                currentUser={currentUser}
+                allDraws={allDraws}
+            />
+        </div>
+    );
+}
