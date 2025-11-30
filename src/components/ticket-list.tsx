@@ -22,21 +22,13 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws, onRebet, onGen
 
   const filteredTickets = tickets.filter(ticket => {
     if (activeTab === 'all') {
-      return ticket.status !== 'expired';
+      return ticket.status !== 'expired'; // Show all non-expired tickets
     }
-    if (activeTab === 'expired') {
-      return ticket.status === 'expired';
-    }
-    if (activeTab === 'unpaid') {
-      return ticket.status === 'unpaid';
-    }
-    return ticket.status === activeTab;
+    return ticket.status === activeTab; // Filter by the specific status for other tabs
   });
 
   const getCount = (status: TabValue) => {
     if (status === 'all') return tickets.filter(t => t.status !== 'expired').length;
-    if (status === 'expired') return tickets.filter(t => t.status === 'expired').length;
-    if (status === 'unpaid') return tickets.filter(t => t.status === 'unpaid').length;
     return tickets.filter(t => t.status === status).length;
   }
 
@@ -54,7 +46,8 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws, onRebet, onGen
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
           {tabItems.map(tab => {
             const count = getCount(tab.value);
-            if(count === 0 && tab.value !== 'all') return null;
+            // Don't show tabs that have zero items, except for 'all'
+            if(count === 0 && tab.value !== 'all') return null; 
             return (
               <TabsTrigger key={tab.value} value={tab.value} className="py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
                 <tab.Icon className="mr-2 h-4 w-4" /> {tab.label} ({count})
