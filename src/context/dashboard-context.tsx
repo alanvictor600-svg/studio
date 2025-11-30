@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -23,6 +24,7 @@ interface DashboardContextType {
     isLotteryPaused: boolean;
     isDataLoading: boolean;
     showCreditsDialog: (show: boolean) => void;
+    isCreditsDialogOpen: boolean;
     handleGenerateReceipt: (ticket: Ticket) => void;
     sellerHistory: SellerHistoryEntry[];
     isLoadingHistory: boolean;
@@ -204,7 +206,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         cart, setCart, handlePurchaseCart,
         isSubmitting, lotteryConfig, receiptTickets, setReceiptTickets,
         userTickets, allDraws, isLotteryPaused, isDataLoading,
-        showCreditsDialog, handleGenerateReceipt,
+        showCreditsDialog, isCreditsDialogOpen, handleGenerateReceipt,
         sellerHistory, isLoadingHistory, loadMoreHistory, hasMoreHistory,
         startDataListeners
     };

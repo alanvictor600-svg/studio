@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense } from 'react';
@@ -45,7 +46,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     setReceiptTickets,
     startDataListeners,
     isDataLoading,
-    showCreditsDialog
+    showCreditsDialog,
+    isCreditsDialogOpen
   } = useDashboard();
   
   const cleanupListenersRef = useRef<(() => void) | null>(null);
