@@ -163,9 +163,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                         <div>
-                             <LogOut /> <span>Sair da Conta</span>
-                         </div>
+                        <>
+                            <LogOut /> <span>Sair da Conta</span>
+                        </>
                     </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>
