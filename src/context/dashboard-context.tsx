@@ -70,41 +70,60 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }, []);
     
     const startDataListeners = useCallback((user: User) => {
-        setIsDataLoading(true);
-        clearListeners(); // Clear any previous listeners
-
-        const newListeners: (() => void)[] = [];
+        // Prevent re-initialization if listeners are already active
+        if (listenersRef.current.length > 0) {
+            // If user has not changed, do nothing.
+            if (listenersRef.current.some(l => (l as any)._query?.path?.includes(user.id))) {
+                return clearListeners;
+            }
+        }
         
+        setIsDataLoading(true);
+        clearListeners(); // Clear any previous listeners just in case
+
+        let isMounted = true;
+        const newListeners: (() => void)[] = [];
+
         const requiredListeners = user.role === 'vendedor' ? 4 : 3;
         let loadedCount = 0;
 
         const checkAllDataLoaded = () => {
-            loadedCount++;
-            if (loadedCount >= requiredListeners) {
-                setIsDataLoading(false);
+            if (isMounted) {
+                loadedCount++;
+                if (loadedCount >= requiredListeners) {
+                    setIsDataLoading(false);
+                }
             }
         };
 
         const configUnsub = onSnapshot(doc(db, 'configs', 'global'), 
             (configDoc) => {
-                setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
-                checkAllDataLoaded();
+                if (isMounted) {
+                    setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
+                    checkAllDataLoaded();
+                }
             },
             () => {
-                toast({ title: "Erro ao carregar configuração", variant: "destructive" });
-                checkAllDataLoaded();
+                if(isMounted) {
+                    toast({ title: "Erro ao carregar configuração", variant: "destructive" });
+                    checkAllDataLoaded();
+                }
             }
         );
         newListeners.push(configUnsub);
 
         const drawsUnsub = onSnapshot(collection(db, 'draws'), 
             (drawsSnapshot) => {
-                setAllDraws(drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw)));
-                checkAllDataLoaded();
+                if (isMounted) {
+                    setAllDraws(drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw)));
+                    checkAllDataLoaded();
+                }
             },
             () => {
-                toast({ title: "Erro ao carregar sorteios", variant: "destructive" });
-                checkAllDataLoaded();
+                 if(isMounted) {
+                    toast({ title: "Erro ao carregar sorteios", variant: "destructive" });
+                    checkAllDataLoaded();
+                }
             }
         );
         newListeners.push(drawsUnsub);
@@ -113,12 +132,16 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         const ticketsQuery = query(collection(db, 'tickets'), where(idField, '==', user.id));
         const ticketsUnsub = onSnapshot(ticketsQuery, 
             (ticketSnapshot) => {
-                setRawUserTickets(ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-                checkAllDataLoaded();
+                if (isMounted) {
+                    setRawUserTickets(ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+                    checkAllDataLoaded();
+                }
             },
             () => {
-                toast({ title: "Erro ao carregar seus bilhetes", variant: "destructive" });
-                checkAllDataLoaded();
+                 if(isMounted) {
+                    toast({ title: "Erro ao carregar seus bilhetes", variant: "destructive" });
+                    checkAllDataLoaded();
+                }
             }
         );
         newListeners.push(ticketsUnsub);
@@ -127,21 +150,30 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             setIsLoadingHistory(true);
             const historyQuery = query(collection(db, 'sellerHistory'), where("sellerId", "==", user.id), orderBy("endDate", "desc"), limit(REPORTS_PER_PAGE));
             getDocs(historyQuery).then(docSnaps => {
-                const historyData = docSnaps.docs.map(d => ({ id: d.id, ...d.data() } as SellerHistoryEntry));
-                setSellerHistory(historyData);
-                setLastVisibleHistory(docSnaps.docs[docSnaps.docs.length - 1] || null);
-                setHasMoreHistory(historyData.length === REPORTS_PER_PAGE);
+                if (isMounted) {
+                    const historyData = docSnaps.docs.map(d => ({ id: d.id, ...d.data() } as SellerHistoryEntry));
+                    setSellerHistory(historyData);
+                    setLastVisibleHistory(docSnaps.docs[docSnaps.docs.length - 1] || null);
+                    setHasMoreHistory(historyData.length === REPORTS_PER_PAGE);
+                }
             }).catch(() => {
-                toast({ title: "Erro ao carregar histórico", variant: "destructive" });
+                if (isMounted) toast({ title: "Erro ao carregar histórico", variant: "destructive" });
             }).finally(() => {
-                setIsLoadingHistory(false);
-                checkAllDataLoaded();
+                if (isMounted) {
+                    setIsLoadingHistory(false);
+                    checkAllDataLoaded();
+                }
             });
         }
         
         listenersRef.current = newListeners;
-        return clearListeners;
+        
+        return () => {
+            isMounted = false;
+            clearListeners();
+        };
     }, [clearListeners, toast]);
+
 
     const userTickets = useMemo(() => updateTicketStatusesBasedOnDraws(rawUserTickets, allDraws), [rawUserTickets, allDraws]);
     
