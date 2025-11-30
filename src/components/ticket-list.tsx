@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, type FC } from 'react';
+import { useState, type FC, useMemo } from 'react';
 import type { Ticket, Draw } from '@/types'; // Import Draw
 import { TicketCard } from '@/components/ticket-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,20 +15,34 @@ interface TicketListProps {
 
 type TabValue = 'all' | 'active' | 'winning' | 'expired' | 'unpaid';
 
-
 export const TicketList: FC<TicketListProps> = ({ tickets, draws, onRebet, onGenerateReceipt }) => {
   const [activeTab, setActiveTab] = useState<TabValue>('all');
 
-  const filteredTickets = tickets.filter(ticket => {
-    if (activeTab === 'all') {
-      return ticket.status !== 'expired'; // Show all non-expired tickets
+  const filteredTickets = useMemo(() => {
+    switch (activeTab) {
+      case 'all':
+        // Show all tickets that are not in a final "past" state, i.e., not expired or unpaid
+        return tickets.filter(ticket => ticket.status === 'active' || ticket.status === 'winning');
+      case 'active':
+        return tickets.filter(ticket => ticket.status === 'active');
+      case 'winning':
+        return tickets.filter(ticket => ticket.status === 'winning');
+      case 'unpaid':
+        return tickets.filter(ticket => ticket.status === 'unpaid');
+      case 'expired':
+        return tickets.filter(ticket => ticket.status === 'expired');
+      default:
+        return [];
     }
-    return ticket.status === activeTab; // Filter by the specific status for other tabs
-  });
+  }, [tickets, activeTab]);
 
   const getCount = (status: TabValue) => {
-    if (status === 'all') return tickets.filter(t => t.status !== 'expired').length;
-    return tickets.filter(t => t.status === status).length;
+     switch (status) {
+      case 'all':
+        return tickets.filter(t => t.status === 'active' || t.status === 'winning').length;
+      default:
+        return tickets.filter(t => t.status === status).length;
+    }
   }
 
   const tabItems: { value: TabValue; label: string; Icon: React.ElementType }[] = [
@@ -46,8 +59,7 @@ export const TicketList: FC<TicketListProps> = ({ tickets, draws, onRebet, onGen
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto bg-card/80 backdrop-blur-sm p-1.5 rounded-lg shadow-md">
           {tabItems.map(tab => {
             const count = getCount(tab.value);
-            // Don't show tabs that have zero items, except for 'all'
-            if(count === 0 && tab.value !== 'all') return null; 
+            if (count === 0 && tab.value !== 'all') return null;
             return (
               <TabsTrigger key={tab.value} value={tab.value} className="py-2.5 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200">
                 <tab.Icon className="mr-2 h-4 w-4" /> {tab.label} ({count})

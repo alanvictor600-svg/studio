@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -6,7 +5,7 @@ import type { LotteryConfig, User, Ticket, Draw, SellerHistoryEntry } from '@/ty
 import { useToast } from '@/hooks/use-toast';
 import { createClientTicketsAction } from '@/app/actions/ticket';
 import { doc, onSnapshot, collection, query, where, orderBy, getDocs, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db, auth } from '@/lib/firebase-client';
 import { v4 as uuidv4 } from 'uuid';
 import { updateTicketStatusesBasedOnDraws } from '@/lib/lottery-utils';
 import { InsufficientCreditsDialog } from '@/components/insufficient-credits-dialog';
@@ -67,9 +66,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
     // Seller states
     const [sellerHistory, setSellerHistory] = useState<SellerHistoryEntry[]>([]);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [lastVisibleHistory, setLastVisibleHistory] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
     const [hasMoreHistory, setHasMoreHistory] = useState(true);
+    const activeUserRef = useRef<User | null>(null);
 
     // Reload on config change
     useEffect(() => {
@@ -85,14 +85,20 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }, [lotteryConfig.configVersion, toast]);
 
     const startDataListeners = useCallback((user: User) => {
+        if (activeUserRef.current?.id === user.id) {
+            // Listeners are already running for this user
+            setIsDataLoading(false);
+            return () => {};
+        }
+        activeUserRef.current = user;
+
         setIsDataLoading(true);
+        setIsLoadingHistory(true);
         const listeners: (() => void)[] = [];
-        let loadedCount = 0;
-        const totalListeners = user.role === 'vendedor' ? 4 : 3; // Seller has one extra listener for history
+        let loadedStatus = { config: false, draws: false, tickets: false, history: user.role !== 'vendedor' };
 
         const checkAllDataLoaded = () => {
-            loadedCount++;
-            if (loadedCount >= totalListeners) {
+            if (Object.values(loadedStatus).every(Boolean)) {
                 setIsDataLoading(false);
             }
         };
@@ -101,17 +107,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             // Listener for global config
             const configDocRef = doc(db, 'configs', 'global');
             const configUnsub = onSnapshot(configDocRef, (configDoc) => {
-                if (configDoc.exists()) setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
-                if(loadedCount === 0) checkAllDataLoaded();
-            }, () => { if(loadedCount === 0) checkAllDataLoaded(); });
+                setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
+                loadedStatus.config = true;
+                checkAllDataLoaded();
+            }, () => { loadedStatus.config = true; checkAllDataLoaded(); });
             listeners.push(configUnsub);
 
             // Listener for draws
             const drawsQuery = query(collection(db, 'draws'));
             const drawsUnsub = onSnapshot(drawsQuery, (drawsSnapshot) => {
                 setAllDraws(drawsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Draw)));
-                if(loadedCount === 1) checkAllDataLoaded();
-            }, () => { if(loadedCount === 1) checkAllDataLoaded(); });
+                loadedStatus.draws = true;
+                checkAllDataLoaded();
+            }, () => { loadedStatus.draws = true; checkAllDataLoaded(); });
             listeners.push(drawsUnsub);
 
             // Listener for user-specific tickets
@@ -119,8 +127,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             const ticketsQuery = query(collection(db, 'tickets'), where(idField, '==', user.id));
             const ticketsUnsub = onSnapshot(ticketsQuery, (ticketSnapshot) => {
                 setRawUserTickets(ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-                if(loadedCount === 2) checkAllDataLoaded();
-            }, () => { if(loadedCount === 2) checkAllDataLoaded(); });
+                loadedStatus.tickets = true;
+                checkAllDataLoaded();
+            }, () => { loadedStatus.tickets = true; checkAllDataLoaded(); });
             listeners.push(ticketsUnsub);
 
             // Listener for seller history (only for sellers)
@@ -132,10 +141,12 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                     setLastVisibleHistory(docSnaps.docs[docSnaps.docs.length - 1] || null);
                     setHasMoreHistory(historyData.length === REPORTS_PER_PAGE);
                     setIsLoadingHistory(false);
-                    if(loadedCount === 3) checkAllDataLoaded();
+                    loadedStatus.history = true;
+                    checkAllDataLoaded();
                 }, () => { 
                     setIsLoadingHistory(false); 
-                    if(loadedCount === 3) checkAllDataLoaded();
+                    loadedStatus.history = true;
+                    checkAllDataLoaded();
                 });
                 listeners.push(historyUnsub);
             }
@@ -145,7 +156,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
             setIsDataLoading(false);
         }
         
-        return () => listeners.forEach(unsub => unsub());
+        return () => {
+            listeners.forEach(unsub => unsub());
+            activeUserRef.current = null;
+        };
 
     }, []);
 
@@ -207,7 +221,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     
     const loadMoreHistory = async () => {
         const user = auth.currentUser;
-        if (!user || user.role !== 'vendedor' || !lastVisibleHistory) return;
+        if (!user || !activeUserRef.current || user.uid !== activeUserRef.current.id || !lastVisibleHistory) return;
         
         setIsLoadingHistory(true);
         const historyQuery = query(collection(db, 'sellerHistory'), where("sellerId", "==", user.uid), orderBy("endDate", "desc"), startAfter(lastVisibleHistory), limit(REPORTS_PER_PAGE));

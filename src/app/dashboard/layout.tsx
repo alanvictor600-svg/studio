@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -133,25 +132,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <SidebarMenu>
                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                        <Link href={dashboardPath}>
-                            <div className="flex items-center gap-2">
+                    <Link href={dashboardPath} passHref>
+                        <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                            <div>
                                 <LayoutDashboard />
                                 <span>Meu Painel</span>
                             </div>
-                        </Link>
-                    </SidebarMenuButton>
+                        </SidebarMenuButton>
+                    </Link>
                  </SidebarMenuItem>
                  
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                         <Link href="/solicitar-saldo">
-                            <div className="flex items-center gap-2">
+                    <Link href="/solicitar-saldo" passHref>
+                        <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
+                             <div>
                                 <Coins /> 
                                 <span>Adquirir Saldo</span>
                             </div>
-                        </Link>
-                    </SidebarMenuButton>
+                        </SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarContent>
@@ -159,19 +158,17 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                  <SidebarSeparator className="my-2" />
                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                        <Link href="/">
-                            <div className="flex items-center gap-2">
+                    <Link href="/" passHref>
+                        <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
+                            <div>
                                 <Home /> <span>Página Inicial</span>
                             </div>
-                        </Link>
-                    </SidebarMenuButton>
+                        </SidebarMenuButton>
+                    </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        <>
-                            <LogOut /> <span>Sair da Conta</span>
-                        </>
+                        <LogOut /> <span>Sair da Conta</span>
                     </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>

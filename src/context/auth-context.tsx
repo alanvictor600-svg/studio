@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase-client';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 import { RoleSelectionDialog } from '@/components/role-selection-dialog';
 
 interface AuthContextType {
@@ -43,7 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
     
-    setIsFirestoreLoading(true);
+    if (authLoading) {
+      setIsFirestoreLoading(true);
+      return;
+    }
 
     if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -51,11 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (doc.exists()) {
               setCurrentUser({ id: doc.id, ...doc.data() } as User);
             } else {
+              // This case can happen briefly during registration.
               setCurrentUser(null);
             }
             setIsFirestoreLoading(false);
         }, (error) => {
             console.error("Error listening to user document:", error);
+            toast({ title: "Erro de Conexão", description: "Não foi possível carregar os dados do usuário.", variant: "destructive" });
             setIsFirestoreLoading(false);
         });
     } else {
@@ -66,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
         if(userUnsubscribe) userUnsubscribe();
     };
-  }, [firebaseUser]);
+  }, [firebaseUser, authLoading, toast]);
 
   const login = useCallback(async (username: string, passwordAttempt: string) => {
      const emailUsername = sanitizeUsernameForEmail(username);
@@ -99,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             saldo: 0,
         };
         await setDoc(userDocRef, newUser);
+        setCurrentUser(newUser); // Immediately update local state
         toast({ title: "Cadastro Concluído!", description: "Bem-vindo ao Bolão Potiguar!", className: "bg-primary text-primary-foreground" });
     } catch(e) {
         console.error("Error creating new user document:", e);
@@ -129,11 +135,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 saldo: 0,
             };
             await setDoc(userDocRef, newUser);
+            setCurrentUser(newUser); // Optimistic update
           } else {
             setPendingGoogleUser(user);
             setIsRoleSelectionOpen(true);
           }
         }
+        // If user exists, the onSnapshot will handle setting currentUser
     } catch (error: any) {
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
@@ -150,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // O redirecionamento será tratado pela página que detectar a mudança de estado
+      setCurrentUser(null); // Clear local state immediately
       router.push('/');
       toast({ title: "Logout realizado", description: "Até logo!", duration: 3000 });
     } catch (error) {
@@ -167,9 +175,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const emailUsername = sanitizeUsernameForEmail(originalUsername);
     const fakeEmail = `${emailUsername}@bolao.potiguar`;
+    
+    // Prevent race conditions by checking if user exists first in a transaction-like manner
+    const userCheckRef = doc(db, "users_username_lookup", emailUsername);
+    
     try {
+        const userCheckDoc = await getDoc(userCheckRef);
+        if (userCheckDoc.exists()) {
+            toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
+            throw new Error("Username already exists");
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passwordRaw);
         const newFirebaseUser = userCredential.user;
+        
         const newUser: User = {
             id: newFirebaseUser.uid,
             username: originalUsername, 
@@ -177,16 +196,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: new Date().toISOString(),
             saldo: 0,
         };
-        await setDoc(doc(db, "users", newFirebaseUser.uid), newUser);
+        
+        // Use a batch write to create user and username lookup atomically
+        const batch = writeBatch(db);
+        batch.set(doc(db, "users", newFirebaseUser.uid), newUser);
+        batch.set(userCheckRef, { userId: newFirebaseUser.uid }); // Create the lookup doc
+        
+        await batch.commit();
+
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
         await signOut(auth);
         router.push('/login');
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
+            // This case might still happen if the username lookup check fails somehow,
+            // or if the email is in use but not in our lookup table.
             toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
         } else if (error.code === 'auth/weak-password') {
             toast({ title: "Erro de Cadastro", description: "A senha é muito fraca. Use pelo menos 6 caracteres.", variant: "destructive" });
-        } else {
+        } else if (error.message !== "Username already exists") {
             console.error("Firebase registration error:", error);
             toast({ title: "Erro de Cadastro", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }

@@ -94,18 +94,15 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                 {menuItems.map(item => (
                     <SidebarMenuItem key={item.id}>
-                        <SidebarMenuButton 
-                          asChild 
-                          isActive={activeSection === item.id}
-                          onClick={() => setOpenMobile(false)}
-                        >
-                            <Link href={`/admin?section=${item.id}`}>
-                                <>
-                                    <item.Icon />
-                                    <span>{item.label}</span>
-                                </>
-                            </Link>
-                        </SidebarMenuButton>
+                        <Link href={`/admin?section=${item.id}`} passHref>
+                            <SidebarMenuButton 
+                              isActive={activeSection === item.id}
+                              onClick={() => setOpenMobile(false)}
+                            >
+                                <item.Icon />
+                                <span>{item.label}</span>
+                            </SidebarMenuButton>
+                        </Link>
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>
@@ -114,21 +111,17 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                   <SidebarSeparator className="my-2" />
                   <SidebarMenuItem>
-                      <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                          <Link href="/">
-                              <>
-                                  <Home />
-                                  <span>Página Inicial</span>
-                              </>
-                          </Link>
-                      </SidebarMenuButton>
+                        <Link href="/" passHref>
+                          <SidebarMenuButton onClick={() => setOpenMobile(false)}>
+                              <Home />
+                              <span>Página Inicial</span>
+                          </SidebarMenuButton>
+                      </Link>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                          <>
-                              <LogOut />
-                              <span>Sair da Conta</span>
-                          </>
+                          <LogOut />
+                          <span>Sair da Conta</span>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
             </SidebarMenu>
