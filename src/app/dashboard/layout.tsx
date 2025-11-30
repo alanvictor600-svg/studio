@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -67,7 +68,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     if (currentUser && currentUser.role !== role) {
       // If user is logged in but trying to access the wrong role's dashboard,
       // redirect them to their correct dashboard.
-      router.replace(`/dashboard/${currentUser.role}`);
+      const targetRole = currentUser.role === 'admin' ? 'admin' : `dashboard/${currentUser.role}`;
+      router.replace(`/${targetRole}`);
     }
   }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
 
@@ -134,10 +136,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  <SidebarMenuItem>
                     <Link href={dashboardPath} passHref>
                         <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                            <div>
+                            <span>
                                 <LayoutDashboard />
                                 <span>Meu Painel</span>
-                            </div>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
@@ -145,10 +147,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                     <Link href="/solicitar-saldo" passHref>
                         <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                             <div>
+                             <span>
                                 <Coins /> 
                                 <span>Adquirir Saldo</span>
-                            </div>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
@@ -160,9 +162,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  <SidebarMenuItem>
                     <Link href="/" passHref>
                         <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                            <div>
+                            <span>
                                 <Home /> <span>Página Inicial</span>
-                            </div>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
