@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -500,9 +499,7 @@ const SidebarMenuButton = React.forwardRef<
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         {...props}
       >
-        <div className="flex items-center gap-2 [&>svg]:size-4 [&>svg]:shrink-0">
-            {children}
-        </div>
+        {children}
         {isCollapsed && tooltip && typeof tooltip === 'string' && <span className="sr-only">{tooltip}</span>}
       </Comp>
     );

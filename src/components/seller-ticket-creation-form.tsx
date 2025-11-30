@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FC } from 'react';
@@ -49,7 +48,7 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
         <CardContent>
            <Alert variant="default" className="border-primary/50 bg-card/90 text-foreground">
             <PauseCircle className="h-5 w-5 text-primary" />
-            <AlertTitle className="text-primary">Vendas Pausadas</AlertTitle>
+            <AlertTitle className="text-primary font-bold">Vendas Pausadas</AlertTitle>
             <AlertDescription className="text-muted-foreground">
               O registro de novas vendas está suspenso.
               Aguarde o administrador iniciar um novo ciclo para continuar.
@@ -154,7 +153,6 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
                 placeholder="Nome do Comprador"
-                
                 disabled={isSubmitting}
               />
             </div>
@@ -168,7 +166,6 @@ export const SellerTicketCreationForm: FC<SellerTicketCreationFormProps> = ({
                 value={buyerPhone}
                 onChange={(e) => setBuyerPhone(e.target.value)}
                 placeholder="(XX) XXXXX-XXXX"
-                
                 disabled={isSubmitting}
               />
             </div>

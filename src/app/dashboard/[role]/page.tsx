@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -6,7 +5,6 @@ import { useAuth } from '@/context/auth-context';
 import { useDashboard } from '@/context/dashboard-context';
 import type { Ticket } from '@/types';
 
-// Import Client and Seller specific components
 import { TicketSelectionForm } from '@/components/ticket-selection-form';
 import { TicketList } from '@/components/ticket-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,23 +17,18 @@ import { SellerDashboard } from '@/components/seller-dashboard';
 export default function DashboardPage() {
     const params = useParams();
     const { role } = params as { role: 'cliente' | 'vendedor' };
-    const { currentUser } = useAuth();
     
-    // This is the Client Page implementation
     if (role === 'cliente') {
         return <ClientePageContent />;
     }
     
-    // This is the Seller Page implementation
     if (role === 'vendedor') {
         return <VendedorPageContent />;
     }
 
-    // Fallback in case of an invalid role
     return <p>Painel desconhecido.</p>;
 }
 
-// Client-specific page content
 function ClientePageContent() {
   const {
     cart,
@@ -134,7 +127,6 @@ function ClientePageContent() {
   );
 }
 
-// Seller-specific page content
 function VendedorPageContent() {
   const { currentUser } = useAuth();
   const {

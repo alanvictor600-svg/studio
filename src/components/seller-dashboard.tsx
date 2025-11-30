@@ -1,13 +1,11 @@
-
 "use client";
 
-import { useState, type FC, useEffect, useCallback, useMemo } from 'react';
-import type { Ticket, User, Draw, SellerHistoryEntry } from '@/types';
+import { useState, type FC, useMemo } from 'react';
+import type { Ticket, User, Draw } from '@/types';
 import { SellerTicketCreationForm } from '@/components/seller-ticket-creation-form';
 import { TicketList } from '@/components/ticket-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShoppingBag, FileText, Loader2, BarChart3, Percent, DollarSign, Ticket as TicketIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { SellerHistoryCard } from './seller-history-card';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
@@ -148,7 +146,7 @@ export const SellerDashboard: FC<SellerDashboardProps> = ({
                                 {hasMoreHistory && (
                                     <div className="flex justify-center mt-6">
                                         <Button
-                                            onClick={() => loadMoreHistory()}
+                                            onClick={loadMoreHistory}
                                             disabled={isLoadingHistory}
                                         >
                                             {isLoadingHistory ? (

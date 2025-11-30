@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -53,44 +52,35 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const cleanupListenersRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // This effect handles authentication and authorization for the dashboard.
     if (isAuthLoading) {
-      // Don't do anything while auth state is resolving.
       return;
     }
 
     if (!isAuthenticated) {
-      // If user is not logged in, redirect to login page, preserving the intended destination.
       router.replace('/login?redirect=' + pathname);
       return;
     }
 
     if (currentUser && currentUser.role !== role) {
-      // If user is logged in but trying to access the wrong role's dashboard,
-      // redirect them to their correct dashboard.
       const targetRole = currentUser.role === 'admin' ? 'admin' : `dashboard/${currentUser.role}`;
       router.replace(`/${targetRole}`);
     }
   }, [isAuthLoading, isAuthenticated, currentUser, role, router, pathname]);
 
-  // Effect to start/stop data listeners based on auth state
   useEffect(() => {
-    // Only start listeners if the user is authenticated and correctly authorized for the current dashboard role.
     if (isAuthenticated && currentUser && currentUser.role === role) {
       cleanupListenersRef.current = startDataListeners(currentUser);
     }
 
-    // Cleanup function to run when the component unmounts or dependencies change.
     return () => {
       if (cleanupListenersRef.current) {
         cleanupListenersRef.current();
-        cleanupListenersRef.current = null; // Prevent multiple cleanups
+        cleanupListenersRef.current = null;
       }
     };
   }, [isAuthenticated, currentUser, role, startDataListeners]);
 
 
-  // While authentication is loading, or if we are waiting for a redirect to happen, show a loading screen.
   if (isAuthLoading || !isAuthenticated || !currentUser || currentUser.role !== role) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
@@ -134,25 +124,21 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <SidebarMenu>
                  <SidebarMenuItem>
-                    <Link href={dashboardPath} passHref>
-                        <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                            <span>
-                                <LayoutDashboard />
-                                <span>Meu Painel</span>
-                            </span>
-                        </SidebarMenuButton>
-                    </Link>
+                    <SidebarMenuButton asChild isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                        <Link href={dashboardPath}>
+                            <LayoutDashboard />
+                            <span>Meu Painel</span>
+                        </Link>
+                    </SidebarMenuButton>
                  </SidebarMenuItem>
                  
                 <SidebarMenuItem>
-                    <Link href="/solicitar-saldo" passHref>
-                        <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                             <span>
-                                <Coins /> 
-                                <span>Adquirir Saldo</span>
-                            </span>
-                        </SidebarMenuButton>
-                    </Link>
+                    <SidebarMenuButton asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
+                         <Link href="/solicitar-saldo">
+                            <Coins /> 
+                            <span>Adquirir Saldo</span>
+                        </Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarContent>
@@ -160,13 +146,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                  <SidebarSeparator className="my-2" />
                  <SidebarMenuItem>
-                    <Link href="/" passHref>
-                        <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
-                            <span>
-                                <Home /> <span>Página Inicial</span>
-                            </span>
-                        </SidebarMenuButton>
-                    </Link>
+                    <SidebarMenuButton asChild onClick={() => setOpenMobile(false)}>
+                        <Link href="/">
+                            <Home /> <span>Página Inicial</span>
+                        </Link>
+                    </SidebarMenuButton>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
