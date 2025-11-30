@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
@@ -20,7 +20,7 @@ import {
     SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Coins, Home, LayoutDashboard } from 'lucide-react';
+import { LogOut, Coins, Home, LayoutDashboard, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { ShoppingCart } from '@/components/shopping-cart';
@@ -91,13 +91,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen">
       <Sidebar>
         <SidebarHeader>
-          <Link href="/" onClick={() => setOpenMobile(false)} className="flex items-center gap-3">
-             <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
-             <div className="flex flex-col">
-                <span className="text-lg font-semibold text-sidebar-foreground">Bolão Potiguar</span>
-                <span className="text-xs text-sidebar-foreground/80 -mt-1">
-                  Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
-                </span>
+          <Link href="/" onClick={() => setOpenMobile(false)}>
+             <div className="flex items-center gap-3">
+               <Image src="/logo.png" alt="Logo Bolão Potiguar" width={40} height={40} />
+               <div className="flex flex-col">
+                  <span className="text-lg font-semibold text-sidebar-foreground">Bolão Potiguar</span>
+                  <span className="text-xs text-sidebar-foreground/80 -mt-1">
+                    Painel de {currentUser.role === 'cliente' ? 'Cliente' : 'Vendedor'}
+                  </span>
+               </div>
              </div>
           </Link>
         </SidebarHeader>
@@ -122,8 +124,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  <SidebarMenuItem>
                     <Link href={dashboardPath} passHref legacyBehavior>
                         <SidebarMenuButton as="a" isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
-                            <LayoutDashboard />
-                            <span>Meu Painel</span>
+                            <span className="flex items-center gap-2">
+                                <LayoutDashboard />
+                                <span>Meu Painel</span>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
@@ -131,8 +135,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                     <Link href="/solicitar-saldo" passHref legacyBehavior>
                         <SidebarMenuButton as="a" className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
-                            <Coins /> 
-                            <span>Adquirir Saldo</span>
+                            <span className="flex items-center gap-2">
+                                <Coins /> 
+                                <span>Adquirir Saldo</span>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
@@ -142,15 +148,27 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                  <SidebarSeparator className="my-2" />
                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={handleForceRefresh} variant="outline">
+                        <span className="flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4" /> 
+                            <span>Atualizar Bolão</span>
+                        </span>
+                    </SidebarMenuButton>
+                 </SidebarMenuItem>
+                 <SidebarMenuItem>
                     <Link href="/" passHref legacyBehavior>
                         <SidebarMenuButton as="a" onClick={() => setOpenMobile(false)}>
-                            <Home /> <span>Página Inicial</span>
+                            <span className="flex items-center gap-2">
+                                <Home /> <span>Página Inicial</span>
+                            </span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        <LogOut /> <span>Sair da Conta</span>
+                        <span className="flex items-center gap-2">
+                            <LogOut /> <span>Sair da Conta</span>
+                        </span>
                     </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>
@@ -213,9 +231,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <DashboardProvider>
-        <Suspense>
-          <DashboardLayoutContent>{children}</DashboardLayoutContent>
-        </Suspense>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
       </DashboardProvider>
     </SidebarProvider>
   );
