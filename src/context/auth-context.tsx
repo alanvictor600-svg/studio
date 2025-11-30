@@ -93,13 +93,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!pendingGoogleUser) return;
     
     const user = pendingGoogleUser;
-    const userDocRef = doc(db, "users", user.uid);
     const username = user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`;
     const emailUsername = sanitizeUsernameForEmail(username);
+    
+    const userDocRef = doc(db, "users", user.uid);
     const userCheckRef = doc(db, "users_username_lookup", emailUsername);
-
-
+    
     try {
+        const userCheckDoc = await getDoc(userCheckRef);
+        if (userCheckDoc.exists()) {
+            toast({ title: "Erro no Cadastro", description: `O nome de usuário '${username}' já está em uso.`, variant: "destructive" });
+            await signOut(auth); // Log out the user to allow them to try again
+            return;
+        }
+
         const batch = writeBatch(db);
         const newUser: User = {
             id: user.uid,
@@ -117,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch(e) {
         console.error("Error creating new user document:", e);
         toast({ title: "Erro no Cadastro", description: "Não foi possível criar sua conta.", variant: "destructive" });
+        await signOut(auth);
     } finally {
         setIsRoleSelectionOpen(false);
         setPendingGoogleUser(null);
@@ -134,8 +142,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
+          const username = user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`;
+          const emailUsername = sanitizeUsernameForEmail(username);
+          const userCheckRef = doc(db, "users_username_lookup", emailUsername);
+          
           if (role) {
-             const username = user.displayName || user.email?.split('@')[0] || `user_${user.uid.substring(0, 6)}`;
+             const userCheckDoc = await getDoc(userCheckRef);
+             if (userCheckDoc.exists()) {
+                toast({ title: "Erro de Cadastro", description: "Um usuário com um nome similar já existe. Por favor, cadastre-se com e-mail e senha para escolher um nome de usuário único.", variant: "destructive", duration: 7000 });
+                await signOut(auth);
+                throw new Error("Username already exists");
+             }
              const newUser: User = {
                 id: user.uid,
                 username: username,
@@ -145,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             const batch = writeBatch(db);
             batch.set(userDocRef, newUser);
-            batch.set(doc(db, "users_username_lookup", sanitizeUsernameForEmail(username)), { userId: user.uid });
+            batch.set(userCheckRef, { userId: user.uid });
             await batch.commit();
 
             setCurrentUser(newUser); // Optimistic update
@@ -159,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             toast({ title: "Erro de Login", description: "Já existe uma conta com este e-mail. Tente fazer login com outro método.", variant: "destructive", duration: 5000 });
         } else if (error.code === 'auth/popup-closed-by-user') {
             // User closed popup, do nothing.
-        } else {
+        } else if (error.message !== "Username already exists") {
             console.error("Google Sign-In Error:", error);
             toast({ title: "Erro de Login", description: "Não foi possível fazer login com o Google. Tente novamente.", variant: "destructive" });
         }

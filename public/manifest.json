@@ -1,0 +1,21 @@
+{
+  "name": "Bolão Potiguar",
+  "short_name": "Bolão Potiguar",
+  "description": "Sua sorte começa aqui!",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#228B22",
+  "background_color": "#FFFFFF",
+  "start_url": "/",
+  "display": "standalone"
+}

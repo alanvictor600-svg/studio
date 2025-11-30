@@ -24,7 +24,7 @@ import { LogOut, Home, Settings, PlusCircle, ShieldCheck, PieChart, History, Tro
 import Image from 'next/image';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 
-const menuItems: { id: string; label: string; Icon: React.ElementType }[] = [
+const menuItems = [
   { id: 'configuracoes', label: 'Configurações', Icon: Settings },
   { id: 'cadastrar-sorteio', label: 'Cadastrar Sorteio', Icon: PlusCircle },
   { id: 'controles-loteria', label: 'Controles', Icon: ShieldCheck },
@@ -90,8 +90,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                 {menuItems.map(item => (
                     <SidebarMenuItem key={item.id}>
-                        <Link href={`/admin?section=${item.id}`} passHref>
-                            <SidebarMenuButton 
+                        <Link href={`/admin?section=${item.id}`} passHref legacyBehavior>
+                           <SidebarMenuButton 
+                              as="a"
                               isActive={activeSection === item.id}
                               onClick={() => setOpenMobile(false)}
                             >
@@ -107,8 +108,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                   <SidebarSeparator className="my-2" />
                   <SidebarMenuItem>
-                        <Link href="/" passHref>
-                            <SidebarMenuButton onClick={() => setOpenMobile(false)}>
+                        <Link href="/" passHref legacyBehavior>
+                            <SidebarMenuButton as="a" onClick={() => setOpenMobile(false)}>
                                 <Home />
                                 <span>Página Inicial</span>
                             </SidebarMenuButton>

@@ -120,8 +120,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <SidebarMenu>
                  <SidebarMenuItem>
-                    <Link href={dashboardPath} passHref>
-                        <SidebarMenuButton isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
+                    <Link href={dashboardPath} passHref legacyBehavior>
+                        <SidebarMenuButton as="a" isActive={pathname === dashboardPath} onClick={() => setOpenMobile(false)}>
                             <LayoutDashboard />
                             <span>Meu Painel</span>
                         </SidebarMenuButton>
@@ -129,8 +129,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                  </SidebarMenuItem>
                  
                 <SidebarMenuItem>
-                    <Link href="/solicitar-saldo" passHref>
-                        <SidebarMenuButton className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
+                    <Link href="/solicitar-saldo" passHref legacyBehavior>
+                        <SidebarMenuButton as="a" className="bg-green-600 hover:bg-green-700 text-white font-semibold text-base h-12" onClick={() => setOpenMobile(false)}>
                             <Coins /> 
                             <span>Adquirir Saldo</span>
                         </SidebarMenuButton>
@@ -142,8 +142,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                  <SidebarSeparator className="my-2" />
                  <SidebarMenuItem>
-                    <Link href="/" passHref>
-                        <SidebarMenuButton onClick={() => setOpenMobile(false)}>
+                    <Link href="/" passHref legacyBehavior>
+                        <SidebarMenuButton as="a" onClick={() => setOpenMobile(false)}>
                             <Home /> <span>Página Inicial</span>
                         </SidebarMenuButton>
                     </Link>
