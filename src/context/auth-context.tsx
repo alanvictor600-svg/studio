@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -171,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const originalUsername = username.trim();
      if (!/^[a-zA-Z0-9_.-]+$/.test(originalUsername)) {
          toast({ title: "Erro de Cadastro", description: "Nome de usuário inválido.", variant: "destructive" });
-         return;
+         throw new Error("Invalid username");
     }
     const emailUsername = sanitizeUsernameForEmail(originalUsername);
     const fakeEmail = `${emailUsername}@bolao.potiguar`;
@@ -205,16 +206,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await batch.commit();
 
         toast({ title: "Cadastro realizado!", description: "Você já pode fazer login.", className: "bg-primary text-primary-foreground", duration: 3000 });
-        await signOut(auth);
+        await signOut(auth); // Sign out the user so they have to log in
         router.push('/login');
     } catch (error: any) {
+        // Don't show toast for errors we've already handled (like username exists)
         if (error.code === 'auth/email-already-in-use') {
-            // This case might still happen if the username lookup check fails somehow,
-            // or if the email is in use but not in our lookup table.
-            toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
+             toast({ title: "Erro de Cadastro", description: "Este nome de usuário já está em uso.", variant: "destructive" });
         } else if (error.code === 'auth/weak-password') {
             toast({ title: "Erro de Cadastro", description: "A senha é muito fraca. Use pelo menos 6 caracteres.", variant: "destructive" });
-        } else if (error.message !== "Username already exists") {
+        } else if (!["Username already exists", "Invalid username"].includes(error.message)) {
             console.error("Firebase registration error:", error);
             toast({ title: "Erro de Cadastro", description: "Ocorreu um erro inesperado. Tente novamente.", variant: "destructive" });
         }
