@@ -33,7 +33,6 @@ export const animalMapping = [
 export function generateAutoFilledTicket(): number[] {
   const ticket: number[] = [];
   const counts: Record<number, number> = {};
-  // All numbers from 1 to 25 are candidates for each pick.
   const allPossibleNumbers = Array.from({ length: 25 }, (_, i) => i + 1);
 
   while (ticket.length < 10) {
@@ -44,9 +43,6 @@ export function generateAutoFilledTicket(): number[] {
       ticket.push(num);
       counts[num] = (counts[num] || 0) + 1;
     }
-    // If a number cannot be added because its count is 4,
-    // the loop continues and picks another random number from allPossibleNumbers.
-    // This is acceptable given the constraints (10 picks, max 4 per number from 25 options).
   }
   return ticket.sort((a, b) => a - b);
 }
@@ -73,13 +69,11 @@ export function calculateTicketMatches(ticket: Ticket, draws: Draw[]): number {
         const countInTicket = ticketNumbersFrequency[num];
         const countInDraws = drawnNumbersFrequency[num] || 0;
         
-        // The number of matches for a given number is the minimum of its count in the ticket and in the draws.
         matches += Math.min(countInTicket, countInDraws);
     }
 
     return matches;
 }
-
 
 export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[]): Ticket[] {
   if (!Array.isArray(tickets)) {
@@ -88,37 +82,30 @@ export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[
   }
   if (!Array.isArray(draws)) {
     console.error("updateTicketStatusesBasedOnDraws: draws is not an array", draws);
-    // If draws are invalid, process tickets as if there are no draws
-    return tickets.map(ticket => {
-        // Don't change awaiting_payment or unpaid status
+    return tickets.filter(Boolean).map(ticket => {
         if (ticket.status === 'awaiting_payment' || ticket.status === 'unpaid') return ticket;
-        // Reset winning to active
         return {...ticket, status: ticket.status === 'winning' ? 'active' : ticket.status };
     });
   }
 
   if (draws.length === 0) {
-    // If there are no draws, no ticket can be winning.
-    // If a ticket was previously 'winning', reset it to 'active'.
-    // Keep other statuses as they are.
-    return tickets.map(ticket => {
+    return tickets.filter(Boolean).map(ticket => {
       if (ticket.status === 'winning') return { ...ticket, status: 'active' };
       return ticket;
     });
   }
 
-  const allDrawnNumbersFlattened: number[] = draws.flatMap(draw => draw.numbers);
+  const allDrawnNumbersFlattened: number[] = draws.flatMap(draw => (draw && Array.isArray(draw.numbers)) ? draw.numbers : []);
   const drawnNumbersFrequency = countOccurrences(allDrawnNumbersFlattened);
 
-  return tickets.map(ticket => {
-    // Tickets that are not active should not have their status changed by new draws.
+  return tickets.filter(Boolean).map(ticket => {
     if (ticket.status !== 'active' && ticket.status !== 'winning') {
       return ticket;
     }
     
-    if (!ticket || !Array.isArray(ticket.numbers)) {
+    if (!Array.isArray(ticket.numbers)) {
       console.error("updateTicketStatusesBasedOnDraws: invalid ticket encountered", ticket);
-      return { ...ticket, status: 'expired' }; // Or some default error state
+      return { ...ticket, status: 'expired' };
     }
 
     const ticketNumbersFrequency = countOccurrences(ticket.numbers);
@@ -142,8 +129,6 @@ export function updateTicketStatusesBasedOnDraws(tickets: Ticket[], draws: Draw[
     if (isCurrentlyWinning) {
       newStatus = 'winning';
     } else {
-      // If it's not currently winning, but its status was 'winning', revert it to active.
-      // Otherwise, keep its existing 'active' status.
       if (ticket.status === 'winning') {
         newStatus = 'active'; 
       }

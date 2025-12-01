@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FC } from 'react';
@@ -121,4 +120,10 @@ export const TicketSelectionForm: FC<TicketSelectionFormProps> = ({
                   <Trash2 className="mr-2 h-4 w-4" /> Limpar
               </Button>
               <Button variant="outline" onClick={handleAutoFill} className="h-11 text-base shadow-sm" disabled={isSubmitting}>
-                  <Sparkles className="mr-2 h-4
+                  <Sparkles className="mr-2 h-4 w-4" /> Surpresinha
+              </Button>
+          </div>
+      </CardFooter>
+    </Card>
+  );
+};

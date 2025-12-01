@@ -53,7 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         userUnsubscribe = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-              setCurrentUser({ id: doc.id, ...doc.data() } as User);
+              const userData = doc.data();
+              if (userData) {
+                setCurrentUser({ id: doc.id, ...userData } as User);
+              } else {
+                setCurrentUser(null);
+              }
             } else {
               setCurrentUser(null);
             }

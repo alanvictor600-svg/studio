@@ -53,6 +53,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   
   const cleanupListenersRef = useRef<(() => void) | null>(null);
 
+  const handleForceRefresh = () => {
+    router.refresh();
+  };
+
   useEffect(() => {
     if (isAuthLoading) return;
 

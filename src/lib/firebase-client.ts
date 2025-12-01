@@ -3,19 +3,23 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { firebaseConfig } from "@/firebase/config"; // Importa a configuração correta
+import { firebaseConfig } from "@/firebase/config";
 
-function initializeClientApp(): { app: FirebaseApp; auth: Auth; db: Firestore } {
-  if (getApps().length > 0) {
-    const app = getApp();
-    return { app, auth: getAuth(app), db: getFirestore(app) };
-  }
-  
-  // Usa o firebaseConfig importado para inicializar
-  const app = initializeApp(firebaseConfig);
-  return { app, auth: getAuth(app), db: getFirestore(app) };
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+
+// This check ensures that Firebase is only initialized on the client side.
+if (typeof window !== 'undefined' && !getApps().length) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} else if (typeof window !== 'undefined') {
+  app = getApp();
+  auth = getAuth(app);
+  db = getFirestore(app);
 }
 
-const { app, auth, db } = initializeClientApp();
-
+// Export the initialized services. They will be undefined on the server,
+// but that's fine because they are only used in client components.
 export { app, auth, db };

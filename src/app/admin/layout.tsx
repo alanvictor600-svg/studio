@@ -96,8 +96,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                               isActive={activeSection === item.id}
                               onClick={() => setOpenMobile(false)}
                             >
+                               <span className="flex items-center gap-2">
                                 <item.Icon />
                                 <span>{item.label}</span>
+                               </span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
@@ -110,15 +112,19 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                         <Link href="/" passHref legacyBehavior>
                             <SidebarMenuButton as="a" onClick={() => setOpenMobile(false)}>
-                                <Home />
-                                <span>Página Inicial</span>
+                                <span className="flex items-center gap-2">
+                                  <Home />
+                                  <span>Página Inicial</span>
+                                </span>
                             </SidebarMenuButton>
                         </Link>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => { logout(); setOpenMobile(false); }} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                          <LogOut />
-                          <span>Sair da Conta</span>
+                          <span className="flex items-center gap-2">
+                            <LogOut />
+                            <span>Sair da Conta</span>
+                          </span>
                       </SidebarMenuButton>
                   </SidebarMenuItem>
             </SidebarMenu>
@@ -139,7 +145,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-semibold text-primary">Painel do Admin</span>
         </header>
-        <main className="p-4 md:p-8 flex-1 bg-gradient-to-b from-emerald-700 to-emerald-900 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 bg-gradient-to-b from-emerald-700 to-emerald-900 overflow-y-auto">
             <div className="mb-6">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight text-center">
                     Área Administrativa

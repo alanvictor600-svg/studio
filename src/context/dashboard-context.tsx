@@ -70,16 +70,14 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }, []);
     
     const startDataListeners = useCallback((user: User) => {
-        // Prevent re-initialization if listeners are already active
         if (listenersRef.current.length > 0) {
-            // If user has not changed, do nothing.
             if (listenersRef.current.some(l => (l as any)._query?.path?.includes(user.id))) {
                 return clearListeners;
             }
         }
         
         setIsDataLoading(true);
-        clearListeners(); // Clear any previous listeners just in case
+        clearListeners(); 
 
         let isMounted = true;
         const newListeners: (() => void)[] = [];
@@ -98,8 +96,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
         const configUnsub = onSnapshot(doc(db, 'configs', 'global'), 
             (configDoc) => {
+                const data = configDoc.data();
                 if (isMounted) {
-                    setLotteryConfig(prev => ({ ...prev, ...configDoc.data() }));
+                    if (data) {
+                        setLotteryConfig(prev => ({ ...prev, ...data }));
+                    }
                     checkAllDataLoaded();
                 }
             },
